@@ -1,0 +1,6 @@
+cscope*
+tags
+*.d
+*.o
+*.elf
+*.bin

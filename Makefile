@@ -59,6 +59,7 @@ LDLIBS		+= -l$(LIBNAME)
 LDLIBS		+= -Wl,--start-group -lc -lgcc -lnosys -Wl,--end-group
 
 # --------------------------------------------------------------------
+.SECONDARY:
 
 all: elf
 elf: $(APP).elf

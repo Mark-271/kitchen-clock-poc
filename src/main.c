@@ -7,6 +7,8 @@
 #include <stdbool.h>
 #include <errno.h>
 
+#include <delay.h>
+
 int _write(int fd, char *ptr, int len);
 
 static void clock_setup(void)
@@ -15,6 +17,7 @@ static void clock_setup(void)
 
 	rcc_periph_clock_enable(RCC_USART1);
 	rcc_periph_clock_enable(RCC_GPIOA);
+	rcc_periph_clock_enable(RCC_GPIOC);
 }
 
 static void gpio_setup(void)
@@ -22,6 +25,10 @@ static void gpio_setup(void)
 	/* USART1 */
 	gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ,
 		      GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_USART1_TX);
+	/* LED */
+	gpio_set_mode(GPIOC, GPIO_MODE_OUTPUT_2_MHZ,
+		      GPIO_CNF_OUTPUT_PUSHPULL, GPIO8);
+
 }
 
 static void usart_setup(void)
@@ -63,6 +70,8 @@ int main(void)
 	printf("Hello\n");
 
 	for (;;) {
+		gpio_toggle(GPIOC, GPIO8);
+		mdelay(10000);
 	}
 
 	return 0;

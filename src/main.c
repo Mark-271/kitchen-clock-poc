@@ -8,6 +8,7 @@
 #include <errno.h>
 
 #include <delay.h>
+#include <ds18b20.h>
 
 int _write(int fd, char *ptr, int len);
 
@@ -18,6 +19,7 @@ static void clock_setup(void)
 	rcc_periph_clock_enable(RCC_USART1);
 	rcc_periph_clock_enable(RCC_GPIOA);
 	rcc_periph_clock_enable(RCC_GPIOC);
+	rcc_periph_clock_enable(RCC_GPIOB);
 }
 
 static void gpio_setup(void)
@@ -28,6 +30,9 @@ static void gpio_setup(void)
 	/* LED */
 	gpio_set_mode(GPIOC, GPIO_MODE_OUTPUT_2_MHZ,
 		      GPIO_CNF_OUTPUT_PUSHPULL, GPIO8);
+	/* Temperature sensor */
+	gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_2_MHZ,
+		      GPIO_CNF_OUTPUT_OPENDRAIN, GPIO9);
 
 }
 
@@ -61,11 +66,14 @@ int _write(int fd, char *ptr, int len)
 	return i;
 }
 
+struct ow ow;
+
 int main(void)
 {
 	clock_setup();
 	gpio_setup();
 	usart_setup();
+	ow_init(&ow, GPIOB, GPIO9);
 
 	printf("Hello\n");
 

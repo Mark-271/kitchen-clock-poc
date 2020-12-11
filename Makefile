@@ -29,7 +29,8 @@ DEBUG		:= -ggdb3
 CSTD		?= -std=gnu89
 
 OBJS		+=			\
-		   src/main.o
+		   src/main.o		\
+		   src/ds18b20.o
 
 # C flags
 

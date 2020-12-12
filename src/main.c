@@ -80,6 +80,15 @@ int main(void)
 	for (;;) {
 		gpio_toggle(GPIOC, GPIO8);
 		mdelay(10000);
+
+		ow_reset(&ow);
+		ow_write_byte(&ow, SKIP_ROM);
+		ow_write_byte(&ow, CONVERT_T);
+		mdelay(760);
+		ow_reset(&ow);
+		ow_write_byte(&ow, SKIP_ROM);
+		ow_write_byte(&ow, READ_SCRATCHPAD);
+
 	}
 
 	return 0;

@@ -1,6 +1,8 @@
 #ifndef DS18b20_H
 #define DS18b20_H
 
+#define UNUSED(x) (void)x
+
 /* 1-wire specific delay timings */
 #define RESET_TIME 500
 #define WRITE_1_TIME 10

@@ -9,6 +9,9 @@
 #define WRITE_1_TIME		10
 #define WRITE_1_PAUSE		50
 #define WRITE_0_TIME		60
+#define READ_INIT_TIME		5
+#define READ_SAMPLING_TIME	5
+#define READ_PAUSE		50
 #define SLOT_WINDOW		5
 
 struct ow {

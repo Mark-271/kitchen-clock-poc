@@ -25,6 +25,7 @@ void ow_init(struct ow *ow, uint32_t gpio_port, uint16_t gpio_pin)
 
 void ow_exit(struct ow *ow)
 {
+	gpio_clear(ow->port, ow->pin);
 	UNUSED(ow);
 }
 

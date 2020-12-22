@@ -1,6 +1,7 @@
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/usart.h>
+#include <libopencm3/cm3/cortex.h>
 
 #include <stdio.h>
 #include <stdint.h>
@@ -79,38 +80,35 @@ int main(void)
 	usart_setup();
 	ow_init(&ow, GPIOB, GPIO9);
 
-	printf("HELLO\n");
-
-	gpio_set(GPIOB, GPIO9);
 	printf("0x%x\n", (gpio_get(GPIOB, GPIO9) >> 9 & 0x01));
 
-	int ret = 0;
-	ret = ow_reset(&ow);
-	printf("0x%x\n", ret >> 9 & 0x01);
-
-	printf("0x%x\n", (gpio_get(GPIOB, GPIO9) >> 9 & 0x1));
+	int i;
+	int8_t data[2];
+	int16_t t = 0;
 
 	for (;;) {
 		gpio_toggle(GPIOC, GPIO8);
-		mdelay(10000);
-/*
-		ow_reset(&ow);
-		ow_write_byte(&ow, 0xCC);
-		ow_write_byte(&ow, 0x44);
-		mdelay(760);
+
+		cm_disable_interrupts();
+		mdelay(5000);
 
 		ow_reset(&ow);
-		ow_write_byte(&ow, 0xCC);
-		ow_write_byte(&ow, 0xBE);
+		ow_write_byte(&ow, SKIP_ROM);
+		ow_write_byte(&ow, CONVERT_T);
+		mdelay(900);
 
-		for (i = 0; i < 8; i++) {
+		ow_reset(&ow);
+		ow_write_byte(&ow, SKIP_ROM);
+		ow_write_byte(&ow, READ_SCRATCHPAD);
+
+		for (i = 0; i < 2; i++) {
 			data[i] = ow_read_byte(&ow);
 		}
 		ow_reset(&ow);
-		t = (int16_t)(data[0] | (data[1] << 8));
+		cm_enable_interrupts();
 
+		t = (int16_t)((data[0] | (data[1] << 8)) / 16);
 		printf("%d\n", t);
-*/
 	}
 
 	return 0;

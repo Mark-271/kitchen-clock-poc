@@ -67,3 +67,16 @@ void ow_write_byte(struct ow *ow, uint8_t byte)
 		udelay(SLOT_WINDOW);
 	}
 }
+
+int8_t ow_read_byte(struct ow *ow)
+{
+	int16_t byte = 0;
+	int i;
+
+	for (i = 0; i < 8; i++) {
+		byte |= read_bit(ow->port, ow->pin) << i;
+		udelay(SLOT_WINDOW);
+	}
+
+	return (int8_t)byte;
+}

@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <libopencm3/stm32/gpio.h>
 #include <ds18b20.h>
 #include <delay.h>
@@ -23,12 +24,18 @@ void ow_exit(struct ow *ow)
 	UNUSED(ow);
 }
 
-void ow_reset(struct ow *ow)
+int ow_reset(struct ow *ow)
 {
+	int ret;
+
 	gpio_clear(ow->port, ow->pin);
 	udelay(RESET_TIME);
 	gpio_set(ow->port, ow->pin);
-	udelay(RESET_TIME);
+	udelay(PRESENCE_WAIT_TIME);
+	ret = gpio_get(ow->port, ow->pin);
+	udelay(RESET_TIME - PRESENCE_WAIT_TIME);
+
+	return ret;
 }
 
 void ow_write_byte(struct ow *ow, uint8_t byte)

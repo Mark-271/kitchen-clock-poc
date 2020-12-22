@@ -79,20 +79,38 @@ int main(void)
 	usart_setup();
 	ow_init(&ow, GPIOB, GPIO9);
 
-	printf("Hello\n");
+	printf("HELLO\n");
+
+	gpio_set(GPIOB, GPIO9);
+	printf("0x%x\n", (gpio_get(GPIOB, GPIO9) >> 9 & 0x01));
+
+	int ret = 0;
+	ret = ow_reset(&ow);
+	printf("0x%x\n", ret >> 9 & 0x01);
+
+	printf("0x%x\n", (gpio_get(GPIOB, GPIO9) >> 9 & 0x1));
 
 	for (;;) {
 		gpio_toggle(GPIOC, GPIO8);
 		mdelay(10000);
-
+/*
 		ow_reset(&ow);
-		ow_write_byte(&ow, SKIP_ROM);
-		ow_write_byte(&ow, CONVERT_T);
+		ow_write_byte(&ow, 0xCC);
+		ow_write_byte(&ow, 0x44);
 		mdelay(760);
-		ow_reset(&ow);
-		ow_write_byte(&ow, SKIP_ROM);
-		ow_write_byte(&ow, READ_SCRATCHPAD);
 
+		ow_reset(&ow);
+		ow_write_byte(&ow, 0xCC);
+		ow_write_byte(&ow, 0xBE);
+
+		for (i = 0; i < 8; i++) {
+			data[i] = ow_read_byte(&ow);
+		}
+		ow_reset(&ow);
+		t = (int16_t)(data[0] | (data[1] << 8));
+
+		printf("%d\n", t);
+*/
 	}
 
 	return 0;

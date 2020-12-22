@@ -6,6 +6,10 @@
 /* 1-wire specific delay timings */
 #define RESET_TIME		500
 #define PRESENCE_WAIT_TIME	70
+#define WRITE_1_TIME		10
+#define WRITE_1_PAUSE		50
+#define WRITE_0_TIME		60
+#define SLOT_WINDOW		5
 
 struct ow {
 	uint32_t port;

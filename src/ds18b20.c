@@ -8,8 +8,10 @@ static void write_bit(uint32_t gpio_port, uint16_t gpio_pin, uint8_t bit)
 {
 	gpio_clear(gpio_port, gpio_pin);
 	udelay(bit ? WRITE_1_TIME : WRITE_0_TIME);
+
 	gpio_set(gpio_port, gpio_pin);
-	udelay(bit ? WRITE_1_PAUSE : WRITE_0_PAUSE);
+	if (bit)
+		udelay(WRITE_1_PAUSE);
 }
 
 /* Public functions */

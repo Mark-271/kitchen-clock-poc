@@ -17,6 +17,8 @@ void ow_init(struct ow *ow, uint32_t gpio_port, uint16_t gpio_pin)
 {
 	ow->port = gpio_port;
 	ow->pin = gpio_pin;
+
+	gpio_set(ow->port, ow->pin);
 }
 
 void ow_exit(struct ow *ow)

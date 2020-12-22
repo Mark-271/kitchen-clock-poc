@@ -59,6 +59,10 @@ int _write(int fd, char *ptr, int len)
 
 	while (*ptr && (i < len)) {
 		usart_send_blocking(USART1, *ptr);
+		if (*ptr == '\n') {
+			usart_send_blocking(USART1, '\r');
+			usart_send_blocking(USART1, '\n');
+		}
 		i++;
 		ptr++;
 	}

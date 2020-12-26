@@ -114,44 +114,48 @@ int _write(int fd, char *ptr, int len)
 	return i;
 }
 
-struct ow ow;
-
 int main(void)
 {
+	struct ow ow;
+
 	clock_setup();
 	gpio_setup();
 	usart_setup();
 	ow_init(&ow, GPIOB, GPIO9);
 
-	printf("0x%x\n", (gpio_get(GPIOB, GPIO9) >> 9 & 0x01));
-
-	int i;
-	int8_t data[2];
-	int16_t t = 0;
+	printf("0x%x\n", !!(gpio_get(GPIOB, GPIO9) & BIT(9)));
 
 	for (;;) {
+		struct tempval temp;
+		int8_t data[2];
+		int i;
+
 		gpio_toggle(GPIOC, GPIO8);
 
-		cm_disable_interrupts();
 		mdelay(5000);
 
+		cm_disable_interrupts();
 		ow_reset(&ow);
 		ow_write_byte(&ow, SKIP_ROM);
 		ow_write_byte(&ow, CONVERT_T);
+
+		cm_enable_interrupts();
 		mdelay(900);
+		cm_disable_interrupts();
 
 		ow_reset(&ow);
 		ow_write_byte(&ow, SKIP_ROM);
 		ow_write_byte(&ow, READ_SCRATCHPAD);
 
-		for (i = 0; i < 2; i++) {
+		for (i = 0; i < 2; i++)
 			data[i] = ow_read_byte(&ow);
-		}
 		ow_reset(&ow);
 		cm_enable_interrupts();
 
-		t = (int16_t)((data[0] | (data[1] << 8)) / 16);
-		printf("%d\n", t);
+		temp = parse_temp(data[0], data[1]);
+		while (temp.frac > 9)
+			temp.frac /= 10;
+		printf("%c%d.%d\n", temp.sign, temp.integer, temp.frac);
 	}
 
 	return 0;

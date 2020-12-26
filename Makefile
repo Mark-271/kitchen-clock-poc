@@ -60,7 +60,11 @@ LDLIBS		+= -l$(LIBNAME)
 LDLIBS		+= -Wl,--start-group -lc -lgcc -lnosys -Wl,--end-group
 
 # --------------------------------------------------------------------
+
+# Workaround for Make regression: don't invoke .SECONDARY for completion
+ifeq ($(filter npq%,$(firstword $(MAKEFLAGS))),)
 .SECONDARY:
+endif
 
 all: elf
 elf: $(APP).elf

@@ -13,6 +13,50 @@
 
 int _write(int fd, char *ptr, int len);
 
+/**
+ * Convert temperature data to null-terminated string.
+ *
+ * @param tv Contains parsed temperature register from DS18B20 @ref parse_temp()
+ * @param str Array to store string literal
+ * @return Pointer to string
+ *
+ */
+static char* itoa(struct tempval *tv, char str[])
+{
+	int i = 0;
+	uint16_t rem;
+
+	if (!tv->frac)
+		str[i++] = '0';
+	else
+		goto CALC;
+CALC:
+	while (tv->frac) {
+		rem = tv->frac % 10;
+		str[i++] = rem + '0';
+		tv->frac /= 10;
+	}
+
+	str[i++] = '.';
+
+	while (tv->integer != 0) {
+		rem = tv->integer % 10;
+		str[i++] = rem + '0';
+		tv->integer /= 10;
+	}
+
+	if (tv->sign == '-')
+		str[i++] = '-';
+	else
+		str[i++] = '+';
+
+	str[i] = '\0';
+
+	inplace_reverse(str);
+
+	return str;
+}
+
 static void clock_setup(void)
 {
 	rcc_clock_setup_in_hsi_out_48mhz();
@@ -84,6 +128,7 @@ int main(void)
 
 	for (;;) {
 		struct tempval temp;
+		char buf[20];
 
 		gpio_toggle(GPIOC, GPIO8);
 
@@ -92,7 +137,7 @@ int main(void)
 		temp = get_temperature(&ow);
 		while (temp.frac > 9)
 			temp.frac /= 10;
-		printf("%c%d.%d\n", temp.sign, temp.integer, temp.frac);
+		puts(itoa(&temp, buf));
 	}
 
 	return 0;

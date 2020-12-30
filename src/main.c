@@ -6,12 +6,48 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <errno.h>
+#include <string.h>
 
 #include <common.h>
 #include <delay.h>
 #include <ds18b20.h>
 
 int _write(int fd, char *ptr, int len);
+
+/**
+ *  Reverse the given null-terminated string in place.
+ *
+ *  Swap the values in the two given variables
+ *  Fails when a and b refer to same memory location
+ *  This works because of three basic properties of xor:
+ *  x ^ 0 = x, x ^ x = 0 and x ^ y = y ^ x for all values x and y
+ *
+ *  @param input should be an array, whose contents are initialized to
+ *  the given string constant.
+ */
+static void inplace_reverse(char *str)
+{
+	if (str) {
+		char *end = str + strlen(str) - 1;
+
+#define XOR_SWAP(a,b) do\
+		{\
+			a ^= b;\
+			b ^= a;\
+			a ^= b;\
+		} while (0)
+
+		/* Walk inwards from both ends of the string,
+		 * swapping until we get to the middle
+		 */
+		while (str < end) {
+			XOR_SWAP(*str, *end);
+			str++;
+			end--;
+		}
+#undef XOR_SWAP
+	}
+}
 
 /**
  * Convert temperature data to null-terminated string.
@@ -21,22 +57,20 @@ int _write(int fd, char *ptr, int len);
  * @return Pointer to string
  *
  */
-static char* itoa(struct tempval *tv, char str[])
+static char* tempval_to_str(struct tempval *tv, char str[])
 {
 	int i = 0;
 	uint16_t rem;
 
-	if (!tv->frac)
+	if (!tv->frac) {
 		str[i++] = '0';
-	else
-		goto CALC;
-CALC:
-	while (tv->frac) {
-		rem = tv->frac % 10;
-		str[i++] = rem + '0';
-		tv->frac /= 10;
+	} else {
+		while (tv->frac) {
+			rem = tv->frac % 10;
+			str[i++] = rem + '0';
+			tv->frac /= 10;
+		}
 	}
-
 	str[i++] = '.';
 
 	while (tv->integer != 0) {
@@ -44,12 +78,7 @@ CALC:
 		str[i++] = rem + '0';
 		tv->integer /= 10;
 	}
-
-	if (tv->sign == '-')
-		str[i++] = '-';
-	else
-		str[i++] = '+';
-
+	str[i++] = tv->sign;
 	str[i] = '\0';
 
 	inplace_reverse(str);
@@ -137,7 +166,7 @@ int main(void)
 		temp = get_temperature(&ow);
 		while (temp.frac > 9)
 			temp.frac /= 10;
-		puts(itoa(&temp, buf));
+		puts(tempval_to_str(&temp, buf));
 	}
 
 	return 0;

@@ -1,6 +1,11 @@
 #ifndef ONE_WIRE_H
 #define ONE_WIRE_H
 
+struct ow {
+	uint32_t port;
+	uint16_t pin;
+};
+
 /* 1-wire specific delay timings */
 enum times {
 	RESET_TIME = 500,
@@ -14,7 +19,10 @@ enum times {
 	SLOT_WINDOW = 5,
 };
 
-void write_bit(uint32_t gpio_port, uint16_t gpio_pin, uint8_t bit);
-uint16_t read_bit(uint32_t gpio_port, uint16_t gpio_pin);
+void ow_init(struct ow *obj, uint32_t gpio_port, uint16_t gpio_pin);
+void ow_exit(struct ow *obj);
+int ow_reset(struct ow *ow);
+void ow_write_byte(struct ow *ow, uint8_t byte);
+int8_t ow_read_byte(struct ow *ow);
 
 #endif /* ONE_WIRE_H */

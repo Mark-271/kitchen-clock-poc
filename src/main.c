@@ -1,12 +1,12 @@
+#include <errno.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/usart.h>
-
-#include <stdio.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <errno.h>
-#include <string.h>
 
 #include <common.h>
 #include <delay.h>
@@ -163,7 +163,7 @@ int main(void)
 
 		mdelay(5000);
 
-		temp = get_temperature(&ow);
+		temp = ds18b20_get_temperature(&ow);
 		while (temp.frac > 9)
 			temp.frac /= 10;
 		puts(tempval_to_str(&temp, buf));

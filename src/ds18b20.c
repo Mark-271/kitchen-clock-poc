@@ -1,48 +1,12 @@
 #include <stdint.h>
-#include <libopencm3/stm32/gpio.h>
+
 #include <libopencm3/cm3/cortex.h>
+#include <libopencm3/stm32/gpio.h>
+
 #include <common.h>
-#include <one_wire.h>
-#include <ds18b20.h>
 #include <delay.h>
-
-/* Static functions */
-static int ow_reset(struct ow *ow)
-{
-	int ret;
-
-	gpio_clear(ow->port, ow->pin);
-	udelay(RESET_TIME);
-	gpio_set(ow->port, ow->pin);
-	udelay(PRESENCE_WAIT_TIME);
-	ret = gpio_get(ow->port, ow->pin);
-	udelay(RESET_TIME - PRESENCE_WAIT_TIME);
-
-	return ret;
-}
-
-static void ow_write_byte(struct ow *ow, uint8_t byte)
-{
-	int i;
-
-	for (i = 0; i < 8; i++) {
-		write_bit(ow->port, ow->pin, byte >> i & 1);
-		udelay(SLOT_WINDOW);
-	}
-}
-
-static int8_t ow_read_byte(struct ow *ow)
-{
-	int16_t byte = 0;
-	int i;
-
-	for (i = 0; i < 8; i++) {
-		byte |= read_bit(ow->port, ow->pin) << i;
-		udelay(SLOT_WINDOW);
-	}
-
-	return (int8_t)byte;
-}
+#include <ds18b20.h>
+#include <one_wire.h>
 
 /**
  * Parse temperature register from DS18B20.
@@ -51,7 +15,7 @@ static int8_t ow_read_byte(struct ow *ow)
  * @param msb Most significant byte of temperature register
  * @return Parsed value
  */
-static struct tempval parse_temp(uint8_t lsb, uint8_t msb)
+static struct tempval ds18b20_parse_temp(uint8_t lsb, uint8_t msb)
 {
 	struct tempval tv;
 
@@ -80,22 +44,7 @@ static struct tempval parse_temp(uint8_t lsb, uint8_t msb)
 	return tv;
 }
 
-/* Public functions */
-void ow_init(struct ow *ow, uint32_t gpio_port, uint16_t gpio_pin)
-{
-	ow->port = gpio_port;
-	ow->pin = gpio_pin;
-
-	gpio_set(ow->port, ow->pin);
-}
-
-void ow_exit(struct ow *ow)
-{
-	gpio_clear(ow->port, ow->pin);
-	UNUSED(ow);
-}
-
-struct tempval get_temperature(struct ow *ow)
+struct tempval ds18b20_get_temperature(struct ow *ow)
 {
 	struct tempval temp;
 	int8_t data[2];
@@ -121,6 +70,6 @@ struct tempval get_temperature(struct ow *ow)
 	ow_reset(ow);
 	cm_enable_interrupts();
 
-	temp = parse_temp(data[0], data[1]);
+	temp = ds18b20_parse_temp(data[0], data[1]);
 	return temp;
 }

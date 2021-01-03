@@ -73,11 +73,16 @@ static char* tempval_to_str(struct tempval *tv, char str[])
 	}
 	str[i++] = '.';
 
-	while (tv->integer != 0) {
-		rem = tv->integer % 10;
-		str[i++] = rem + '0';
-		tv->integer /= 10;
+	if (!tv->integer) {
+		str[i++] = '0';
+	} else {
+		while (tv->integer) {
+			rem = tv->integer % 10;
+			str[i++] = rem + '0';
+			tv->integer /= 10;
+		}
 	}
+
 	str[i++] = tv->sign;
 	str[i] = '\0';
 

@@ -15,6 +15,6 @@ enum cmd {
 	READ_SCRATCHPAD = 0xBE
 };
 
-struct tempval get_temperature(struct ow *obj);
+struct tempval ds18b20_get_temperature(struct ow *obj);
 
 #endif /* DS18b20_H */

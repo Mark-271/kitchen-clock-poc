@@ -11,6 +11,7 @@
 #include <common.h>
 #include <delay.h>
 #include <ds18b20.h>
+#include <wh1602b.h>
 
 int _write(int fd, char *ptr, int len);
 
@@ -97,8 +98,8 @@ static void clock_setup(void)
 
 	rcc_periph_clock_enable(RCC_USART1);
 	rcc_periph_clock_enable(RCC_GPIOA);
-	rcc_periph_clock_enable(RCC_GPIOC);
 	rcc_periph_clock_enable(RCC_GPIOB);
+	rcc_periph_clock_enable(RCC_GPIOD);
 }
 
 static void gpio_setup(void)
@@ -106,13 +107,12 @@ static void gpio_setup(void)
 	/* USART1 */
 	gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ,
 		      GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_USART1_TX);
-	/* LED */
-	gpio_set_mode(GPIOC, GPIO_MODE_OUTPUT_2_MHZ,
-		      GPIO_CNF_OUTPUT_PUSHPULL, GPIO8);
 	/* Temperature sensor */
-	gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_2_MHZ,
-		      GPIO_CNF_OUTPUT_OPENDRAIN, GPIO9);
-
+	gpio_set_mode(GPIOD, GPIO_MODE_OUTPUT_2_MHZ,
+		      GPIO_CNF_OUTPUT_OPENDRAIN, GPIO2);
+	/* LCD WH1602B */
+	gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL,
+		      GPIO9 | GPIO8 | GPIO7 | GPIO6 | GPIO5| GPIO4);
 }
 
 static void usart_setup(void)
@@ -152,11 +152,13 @@ int _write(int fd, char *ptr, int len)
 int main(void)
 {
 	struct ow ow;
+	struct wh1602b wh;
 
 	clock_setup();
 	gpio_setup();
 	usart_setup();
-	ow_init(&ow, GPIOB, GPIO9);
+	ow_init(&ow, GPIOD, GPIO2);
+	wh1602b_init(&wh, GPIOB, GPIO9, GPIO8, GPIO4, GPIO5, GPIO6, GPIO7);
 
 	printf("0x%x\n", !!(gpio_get(GPIOB, GPIO9) & BIT(9)));
 

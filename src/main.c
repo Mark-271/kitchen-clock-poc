@@ -56,7 +56,6 @@ static void inplace_reverse(char *str)
  * @param tv Contains parsed temperature register from DS18B20 @ref parse_temp()
  * @param str Array to store string literal
  * @return Pointer to string
- *
  */
 static char* tempval_to_str(struct tempval *tv, char str[])
 {
@@ -149,16 +148,37 @@ int _write(int fd, char *ptr, int len)
 	return i;
 }
 
+/* Defines behavior of the program when error occures */
+static void hang(int err)
+{
+	printf("Error: %d\n", err);
+	while (1) ;
+}
+
 int main(void)
 {
+	int err;
 	struct ow ow;
-	struct wh1602b wh;
+	struct wh1602b wh = {
+		.port = GPIOB,
+		.rs = GPIO9,
+		.en = GPIO8,
+		.db4 = GPIO4,
+		.db5 = GPIO5,
+		.db6 = GPIO6,
+		.db7 = GPIO7
+	};
 
 	clock_setup();
 	gpio_setup();
 	usart_setup();
-	ow_init(&ow, GPIOD, GPIO2);
-	wh1602b_init(&wh, GPIOB, GPIO9, GPIO8, GPIO4, GPIO5, GPIO6, GPIO7);
+
+	err = ow_init(&ow, GPIOD, GPIO2);
+	if (err)
+		hang(err);
+	err = wh1602b_init(&wh);
+	if (err)
+		hang(err);
 
 	printf("0x%x\n", !!(gpio_get(GPIOB, GPIO9) & BIT(9)));
 

@@ -29,14 +29,27 @@ static uint16_t ow_read_bit(struct ow *ow)
 	udelay(READ_PAUSE);
 
 	return ((bit != 0) ? 1 : 0);
-	}
+}
 
-void ow_init(struct ow *ow, uint32_t gpio_port, uint16_t gpio_pin)
+/**
+ * Initialize one-wire interface.
+ *
+ * @param ow Structure to store corresponding GPIOs
+ * @param gpio_port Unsigned 32int. GPIO port identifier
+ * @param gpio_pin Unsigned 16int. GPIO pin identifier
+ * @return 0 when success and -1 otherwise
+ */
+int ow_init(struct ow *ow, uint32_t gpio_port, uint16_t gpio_pin)
 {
 	ow->port = gpio_port;
 	ow->pin = gpio_pin;
 
 	gpio_set(ow->port, ow->pin);
+	/* if device holds bus in low lvl return error */
+	if (!(gpio_get(ow->port, ow->pin)))
+		return -1;
+
+	return 0;
 }
 
 void ow_exit(struct ow *ow)
@@ -53,7 +66,11 @@ int ow_reset(struct ow *ow)
 	udelay(RESET_TIME);
 	gpio_set(ow->port, ow->pin);
 	udelay(PRESENCE_WAIT_TIME);
+
 	ret = gpio_get(ow->port, ow->pin);
+	if (ret)
+		return -1;
+
 	udelay(RESET_TIME - PRESENCE_WAIT_TIME);
 
 	return ret;

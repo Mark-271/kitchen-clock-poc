@@ -8,6 +8,7 @@
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/usart.h>
 
+#include <board.h>
 #include <common.h>
 #include <delay.h>
 #include <ds18b20.h>
@@ -91,29 +92,6 @@ static char *tempval_to_str(struct tempval *tv, char str[])
 	return str;
 }
 
-static void clock_setup(void)
-{
-	rcc_clock_setup_in_hsi_out_48mhz();
-
-	rcc_periph_clock_enable(RCC_USART1);
-	rcc_periph_clock_enable(RCC_GPIOA);
-	rcc_periph_clock_enable(RCC_GPIOB);
-	rcc_periph_clock_enable(RCC_GPIOD);
-}
-
-static void gpio_setup(void)
-{
-	/* USART1 */
-	gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ,
-		      GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_USART1_TX);
-	/* Temperature sensor */
-	gpio_set_mode(GPIOD, GPIO_MODE_OUTPUT_2_MHZ,
-		      GPIO_CNF_OUTPUT_OPENDRAIN, GPIO2);
-	/* LCD WH1602B */
-	gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL,
-		      GPIO9 | GPIO8 | GPIO7 | GPIO6 | GPIO5 | GPIO4);
-}
-
 static void usart_setup(void)
 {
 	usart_set_baudrate(USART1, 115200);
@@ -170,8 +148,7 @@ int main(void)
 		.db7 = GPIO7
 	};
 
-	clock_setup();
-	gpio_setup();
+	board_init();
 	usart_setup();
 
 	err = ow_init(&ow, GPIOD, GPIO2);

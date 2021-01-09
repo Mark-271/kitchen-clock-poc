@@ -30,6 +30,7 @@ CSTD		?= -std=gnu89
 
 OBJS		+=			\
 		   src/main.o		\
+		   src/board.o		\
 		   src/ds18b20.o	\
 		   src/one_wire.o	\
 		   src/wh1602b.o

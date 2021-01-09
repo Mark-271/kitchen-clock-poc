@@ -53,9 +53,11 @@ void wh1602b_write_data(struct wh1602b *wh, uint8_t data)
 int wh1602b_init(struct wh1602b *wh)
 {
 	int ret;
+	uint16_t pins_mask = wh->rs | wh->en | wh->db4 | wh->db5 | wh->db6 |
+			     wh->db7;
 
-	gpio_clear(wh->port, 0x3f0); /* Clear all gpios in use */
-	ret = gpio_get(wh->port, 0x3f0);
+	gpio_clear(wh->port, pins_mask);
+	ret = gpio_get(wh->port, pins_mask);
 	if (ret)
 		return -2;
 

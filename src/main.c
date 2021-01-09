@@ -57,7 +57,7 @@ static void inplace_reverse(char *str)
  * @param str Array to store string literal
  * @return Pointer to string
  */
-static char* tempval_to_str(struct tempval *tv, char str[])
+static char *tempval_to_str(struct tempval *tv, char str[])
 {
 	int i = 0;
 	uint16_t rem;
@@ -152,7 +152,8 @@ int _write(int fd, char *ptr, int len)
 static void hang(int err)
 {
 	printf("Error: %d\n", err);
-	while (1) ;
+	for (;;)
+		;
 }
 
 int main(void)

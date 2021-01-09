@@ -14,7 +14,8 @@ struct wh1602b {
 	uint16_t db7;
 };
 
-int wh1602b_init(struct wh1602b *wh)
+int wh1602b_init(struct wh1602b *wh);
 void wh1602b_exit(struct wh1602b *wh);
-
+void wh1602b_set_addr_ddram(struct wh1602b *wh, uint8_t addr);
+void wh1602b_write_data(struct wh1602b *wh, uint8_t data);
 #endif /* WH1602B_H */

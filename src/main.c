@@ -111,7 +111,7 @@ static void gpio_setup(void)
 		      GPIO_CNF_OUTPUT_OPENDRAIN, GPIO2);
 	/* LCD WH1602B */
 	gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL,
-		      GPIO9 | GPIO8 | GPIO7 | GPIO6 | GPIO5| GPIO4);
+		      GPIO9 | GPIO8 | GPIO7 | GPIO6 | GPIO5 | GPIO4);
 }
 
 static void usart_setup(void)
@@ -180,9 +180,11 @@ int main(void)
 	if (err)
 		hang(err);
 
-	printf("0x%x\n", !!(gpio_get(GPIOB, GPIO9) & BIT(9)));
+	wh1602b_set_addr_ddram(&wh, 0x00);
+	wh1602b_write_data(&wh, 'G');
 
 	for (;;) {
+#if 0
 		struct tempval temp;
 		char buf[20];
 
@@ -194,6 +196,7 @@ int main(void)
 		while (temp.frac > 9)
 			temp.frac /= 10;
 		puts(tempval_to_str(&temp, buf));
+#endif
 	}
 
 	return 0;

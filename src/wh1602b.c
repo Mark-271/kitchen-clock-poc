@@ -61,6 +61,7 @@ int wh1602b_init(struct wh1602b *wh)
 	if (ret)
 		return -1;
 
+	/* TODO: Disable interrupts to avoid possible race conditions */
 	mdelay(100);
 	gpio_clear(wh->port, wh->rs);
 	gpio_set(wh->port, wh->en);

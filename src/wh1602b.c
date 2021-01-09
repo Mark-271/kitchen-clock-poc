@@ -59,7 +59,7 @@ int wh1602b_init(struct wh1602b *wh)
 	gpio_clear(wh->port, pins_mask);
 	ret = gpio_get(wh->port, pins_mask);
 	if (ret)
-		return -2;
+		return -1;
 
 	mdelay(100);
 	gpio_clear(wh->port, wh->rs);

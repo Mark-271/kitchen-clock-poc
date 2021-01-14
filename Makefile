@@ -33,7 +33,8 @@ OBJS		+=			\
 		   src/ds18b20.o	\
 		   src/main.o		\
 		   src/one_wire.o	\
-		   src/wh1602.o
+		   src/wh1602.o		\
+		   src/serial_console.o
 
 # C flags
 

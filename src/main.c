@@ -1,4 +1,3 @@
-#include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -11,11 +10,10 @@
 #include <board.h>
 #include <common.h>
 #include <delay.h>
+#include <serial_console.h>
 #include <one_wire.h>
 #include <ds18b20.h>
 #include <wh1602.h>
-
-int _write(int fd, char *ptr, int len);
 
 /**
  *  Reverse the given null-terminated string in place.
@@ -93,40 +91,6 @@ static char *tempval_to_str(struct tempval *tv, char str[])
 	return str;
 }
 
-static void usart_setup(void)
-{
-	usart_set_baudrate(USART1, 115200);
-	usart_set_databits(USART1, 8);
-	usart_set_stopbits(USART1, USART_STOPBITS_1);
-	usart_set_parity(USART1, USART_PARITY_NONE);
-	usart_set_mode(USART1, USART_MODE_TX_RX);
-	usart_set_flow_control(USART1, USART_FLOWCONTROL_NONE);
-	usart_enable(USART1);
-}
-
-int _write(int fd, char *ptr, int len)
-{
-	int i = 0;
-
-	/* only works for stdout */
-	if (fd != 1) {
-		errno = EIO;
-		return -1;
-	}
-
-	while (*ptr && (i < len)) {
-		usart_send_blocking(USART1, *ptr);
-		if (*ptr == '\n') {
-			usart_send_blocking(USART1, '\r');
-			usart_send_blocking(USART1, '\n');
-		}
-		i++;
-		ptr++;
-	}
-
-	return i;
-}
-
 /* Defines behavior of the program when error occures */
 static void hang(int err)
 {
@@ -138,6 +102,15 @@ static void hang(int err)
 int main(void)
 {
 	int err;
+		struct sc sc = {
+		.uart = SERIAL_USART,
+		.baud = 115200,
+		.bits = 8,
+		.stopbits = USART_STOPBITS_1,
+		.parity = USART_PARITY_NONE,
+		.mode = USART_MODE_TX_RX,
+		.flow_control = USART_FLOWCONTROL_NONE
+	};
 	struct ow ow = {
 		.port = DS18B20_GPIO_PORT,
 		.pin = DS18B20_GPIO_PIN
@@ -153,7 +126,7 @@ int main(void)
 	};
 
 	board_init();
-	usart_setup();
+	sc_init(&sc);
 
 	err = ow_init(&ow);
 	// XXX: "ow_init error check" issue

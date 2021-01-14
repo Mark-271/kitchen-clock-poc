@@ -4,6 +4,7 @@
 struct ow {
 	uint32_t port;
 	uint16_t pin;
+	bool ow_flag;
 };
 
 /* 1-wire specific delay timings */
@@ -19,9 +20,9 @@ enum times {
 	SLOT_WINDOW = 5,
 };
 
-int ow_init(struct ow *ow, uint32_t gpio_port, uint16_t gpio_pin);
+int ow_init(struct ow *ow);
 void ow_exit(struct ow *ow);
-int ow_reset(struct ow *ow);
+int ow_reset_pulse(struct ow *ow);
 void ow_write_byte(struct ow *ow, uint8_t byte);
 int8_t ow_read_byte(struct ow *ow);
 

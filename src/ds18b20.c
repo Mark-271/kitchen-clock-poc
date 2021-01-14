@@ -51,7 +51,7 @@ struct tempval ds18b20_get_temperature(struct ow *ow)
 	int i;
 
 	cm_disable_interrupts();
-	ow_reset(ow);
+	ow_reset_pulse(ow);
 	ow_write_byte(ow, SKIP_ROM);
 	ow_write_byte(ow, CONVERT_T);
 
@@ -59,7 +59,7 @@ struct tempval ds18b20_get_temperature(struct ow *ow)
 	mdelay(900);
 	cm_disable_interrupts();
 
-	ow_reset(ow);
+	ow_reset_pulse(ow);
 	ow_write_byte(ow, SKIP_ROM);
 	ow_write_byte(ow, READ_SCRATCHPAD);
 	cm_enable_interrupts();
@@ -67,7 +67,7 @@ struct tempval ds18b20_get_temperature(struct ow *ow)
 	for (i = 0; i < 2; i++)
 		data[i] = ow_read_byte(ow);
 	cm_disable_interrupts();
-	ow_reset(ow);
+	ow_reset_pulse(ow);
 	cm_enable_interrupts();
 
 	temp = ds18b20_parse_temp(data[0], data[1]);

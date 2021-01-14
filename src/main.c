@@ -113,7 +113,8 @@ int main(void)
 	};
 	struct ow ow = {
 		.port = DS18B20_GPIO_PORT,
-		.pin = DS18B20_GPIO_PIN
+		.pin = DS18B20_GPIO_PIN,
+		.ow_flag = true
 	};
 	struct wh1602 wh = {
 		.port = WH1602_GPIO_PORT,
@@ -129,35 +130,31 @@ int main(void)
 	sc_init(&sc);
 
 	err = ow_init(&ow);
-	// XXX: "ow_init error check" issue
-#if 0
 	if (err)
-		hang(err);
-#endif
+		ow.ow_flag = false;
 	err = wh1602_init(&wh);
 	if (err)
 		hang(err);
 
-	char *s = "I love you!";
+	char *s = "Poc Watch";
 	wh1602_set_addr_ddram(&wh, 0x0);
 	wh1602_print_str(&wh, s);
-	mdelay(10000);
+	mdelay(2000);
 	wh1602_erase_screen(&wh);
 
 	for (;;) {
-#if 0
-		struct tempval temp;
-		char buf[20];
+		if (ow.ow_flag) {
+			struct tempval temp;
+			char buf[20];
 
-		gpio_toggle(GPIOC, GPIO8);
-
-		mdelay(5000);
-
-		temp = ds18b20_get_temperature(&ow);
-		while (temp.frac > 9)
-			temp.frac /= 10;
-		puts(tempval_to_str(&temp, buf));
-#endif
+			temp = ds18b20_get_temperature(&ow);
+			while (temp.frac > 9)
+				temp.frac /= 10;
+			s = tempval_to_str(&temp, buf);
+			wh1602_set_addr_ddram(&wh, 0x0);
+			wh1602_print_str(&wh, s);
+			mdelay(10000);
+		}
 	}
 
 	return 0;

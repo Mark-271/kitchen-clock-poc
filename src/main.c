@@ -11,8 +11,9 @@
 #include <board.h>
 #include <common.h>
 #include <delay.h>
+#include <one_wire.h>
 #include <ds18b20.h>
-#include <wh1602b.h>
+#include <wh1602.h>
 
 int _write(int fd, char *ptr, int len);
 
@@ -137,29 +138,38 @@ static void hang(int err)
 int main(void)
 {
 	int err;
-	struct ow ow;
-	struct wh1602b wh = {
-		.port = GPIOB,
-		.rs = GPIO9,
-		.en = GPIO8,
-		.db4 = GPIO4,
-		.db5 = GPIO5,
-		.db6 = GPIO6,
-		.db7 = GPIO7
+	struct ow ow = {
+		.port = DS18B20_GPIO_PORT,
+		.pin = DS18B20_GPIO_PIN
+	};
+	struct wh1602 wh = {
+		.port = WH1602_GPIO_PORT,
+		.rs = WH1602_RS_PIN,
+		.en = WH1602_EN_PIN,
+		.db4 = WH1602_DB4_PIN,
+		.db5 = WH1602_DB5_PIN,
+		.db6 = WH1602_DB6_PIN,
+		.db7 = WH1602_DB7_PIN,
 	};
 
 	board_init();
 	usart_setup();
 
-	err = ow_init(&ow, GPIOD, GPIO2);
+	err = ow_init(&ow);
+	// XXX: "ow_init error check" issue
+#if 0
 	if (err)
 		hang(err);
-	err = wh1602b_init(&wh);
+#endif
+	err = wh1602_init(&wh);
 	if (err)
 		hang(err);
 
-	wh1602b_set_addr_ddram(&wh, 0x00);
-	wh1602b_write_data(&wh, 'G');
+	char *s = "I love you!";
+	wh1602_set_addr_ddram(&wh, 0x0);
+	wh1602_print_str(&wh, s);
+	mdelay(10000);
+	wh1602_erase_screen(&wh);
 
 	for (;;) {
 #if 0

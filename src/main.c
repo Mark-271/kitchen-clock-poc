@@ -102,7 +102,9 @@ static void hang(int err)
 int main(void)
 {
 	int err;
-		struct sc sc = {
+	unsigned long flags;
+
+	struct sc sc = {
 		.uart = SERIAL_USART,
 		.baud = 115200,
 		.bits = 8,
@@ -139,8 +141,12 @@ int main(void)
 	char *s = "Poc Watch";
 	wh1602_set_addr_ddram(&wh, 0x0);
 	wh1602_print_str(&wh, s);
+	wh1602_display_control(&wh, DISPLAY_ON, OFF, OFF);
+
+	enter_critical(flags);
 	mdelay(2000);
-	wh1602_erase_screen(&wh);
+	exit_critical(flags);
+	wh1602_display_clear(&wh);
 
 	for (;;) {
 		if (ow.ow_flag) {
@@ -151,9 +157,12 @@ int main(void)
 			while (temp.frac > 9)
 				temp.frac /= 10;
 			s = tempval_to_str(&temp, buf);
-			wh1602_set_addr_ddram(&wh, 0x0);
 			wh1602_print_str(&wh, s);
+			wh1602_return_home(&wh);
+
+			enter_critical(flags);
 			mdelay(10000);
+			exit_critical(flags);
 		}
 	}
 

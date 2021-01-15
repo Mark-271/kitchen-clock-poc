@@ -1,8 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
-#include <stdbool.h>
-
 #include <string.h>
+
 #include <board.h>
 #include <common.h>
 #include <delay.h>
@@ -11,18 +10,15 @@
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/cm3/cortex.h>
 
-#define DB4_MASK			0x1
-#define DB5_MASK			0x2
-#define DB6_MASK			0x4
-#define DB7_MASK			0x8
-#define DB_PINS_MASK			WH1602_DB4_PIN | WH1602_DB5_PIN | \
-					WH1602_DB6_PIN | WH1602_DB7_PIN
-
 #define ENABLE_PULSE_DELAY		1
 #define SET_POWER_DELAY			20
 #define WAIT_TIME_DELAY			5
 #define EXEC_TIME_DELAY			50
 #define DISPLAY_CLEAN_RETURN_DELAY	2
+
+#define WH_LOOKUP_GPIO(obj, nibble)					\
+	(obj->lookup[nibble & BIT(0)] | obj->lookup[nibble & BIT(1)] |	\
+	 obj->lookup[nibble & BIT(2)] | obj->lookup[nibble & BIT(3)])
 
 static unsigned long flags;
 
@@ -43,47 +39,42 @@ static void wh1602_en_pulse(struct wh1602 *wh)
 }
 
 /* Write 4-bit data. RS signal mode should be controlled by the caller */
-static void wh1602_write_nibble(struct wh1602 *wh, uint8_t nibble)
+static void wh1602_write(struct wh1602 *wh, uint8_t nibble)
 {
-	uint16_t pins;
+	uint16_t data;
 
 	enter_critical(flags);
-	pins = gpio_get(wh->port, DB_PINS_MASK);
+	data = gpio_get(wh->port, wh->pin_mask);
 	exit_critical(flags);
 
-	pins &= ~(DB_PINS_MASK);
-	if (nibble & BIT(0))
-		pins |= wh->db4;
-	if (nibble & BIT(1))
-		pins |= wh->db5;
-	if (nibble & BIT(2))
-		pins |= wh->db6;
-	if (nibble & BIT(3))
-		pins |= wh->db7;
+	data &= ~wh->pin_mask;
+	data |= WH_LOOKUP_GPIO(wh, nibble);
 
 	enter_critical(flags);
-	gpio_port_write(wh->port, pins);
+	gpio_port_write(wh->port, data);
 	exit_critical(flags);
 }
 
 /**
  * Clear Display
  *
- * Clear all the display data by writing "20H" to all DDRAM address
+ * Clear all the display data by writing "20H" to all DDRAM addresses
  * Set DDRAM address to "00H" into AC
  * Return cursor to the original status
  * Make entry mode increment
  *
- * @param wh Structure whose fields should be filled by the caller
+ * @param wh Structure fields should be filled by the caller
  */
 void wh1602_display_clear(struct wh1602 *wh)
 {
-	printf("TESTING %s()...\n", __func__);
+	uint8_t data = CLEAR_DISPLAY;
 
-	gpio_clear(wh->port, wh->rs | DB_PINS_MASK);
+	gpio_clear(wh->port, wh->rs);
+
+	wh1602_write(wh, data  >> 4);
 	wh1602_en_pulse(wh);
 
-	gpio_set(wh->port, wh->db4);
+	wh1602_write(wh, data & 0x0f);
 	wh1602_en_pulse(wh);
 
 	enter_critical(flags);
@@ -99,16 +90,18 @@ void wh1602_display_clear(struct wh1602 *wh)
  * Return display to its original status, if shifted
  * Contents of DDRAM doesn't chabge
  *
- * @param wh Structure whose fields should be filled by the caller
+ * @param wh Structure fields should be filled by the caller
  */
 void wh1602_return_home(struct wh1602 *wh)
 {
-	printf("TESTING %s()...\n", __func__);
+	uint8_t data = RETURN_HOME;
 
-	gpio_clear(wh->port, wh->rs | DB_PINS_MASK);
+	gpio_clear(wh->port, wh->rs);
+
+	wh1602_write(wh, data  >> 4);
 	wh1602_en_pulse(wh);
 
-	gpio_set(wh->port, wh->db5);
+	wh1602_write(wh, data & 0x0f);
 	wh1602_en_pulse(wh);
 
 	enter_critical(flags);
@@ -122,23 +115,21 @@ void wh1602_return_home(struct wh1602 *wh)
  * Set the moving direction of cursor and display
  *
  * @param wh Structure whose fields should be filled by the caller
- * @param id Boolean. When "true", cursor/blink moves to right.
- * 	     DDRAM address is increased by 1
- * @param sh Boolean. When "true", and DDRAM write operation, shift of display
- * 	     is performed according to @ref id value.
+ * @param id Cursor moving control bit. DDRAM address is increased by 1
+ * @param sh When set and DDRAM write operation, shift of display
+ * 	     is performed according to @ref id value
  */
-void wh1602_entry_mode_set(struct wh1602 *wh, bool id, bool sh)
+void wh1602_entry_mode_set(struct wh1602 *wh, enum lcd_cmd_bit id,
+			   enum lcd_cmd_bit sh)
 {
-	printf("TESTING %s()...\n", __func__);
+	uint8_t data = ENTRY_MODE_SET | id | sh;
 
-	gpio_clear(wh->port, wh->rs | DB_PINS_MASK);
+	gpio_clear(wh->port, wh->rs);
+
+	wh1602_write(wh, data  >> 4);
 	wh1602_en_pulse(wh);
 
-	gpio_set(wh->port, wh->db6);
-	if (id)
-		gpio_set(wh->port, wh->db5);
-	if (sh)
-		gpio_set(wh->port, wh->db4);
+	wh1602_write(wh, data & 0x0f);
 	wh1602_en_pulse(wh);
 
 	enter_critical(flags);
@@ -147,29 +138,26 @@ void wh1602_entry_mode_set(struct wh1602 *wh, bool id, bool sh)
 }
 
 /**
- * Display ON/OFF
+ * Display ON/OFF control
  *
  * Control display/cursor/blink ON/OFF 1 bit register
  *
  * @param wh Structure whose fields should be filled by the caller
- * @param d Boolean. When "true", entire display is turned on
- * @param c Boolean. When "true", cursor is turned on
- * @param b Boolean. When "true", cursor blink is on
+ * @param d When set, entire display is turned on
+ * @param c When set, cursor is turned on
+ * @param b When set, cursor blink is on
  */
-void wh1602_display_on_off(struct wh1602 *wh, bool d, bool c, bool b)
+void wh1602_display_control(struct wh1602 *wh, enum lcd_cmd_bit d,
+			   enum lcd_cmd_bit c, enum lcd_cmd_bit b)
 {
-	printf("TESTING %s()...\n", __func__);
+	uint8_t data = DISPLAY_CONTROL | d | c | b;
 
-	gpio_clear(wh->port, wh->rs | DB_PINS_MASK);
+	gpio_clear(wh->port, wh->rs);
+
+	wh1602_write(wh, data  >> 4);
 	wh1602_en_pulse(wh);
 
-	gpio_set(wh->port, wh->db7);
-	if (d)
-		gpio_set(wh->port, wh->db6);
-	if (c)
-		gpio_set(wh->port, wh->db5);
-	if (b)
-		gpio_set(wh->port, wh->db4);
+	wh1602_write(wh, data & 0x0f);
 	wh1602_en_pulse(wh);
 
 	enter_critical(flags);
@@ -183,29 +171,20 @@ void wh1602_display_on_off(struct wh1602 *wh, bool d, bool c, bool b)
  * Contol data bus length, display line number and font size
  *
  * @param wh Structe should be filled by the caller
- * @param dl Boolean. Interface data length control bit.
- * 	     When "false" 4-bit bus mode enabled
- * @param n Boolean. Display line number control bit
- * 	    When "true" 2-line display mode is set
- * @param f Boolean. Dislay font type control bit
- * 	    When "false" 5x8 dots format display mode.
+ * @param dl Interface data length control bit.
+ * @param n  Display line number control bit.
+ * @param f  Dislay font type control bit.
  */
-void wh1602_function_set(struct wh1602 *wh, bool dl, bool n, bool f)
+void wh1602_function_set(struct wh1602 *wh, enum lcd_cmd_bit dl, enum lcd_cmd_bit n, enum lcd_cmd_bit f)
 {
-	printf("TESTING %s()...\n", __func__);
+	uint8_t data = FUNC_SET | dl | n | f;
 
-	gpio_clear(wh->port, wh->rs | DB_PINS_MASK);
+	gpio_clear(wh->port, wh->rs);
 
-	gpio_set(wh->port, wh->db5);
-	if (dl)
-		gpio_set(wh->port, wh->db4);
+	wh1602_write(wh, data  >> 4);
 	wh1602_en_pulse(wh);
 
-	gpio_clear(wh->port, wh->db5 | wh->db4);
-	if (n)
-		gpio_set(wh->port, wh->db7);
-	if (f)
-		gpio_set(wh->port, wh->db6);
+	wh1602_write(wh, data & 0x0f);
 	wh1602_en_pulse(wh);
 
 	enter_critical(flags);
@@ -223,33 +202,38 @@ int wh1602_init(struct wh1602 *wh)
 {
 	int ret;
 
+	gpio_clear(wh->port, wh->en | wh->rs | wh->pin_mask);
+	ret = gpio_get(wh->port, wh->en | wh->rs | wh->pin_mask);
+	if (ret)
+		return -1;
+
+	wh->pin_mask = wh->db4 | wh->db5 | wh->db6 | wh->db7;
+	wh->lookup[0] = 0;
+	wh->lookup[1] = wh->db4;
+	wh->lookup[2] = wh->db5;
+	wh->lookup[4] = wh->db6;
+	wh->lookup[8] = wh->db7;
+
 	enter_critical(flags);
 	mdelay(SET_POWER_DELAY);
 	exit_critical(flags);
 
-	gpio_clear(wh->port, wh->en | wh->rs | DB_PINS_MASK);
-	ret = gpio_get(wh->port, wh->en | wh->rs | DB_PINS_MASK);
-	if (ret) {
-		printf("0x%x\n", ret);
-		return -1;
-	}
-
-	wh1602_function_set(wh, true, false, false);
+	wh1602_function_set(wh, DB8, OFF, OFF);
 	enter_critical(flags);
 	mdelay(WAIT_TIME_DELAY);
 	exit_critical(flags);
 
-	wh1602_function_set(wh, true, false, false);
+	wh1602_function_set(wh, DB8, OFF, OFF);
 	enter_critical(flags);
 	mdelay(WAIT_TIME_DELAY);
 	exit_critical(flags);
 
-	wh1602_function_set(wh, true, false, false);
-	wh1602_function_set(wh, false, true, false);
-	wh1602_display_on_off(wh, false, false, false);
+	wh1602_function_set(wh, DB8, OFF, OFF);
+	wh1602_function_set(wh, DB4, LINE_NUM_2, FONT_T_8);
+	wh1602_display_control(wh, OFF, OFF, OFF);
 	wh1602_display_clear(wh);
-	wh1602_entry_mode_set(wh, true, false);
-	wh1602_display_on_off(wh, true, true, true);
+	wh1602_entry_mode_set(wh, CURSOR_MOV_R, OFF);
+	wh1602_display_control(wh, DISPLAY_ON, CURSOR_ON, BLINK_ON);
 
 	return 0;
 }
@@ -270,12 +254,10 @@ void wh1602_set_addr_ddram(struct wh1602 *wh, uint8_t addr)
 {
 	uint8_t temp = addr | 0x80;
 
-	printf("TESTING %s()...\n", __func__);
-
 	gpio_clear(wh->port, wh->rs);
-	wh1602_write_nibble(wh, temp >> 4);
+	wh1602_write(wh, temp >> 4);
 	wh1602_en_pulse(wh);
-	wh1602_write_nibble(wh, temp & 0x0f);
+	wh1602_write(wh, temp & 0x0f);
 	wh1602_en_pulse(wh);
 
 	enter_critical(flags);
@@ -291,13 +273,11 @@ void wh1602_set_addr_ddram(struct wh1602 *wh, uint8_t addr)
  */
 void wh1602_write_char(struct wh1602 *wh, uint8_t data)
 {
-	printf("TESTING %s()...\n", __func__);
-
-	wh1602_write_nibble(wh, data >> 4);
+	wh1602_write(wh, data >> 4);
 	gpio_set(wh->port, wh->rs);
 	wh1602_en_pulse(wh);
 
-	wh1602_write_nibble(wh, data & 0x0f);
+	wh1602_write(wh, data & 0x0f);
 	gpio_set(wh->port, wh->rs);
 	wh1602_en_pulse(wh);
 

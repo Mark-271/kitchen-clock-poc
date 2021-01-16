@@ -292,9 +292,17 @@ void wh1602_print_str(struct wh1602 *wh, char *str)
 	while (*str)
 		wh1602_write_char(wh, *str++);
 }
+
 /* Erase all data from screen */
 void wh1602_erase_screen(struct wh1602 *wh)
 {
 	wh1602_display_clear(wh);
 	wh1602_return_home(wh);
+}
+
+/* Set line on LCD to print data. */
+void wh1602_set_line(struct wh1602 *wh, enum lcd_cmd_bit l)
+{
+	uint8_t lcd_lines[] = {0x00, 0x40};
+	wh1602_set_addr_ddram(wh, lcd_lines[l]);
 }

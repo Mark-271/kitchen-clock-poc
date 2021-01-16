@@ -38,6 +38,8 @@ typedef enum lcd_cmd_bit {
 	LINE_NUM_1	 = 0,
 	FONT_T_8	 = 0,
 	FONT_T_11	 = 0x04,
+	LINE_1		 = 0,
+	LINE_2		 = 0x01,
 } lcd_cmd_bit;
 
 int wh1602_init(struct wh1602 *wh);
@@ -53,4 +55,5 @@ void wh1602_set_addr_ddram(struct wh1602 *wh, uint8_t addr);
 void wh1602_write_char(struct wh1602 *wh, uint8_t data);
 void wh1602_print_str(struct wh1602 *wh, char *str);
 void wh1602_erase_screen(struct wh1602 *wh);
+void wh1602_set_line(struct wh1602 *wh, enum lcd_cmd_bit line);
 #endif /* WH1602_H */

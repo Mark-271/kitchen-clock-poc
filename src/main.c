@@ -142,7 +142,6 @@ int main(void)
 	wh1602_set_addr_ddram(&wh, 0x0);
 	wh1602_print_str(&wh, s);
 	wh1602_display_control(&wh, DISPLAY_ON, OFF, OFF);
-
 	enter_critical(flags);
 	mdelay(2000);
 	exit_critical(flags);
@@ -157,8 +156,8 @@ int main(void)
 			while (temp.frac > 9)
 				temp.frac /= 10;
 			s = tempval_to_str(&temp, buf);
+			wh1602_set_line(&wh, LINE_2);
 			wh1602_print_str(&wh, s);
-			wh1602_return_home(&wh);
 
 			enter_critical(flags);
 			mdelay(10000);

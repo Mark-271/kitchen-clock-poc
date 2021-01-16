@@ -103,7 +103,6 @@ int main(void)
 {
 	int err;
 	unsigned long flags;
-
 	struct sc sc = {
 		.uart = SERIAL_USART,
 		.baud = 115200,

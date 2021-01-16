@@ -25,8 +25,8 @@ enum wh1602_cmd_base {
 };
 
 typedef enum lcd_cmd_bit {
-	CURSOR_MOV_R = 0x02,
-	CURSOR_MOV_L  = 0,
+	CURSOR_MOV_R	 = 0x02,
+	CURSOR_MOV_L	 = 0,
 	DISPLAY_SH_ON	 = 0x01,
 	DISPLAY_ON	 = 0x04,
 	CURSOR_ON	 = 0x02,
@@ -56,4 +56,5 @@ void wh1602_write_char(struct wh1602 *wh, uint8_t data);
 void wh1602_print_str(struct wh1602 *wh, char *str);
 void wh1602_erase_screen(struct wh1602 *wh);
 void wh1602_set_line(struct wh1602 *wh, enum lcd_cmd_bit line);
+
 #endif /* WH1602_H */

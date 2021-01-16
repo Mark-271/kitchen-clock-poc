@@ -26,16 +26,16 @@
  * @param[out] flags Will contain IRQ flags value before disabling interrupts;
  *                   must have "unsigned long" type
  */
-#define enter_critical(flags)                       \
-do {                                    \
-    __asm__ __volatile__ (                      \
-        "mrs %0, primask\n" /* save PRIMASK to "flags" */   \
-        "cpsid i"       /* disable interrupts */    \
-        : "=r" (flags)                      \
-        :                           \
-        : "memory");                        \
+#define enter_critical(flags)						\
+do {									\
+	__asm__ __volatile__ (						\
+		"mrs %0, primask\n"	/* save PRIMASK to "flags" */	\
+		"cpsid i"		/* disable interrupts */	\
+		: "=r" (flags)						\
+		:							\
+		: "memory");						\
 } while (0)
- 
+
 /**
  * Exit critical section (restore saved IRQ flags).
  *
@@ -50,14 +50,14 @@ do {                                    \
  *
  * @param[in] flags Previously saved IRQ flags.
  */
-#define exit_critical(flags)                        \
-do {                                    \
-    __asm__ __volatile__ (                      \
-        "msr primask, %0\n" /* load PRIMASK from "flags" */ \
-        "isb"                           \
-        :                           \
-        : "r" (flags)                       \
-        : "memory");                        \
+#define exit_critical(flags)						\
+do {									\
+	__asm__ __volatile__ (						\
+		"msr primask, %0\n" /* load PRIMASK from "flags" */	\
+		"isb"							\
+		:							\
+		: "r" (flags)						\
+		: "memory");						\
 } while (0)
 
 #endif /* COMMON_H */

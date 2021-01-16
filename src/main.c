@@ -113,7 +113,7 @@ static void init(void)
 {
 	const char *s = "Poc Watch";
 	int err;
-	struct sc sc = {
+	struct serial_params serial = {
 		.uart = SERIAL_USART,
 		.baud = 115200,
 		.bits = 8,
@@ -134,7 +134,7 @@ static void init(void)
 	};
 
 	board_init();
-	sc_init(&sc);
+	sc_init(&serial);
 
 	err = ow_init(&ow);
 	if (err)

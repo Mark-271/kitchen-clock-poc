@@ -1,23 +1,38 @@
-#include <stdint.h>
+/**
+ * @file
+ *
+ * Serial console driver.
+ *
+ * It's a singleton object, because it can't exist in multiple instances anyway,
+ * because of _write() "syscall" implementation.
+ */
+
+#include <serial_console.h>
+#include <libopencm3/stm32/usart.h>
 #include <stdio.h>
 #include <errno.h>
 
-#include <serial_console.h>
-#include <board.h>
+static uint32_t serial_usart; /* singleton object */
 
-#include <libopencm3/stm32/usart.h>
-
-int sc_init(struct sc *sc)
+int sc_init(struct serial_params *params)
 {
-	usart_set_baudrate(sc->uart, sc->baud);
-	usart_set_databits(sc->uart, sc->bits);
-	usart_set_stopbits(sc->uart, sc->stopbits);
-	usart_set_parity(sc->uart, sc->parity);
-	usart_set_mode(sc->uart, sc->mode);
-	usart_set_flow_control(sc->uart, sc->flow_control);
-	usart_enable(sc->uart);
+	serial_usart = params->uart;
+
+	usart_set_baudrate(serial_usart, params->baud);
+	usart_set_databits(serial_usart, params->bits);
+	usart_set_stopbits(serial_usart, params->stopbits);
+	usart_set_parity(serial_usart, params->parity);
+	usart_set_mode(serial_usart, params->mode);
+	usart_set_flow_control(serial_usart, params->flow_control);
+	usart_enable(serial_usart);
 
 	return 0;
+}
+
+void sc_exit(void)
+{
+	usart_disable(serial_usart);
+	serial_usart = 0;
 }
 
 int _write(int fd, char *ptr, int len)
@@ -31,10 +46,10 @@ int _write(int fd, char *ptr, int len)
 	}
 
 	while (*ptr && (i < len)) {
-		usart_send_blocking(SERIAL_USART, *ptr);
+		usart_send_blocking(serial_usart, *ptr);
 		if (*ptr == '\n') {
-			usart_send_blocking(SERIAL_USART, '\r');
-			usart_send_blocking(SERIAL_USART, '\n');
+			usart_send_blocking(serial_usart, '\r');
+			usart_send_blocking(serial_usart, '\n');
 		}
 		i++;
 		ptr++;

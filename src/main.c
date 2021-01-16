@@ -15,6 +15,14 @@
 #include <ds18b20.h>
 #include <wh1602.h>
 
+static struct ow ow = {
+	.port = DS18B20_GPIO_PORT,
+	.pin = DS18B20_GPIO_PIN,
+	.ow_flag = true
+};
+static struct wh1602 wh;
+
+/* TODO: tools.c */
 /**
  *  Reverse the given null-terminated string in place.
  *
@@ -50,6 +58,7 @@ static void inplace_reverse(char *str)
 	}
 }
 
+/* TODO: tools.c */
 /**
  * Convert temperature data to null-terminated string.
  *
@@ -91,6 +100,7 @@ static char *tempval_to_str(struct tempval *tv, char str[])
 	return str;
 }
 
+/* TODO: Move to common.c */
 /* Defines behavior of the program when error occures */
 static void hang(int err)
 {
@@ -99,10 +109,10 @@ static void hang(int err)
 		;
 }
 
-int main(void)
+static void init(void)
 {
+	const char *s = "Poc Watch";
 	int err;
-	unsigned long flags;
 	struct sc sc = {
 		.uart = SERIAL_USART,
 		.baud = 115200,
@@ -112,12 +122,8 @@ int main(void)
 		.mode = USART_MODE_TX_RX,
 		.flow_control = USART_FLOWCONTROL_NONE
 	};
-	struct ow ow = {
-		.port = DS18B20_GPIO_PORT,
-		.pin = DS18B20_GPIO_PIN,
-		.ow_flag = true
-	};
-	struct wh1602 wh = {
+
+	struct wh1602_gpio wh_gpio = {
 		.port = WH1602_GPIO_PORT,
 		.rs = WH1602_RS_PIN,
 		.en = WH1602_EN_PIN,
@@ -133,23 +139,25 @@ int main(void)
 	err = ow_init(&ow);
 	if (err)
 		ow.ow_flag = false;
-	err = wh1602_init(&wh);
+
+	err = wh1602_init(&wh, &wh_gpio);
 	if (err)
 		hang(err);
 
-	char *s = "Poc Watch";
 	wh1602_set_addr_ddram(&wh, 0x0);
 	wh1602_print_str(&wh, s);
 	wh1602_display_control(&wh, DISPLAY_ON, OFF, OFF);
-	enter_critical(flags);
-	mdelay(2000);
-	exit_critical(flags);
+	mdelay(2000); /* TODO: Get rid of magic number! */
 	wh1602_display_clear(&wh);
+}
 
+static void __attribute__((__noreturn__)) loop(void)
+{
 	for (;;) {
 		if (ow.ow_flag) {
 			struct tempval temp;
 			char buf[20];
+			char *s;
 
 			temp = ds18b20_get_temperature(&ow);
 			while (temp.frac > 9)
@@ -158,11 +166,13 @@ int main(void)
 			wh1602_set_line(&wh, LINE_2);
 			wh1602_print_str(&wh, s);
 
-			enter_critical(flags);
-			mdelay(10000);
-			exit_critical(flags);
+			mdelay(10000); /* TODO: Get rid of magic number!*/
 		}
 	}
+}
 
-	return 0;
+int main(void)
+{
+	init();
+	loop();
 }

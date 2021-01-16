@@ -1,19 +1,29 @@
 #ifndef WH1602_H
 #define WH1602_H
 
-struct wh1602 {
+#include <common.h>
+#include <stdint.h>
+
+struct wh1602_gpio {
 	/* GPIO port */
 	uint32_t port;
 
-	/* All the folllowing fiels are GPIO pins */
+	/* GPIO pins */
 	uint16_t rs;
 	uint16_t en;
 	uint16_t db4;
 	uint16_t db5;
 	uint16_t db6;
 	uint16_t db7;
-	uint16_t pin_mask;
-	uint16_t lookup[9];
+};
+
+struct wh1602 {
+	/* User data */
+	struct wh1602_gpio gpio;
+
+	/* Internal driver's data */
+	uint16_t pin_mask;	/* cached value: db4 | db5 | db6 | db7 */
+	uint16_t lookup[9];	/* mapping: data bit -> GPIO line */
 };
 
 enum wh1602_cmd_base {
@@ -22,6 +32,7 @@ enum wh1602_cmd_base {
 	ENTRY_MODE_SET	 = 0x04,
 	DISPLAY_CONTROL	 = 0x08,
 	FUNC_SET	 = 0x20,
+	SET_ADDRESS	 = BIT(7),
 };
 
 typedef enum lcd_cmd_bit {
@@ -42,7 +53,7 @@ typedef enum lcd_cmd_bit {
 	LINE_2		 = 0x01,
 } lcd_cmd_bit;
 
-int wh1602_init(struct wh1602 *wh);
+int wh1602_init(struct wh1602 *wh, const struct wh1602_gpio *gpio);
 void wh1602_exit(struct wh1602 *wh);
 void wh1602_display_clear(struct wh1602 *wh);
 void wh1602_return_home(struct wh1602 *wh);
@@ -53,8 +64,7 @@ void wh1602_function_set(struct wh1602 *wh, lcd_cmd_bit dl, lcd_cmd_bit n,
 			 lcd_cmd_bit f);
 void wh1602_set_addr_ddram(struct wh1602 *wh, uint8_t addr);
 void wh1602_write_char(struct wh1602 *wh, uint8_t data);
-void wh1602_print_str(struct wh1602 *wh, char *str);
-void wh1602_erase_screen(struct wh1602 *wh);
-void wh1602_set_line(struct wh1602 *wh, enum lcd_cmd_bit line);
+void wh1602_print_str(struct wh1602 *wh, const char *str);
+void wh1602_set_line(struct wh1602 *wh, int line);
 
 #endif /* WH1602_H */

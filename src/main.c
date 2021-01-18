@@ -144,9 +144,9 @@ static void init(void)
 	if (err)
 		hang(err);
 
-	wh1602_set_addr_ddram(&wh, 0x0);
+	wh1602_set_address(&wh, 0x0);
 	wh1602_print_str(&wh, s);
-	wh1602_display_control(&wh, DISPLAY_ON, OFF, OFF);
+	wh1602_display_control(&wh, LCD_ON, CURSOR_OFF, CURSOR_BLINK_OFF);
 	mdelay(2000); /* TODO: Get rid of magic number! */
 	wh1602_display_clear(&wh);
 }

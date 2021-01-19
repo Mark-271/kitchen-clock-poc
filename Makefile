@@ -35,7 +35,8 @@ OBJS		+=			\
 		   src/one_wire.o	\
 		   src/wh1602.o		\
 		   src/serial.o		\
-		   src/tools.o
+		   src/tools.o		\
+		   src/common.o
 
 # C flags
 

@@ -34,7 +34,7 @@ OBJS		+=			\
 		   src/main.o		\
 		   src/one_wire.o	\
 		   src/wh1602.o		\
-		   src/serial_console.o
+		   src/serial.o
 
 # C flags
 

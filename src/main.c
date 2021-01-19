@@ -10,7 +10,7 @@
 #include <board.h>
 #include <common.h>
 #include <delay.h>
-#include <serial_console.h>
+#include <serial.h>
 #include <one_wire.h>
 #include <ds18b20.h>
 #include <wh1602.h>

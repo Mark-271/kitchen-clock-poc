@@ -1,5 +1,5 @@
-#ifndef SERIAL_CONSOLE_H
-#define SERIAL_CONSOLE_H
+#ifndef SERIAL_H
+#define SERIAL_H
 
 #include <stdint.h>
 
@@ -17,4 +17,4 @@ int _write(int fd, char *ptr, int len);
 int sc_init(struct serial_params *params);
 void sc_exit(void);
 
-#endif /* SERIAL_CONSOLE_H */
+#endif /* SERIAL_H */

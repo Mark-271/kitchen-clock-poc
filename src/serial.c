@@ -7,7 +7,7 @@
  * because of _write() "syscall" implementation.
  */
 
-#include <serial_console.h>
+#include <serial.h>
 #include <libopencm3/stm32/usart.h>
 #include <stdio.h>
 #include <errno.h>

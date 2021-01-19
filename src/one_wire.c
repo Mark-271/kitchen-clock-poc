@@ -1,43 +1,30 @@
-#include <stdint.h>
-
-#include <libopencm3/stm32/gpio.h>
-
-#include <common.h>
-#include <delay.h>
 #include <one_wire.h>
+#include <delay.h>
+#include <common.h>
+#include <libopencm3/stm32/gpio.h>
+#include <stddef.h>
 
-static unsigned long flags;
-
-static void ow_write_bit(struct ow *ow, uint8_t bit)
+/* Write bit on 1-wire interface. Caller must disable interrupts*/
+static void ow_write_bit(struct ow *obj, uint8_t bit)
 {
-	gpio_clear(ow->port, ow->pin);
-	enter_critical(flags);
+	gpio_clear(obj->port, obj->pin);
 	udelay(bit ? WRITE_1_TIME : WRITE_0_TIME);
-	exit_critical(flags);
-
-	gpio_set(ow->port, ow->pin);
-	if (bit) {
-		enter_critical(flags);
+	gpio_set(obj->port, obj->pin);
+	if (bit)
 		udelay(WRITE_1_PAUSE);
-		exit_critical(flags);
-	}
 }
 
-static uint16_t ow_read_bit(struct ow *ow)
+/* Read bit on 1-wire interface. Caller must disable interrupts */
+static uint16_t ow_read_bit(struct ow *obj)
 {
 	uint16_t bit = 0;
 
-	gpio_clear(ow->port, ow->pin);
-	enter_critical(flags);
+	gpio_clear(obj->port, obj->pin);
 	udelay(READ_INIT_TIME);
-	exit_critical(flags);
-
-	gpio_set(ow->port, ow->pin);
-	enter_critical(flags);
+	gpio_set(obj->port, obj->pin);
 	udelay(READ_SAMPLING_TIME);
-	bit = gpio_get(ow->port, ow->pin);
+	bit = gpio_get(obj->port, obj->pin);
 	udelay(READ_PAUSE);
-	exit_critical(flags);
 
 	return ((bit != 0) ? 1 : 0);
 }
@@ -45,54 +32,54 @@ static uint16_t ow_read_bit(struct ow *ow)
 /**
  * Initialize one-wire interface.
  *
- * @param ow Structure to store corresponding GPIOs
- * @param gpio_port Unsigned 32int. GPIO port identifier
- * @param gpio_pin Unsigned 16int. GPIO pin identifier
- * @return 0 when success and -1 otherwise
+ * @param obj Structure to store corresponding GPIOs
+ * @return  0 on success
+ * @return -1 if device is damaged
+ * @return -2 if data bus is damaged
  */
-int ow_init(struct ow *ow)
+int ow_init(struct ow *obj)
 {
-	gpio_set(ow->port, ow->pin);
+	gpio_set(obj->port, obj->pin);
 	/* if device holds bus in low lvl return error */
-	enter_critical(flags);
-	if (!(gpio_get(ow->port, ow->pin))) {
-		exit_critical(flags);
+	if (!(gpio_get(obj->port, obj->pin))) {
 		return -1;
 	}
-	exit_critical(flags);
 
-	return ow_reset_pulse(ow);
+	return ow_reset_pulse(obj);
 }
 
-void ow_exit(struct ow *ow)
+/* Destroy object */
+void ow_exit(struct ow *obj)
 {
-	gpio_clear(ow->port, ow->pin);
-	UNUSED(ow);
+	gpio_clear(obj->port, obj->pin);
+	UNUSED(obj);
 }
 
-int ow_reset_pulse(struct ow *ow)
+/**
+ * Reset-presence pulse.
+ *
+ * @param obj Structure to store corresponding GPIOs
+ * @return  0 on success
+ * @return -1 if device doesn't respond
+ * @return -2 if data bus is damaged
+ */
+int ow_reset_pulse(struct ow *obj)
 {
+	unsigned long flags;
 	int ret;
 
-	gpio_clear(ow->port, ow->pin);
 	enter_critical(flags);
+	gpio_clear(obj->port, obj->pin);
 	udelay(RESET_TIME);
-	exit_critical(flags);
-
-	gpio_set(ow->port, ow->pin);
-	enter_critical(flags);
+	gpio_set(obj->port, obj->pin);
 	udelay(PRESENCE_WAIT_TIME);
-	ret = gpio_get(ow->port, ow->pin);
+	ret = gpio_get(obj->port, obj->pin);
 	exit_critical(flags);
 	if (ret)
 		return -1;
-
 	enter_critical(flags);
 	udelay(RESET_TIME);
-	exit_critical(flags);
-
-	enter_critical(flags);
-	ret = gpio_get(ow->port, ow->pin);
+	ret = gpio_get(obj->port, obj->pin);
 	exit_critical(flags);
 	if (!ret)
 		return -2;
@@ -100,29 +87,43 @@ int ow_reset_pulse(struct ow *ow)
 	return 0;
 }
 
-void ow_write_byte(struct ow *ow, uint8_t byte)
+/**
+ * Write byte of data.
+ *
+ * @param obj Structure to store corresponding GPIOs
+ * @param byte Data to be written
+ */
+void ow_write_byte(struct ow *obj, uint8_t byte)
 {
-	int i;
+	unsigned long flags;
+	size_t i;
 
+	enter_critical(flags);
 	for (i = 0; i < 8; i++) {
-		ow_write_bit(ow, byte >> i & 1);
-		enter_critical(flags);
+		ow_write_bit(obj, byte >> i & 1);
 		udelay(SLOT_WINDOW);
-		exit_critical(flags);
 	}
+	exit_critical(flags);
 }
 
-int8_t ow_read_byte(struct ow *ow)
+/**
+ * Read byte of data.
+ *
+ * @param ow Structure to store corresponding GPIOs
+ * @return Byte read from scratchpad
+ */
+int8_t ow_read_byte(struct ow *obj)
 {
+	unsigned long flags;
 	int16_t byte = 0;
-	int i;
+	size_t i;
 
+	enter_critical(flags);
 	for (i = 0; i < 8; i++) {
-		byte |= ow_read_bit(ow) << i;
-		enter_critical(flags);
+		byte |= ow_read_bit(obj) << i;
 		udelay(SLOT_WINDOW);
-		exit_critical(flags);
 	}
+	exit_critical(flags);
 
 	return (int8_t)byte;
 }

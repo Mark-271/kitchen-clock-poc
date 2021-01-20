@@ -36,7 +36,8 @@ OBJS		+=			\
 		   src/wh1602.o		\
 		   src/serial.o		\
 		   src/tools.o		\
-		   src/common.o
+		   src/common.o		\
+		   src/button.o
 
 # C flags
 

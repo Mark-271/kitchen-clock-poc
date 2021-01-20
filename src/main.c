@@ -5,9 +5,12 @@
 #include <one_wire.h>
 #include <serial.h>
 #include <wh1602.h>
+#include <button.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/usart.h>
+#include <libopencm3/cm3/nvic.h>
+#include <libopencm3/stm32/timer.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -16,12 +19,39 @@
 #define SCAN_TEMPERATURE_DELAY	10000
 #define LCD_GREETING_DELAY	2000
 
+static bool timer_event_flag;
 static struct ow ow = {
 	.port = DS18B20_GPIO_PORT,
 	.pin = DS18B20_GPIO_PIN,
-	.ow_flag = true
+	.ow_flag = false
 };
 static struct wh1602 wh;
+static struct btn btn = {
+	.port = BUTTON_GPIO_PORT,
+	.pin = BUTTON_GPIO_PIN
+};
+
+static void timer_init(void)
+{
+	rcc_periph_clock_enable(RCC_TIM4);
+
+	timer_set_mode(TIM4, TIM_CR1_CKD_CK_INT,
+		       TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP );
+	timer_set_prescaler(TIM4, 999999); /* Timer frequency is 1 MHz */
+	timer_set_period(TIM4, 99999); /* Overflow occures every 100 ms */
+
+	nvic_enable_irq(NVIC_TIM4_IRQ);
+	timer_enable_irq(TIM4, TIM_DIER_UIE);
+
+	timer_enable_counter(TIM4);
+}
+
+void tim4_isr(void)
+{
+	if (timer_get_flag(TIM4, TIM_SR_UIF))
+			timer_clear_flag(TIM4, TIM_SR_UIF);
+	timer_event_flag = true;
+}
 
 static void init(void)
 {
@@ -49,6 +79,9 @@ static void init(void)
 
 	board_init();
 	sc_init(&serial);
+	timer_init();
+
+	button_init(&btn);
 
 	err = ow_init(&ow);
 	if (err)
@@ -65,8 +98,11 @@ static void init(void)
 	wh1602_display_clear(&wh);
 }
 
+
 static void __attribute__((__noreturn__)) loop(void)
 {
+	int c = 0 + '0';
+
 	for (;;) {
 		if (ow.ow_flag) {
 			struct tempval temp;
@@ -80,6 +116,17 @@ static void __attribute__((__noreturn__)) loop(void)
 			wh1602_set_line(&wh, LINE_2);
 			wh1602_print_str(&wh, temper);
 			mdelay(SCAN_TEMPERATURE_DELAY);
+		}
+
+		if (timer_event_flag) {
+			timer_event_flag = false;
+
+			if (!button_poll_input(&btn)) {
+				puts("Button pushed");
+				wh1602_set_line(&wh, LINE_2);
+				wh1602_write_char(&wh, c);
+				c = (c == 9) ? 0 : c + 1; /* Doesn't zero out */
+			}
 		}
 	}
 }

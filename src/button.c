@@ -26,7 +26,7 @@ static uint16_t button_read_debounced_state(struct btn *obj)
 	while (i < RELAXATION_TIME) {
 		i++;
 		val = gpio_get(obj->port, obj->pin);
-		if (val == obj->state)
+		if (val)
 			i--;
 		mdelay(RELAXING_DELAY);
 	}
@@ -35,10 +35,10 @@ static uint16_t button_read_debounced_state(struct btn *obj)
 	return val;
 }
 
-/* Initialize button. Struct should be filled before call */
-int button_init(struct btn *obj, uint16_t base_state)
+/* Corresponding gpios are configured with internal pullup resistor */
+int button_init(struct btn *obj)
 {
-	obj->state = base_state;
+	gpio_set(obj->port, obj->pin);
 
 	return 0;
 }

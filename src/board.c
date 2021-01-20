@@ -28,6 +28,12 @@ static struct pin_mode pins[] = {
 			WH1602_DB5_PIN | WH1602_DB6_PIN | WH1602_DB7_PIN,
 		.mode = GPIO_MODE_OUTPUT_2_MHZ,
 		.conf = GPIO_CNF_OUTPUT_PUSHPULL,
+	},
+	{
+		.port = BUTTON_GPIO_PORT,
+		.pins = BUTTON_GPIO_PIN,
+		.mode = GPIO_MODE_INPUT,
+		.conf = GPIO_CNF_INPUT_PULL_UPDOWN,
 	}
 };
 
@@ -36,6 +42,7 @@ enum rcc_periph_clken clocks[] = {
 	SERIAL_GPIO_RCC,
 	DS18B20_GPIO_RCC,
 	WH1602_GPIO_RCC,
+	BUTTON_GPIO_RCC
 };
 
 static void board_pinmux_init(void)

@@ -27,6 +27,11 @@
 #define WH1602_DB6_PIN		GPIO2
 #define WH1602_DB7_PIN		GPIO3
 
+/* Push button switch*/
+#define BUTTON_GPIO_RCC		RCC_GPIOA
+#define BUTTON_GPIO_PORT	GPIOA
+#define BUTTON_GPIO_PIN		GPIO1
+
 int board_init(void);
 
 #endif /* BOARD_H */

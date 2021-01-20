@@ -3,18 +3,13 @@
 
 #include <stdint.h>
 
+/* Should be initialized by the caller */
 struct btn {
 	uint32_t port;
 	uint16_t pin;
-	uint16_t state:1;
 };
 
-enum button_base_state {
-	LOW = 0,
-	HIGH
-};
-
-int button_init(struct btn *obj, uint16_t base_state);
+int button_init(struct btn *obj);
 void button_exit(struct btn *obj);
 uint16_t button_poll_input(struct btn *obj);
 

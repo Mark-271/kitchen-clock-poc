@@ -93,7 +93,7 @@ static void wh1602_write_data(struct wh1602 *obj, uint8_t data,
  *
  * @param obj Structure fields should be filled by the caller
  */
-void wh1602_display_clear(struct wh1602 *obj)
+void wh1602_clear_display(struct wh1602 *obj)
 {
 	wh1602_write_cmd(obj, CLEAR_DISPLAY, DISPLAY_CLEAN_RETURN_DELAY);
 }
@@ -123,7 +123,7 @@ void wh1602_return_home(struct wh1602 *obj)
  * @param sh When set and DDRAM write operation, shift of display
  * 	     is performed according to @ref id value
  */
-void wh1602_entry_mode_set(struct wh1602 *obj, int id, int sh)
+void wh1602_set_entry_mode(struct wh1602 *obj, int id, int sh)
 {
 	wh1602_write_cmd(obj, ENTRY_MODE_SET | id | sh, EXEC_TIME_DELAY);
 }
@@ -138,7 +138,7 @@ void wh1602_entry_mode_set(struct wh1602 *obj, int id, int sh)
  * @param c When set, cursor is turned on
  * @param b When set, cursor blink is on
  */
-void wh1602_display_control(struct wh1602 *obj, int d, int c, int b)
+void wh1602_control_display(struct wh1602 *obj, int d, int c, int b)
 {
 	wh1602_write_cmd(obj, DISPLAY_CONTROL | d | c | b, EXEC_TIME_DELAY);
 }
@@ -153,7 +153,7 @@ void wh1602_display_control(struct wh1602 *obj, int d, int c, int b)
  * @param n  Display line number control bit.
  * @param f  Dislay font type control bit.
  */
-void wh1602_function_set(struct wh1602 *obj, int dl, int n, int f)
+void wh1602_set_function(struct wh1602 *obj, int dl, int n, int f)
 {
 	wh1602_write_cmd(obj, FUNC_SET | dl | n | f, EXEC_TIME_DELAY);
 }
@@ -182,16 +182,16 @@ int wh1602_init(struct wh1602 *obj, const struct wh1602_gpio *gpio)
 
 	/* Startup sequence by datasheet */
 	udelay(SET_POWER_DELAY);
-	wh1602_function_set(obj, DATA_BUS_8, LCD_1_LINE_MODE, FONT_TYPE_5_8);
+	wh1602_set_function(obj, DATA_BUS_8, LCD_1_LINE_MODE, FONT_TYPE_5_8);
 	udelay(WAIT_TIME_DELAY);
-	wh1602_function_set(obj, DATA_BUS_8, LCD_1_LINE_MODE, FONT_TYPE_5_8);
+	wh1602_set_function(obj, DATA_BUS_8, LCD_1_LINE_MODE, FONT_TYPE_5_8);
 	udelay(WAIT_TIME_DELAY);
-	wh1602_function_set(obj, DATA_BUS_8, LCD_1_LINE_MODE, FONT_TYPE_5_8);
-	wh1602_function_set(obj, DATA_BUS_4, LCD_2_LINE_MODE, FONT_TYPE_5_8);
-	wh1602_display_control(obj, LCD_OFF, CURSOR_OFF, CURSOR_BLINK_OFF);
-	wh1602_display_clear(obj);
-	wh1602_entry_mode_set(obj, CURSOR_MOVE_RIGHT, DISABLE_LCD_SHIFT);
-	wh1602_display_control(obj, LCD_ON, CURSOR_ON, CURSOR_BLINK_ON);
+	wh1602_set_function(obj, DATA_BUS_8, LCD_1_LINE_MODE, FONT_TYPE_5_8);
+	wh1602_set_function(obj, DATA_BUS_4, LCD_2_LINE_MODE, FONT_TYPE_5_8);
+	wh1602_control_display(obj, LCD_OFF, CURSOR_OFF, CURSOR_BLINK_OFF);
+	wh1602_clear_display(obj);
+	wh1602_set_entry_mode(obj, CURSOR_MOVE_RIGHT, DISABLE_LCD_SHIFT);
+	wh1602_control_display(obj, LCD_ON, CURSOR_ON, CURSOR_BLINK_ON);
 
 	return 0;
 }

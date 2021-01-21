@@ -47,11 +47,11 @@ struct wh1602 {
 
 int wh1602_init(struct wh1602 *obj, const struct wh1602_gpio *gpio);
 void wh1602_exit(struct wh1602 *obj);
-void wh1602_display_clear(struct wh1602 *obj);
+void wh1602_clear_display(struct wh1602 *obj);
 void wh1602_return_home(struct wh1602 *obj);
-void wh1602_entry_mode_set(struct wh1602 *obj, int id, int sh);
-void wh1602_display_control(struct wh1602 *obj, int d, int c, int b);
-void wh1602_function_set(struct wh1602 *obj, int dl, int n, int f);
+void wh1602_set_entry_mode(struct wh1602 *obj, int id, int sh);
+void wh1602_control_display(struct wh1602 *obj, int d, int c, int b);
+void wh1602_set_function(struct wh1602 *obj, int dl, int n, int f);
 void wh1602_set_address(struct wh1602 *obj, uint8_t addr);
 void wh1602_write_char(struct wh1602 *obj, uint8_t data);
 void wh1602_print_str(struct wh1602 *obj, const char *str);

@@ -93,9 +93,9 @@ static void init(void)
 
 	wh1602_set_line(&wh, LINE_1);
 	wh1602_print_str(&wh, str);
-	wh1602_display_control(&wh, LCD_ON, CURSOR_OFF, CURSOR_BLINK_OFF);
+	wh1602_control_display(&wh, LCD_ON, CURSOR_OFF, CURSOR_BLINK_OFF);
 	mdelay(LCD_GREETING_DELAY);
-	wh1602_display_clear(&wh);
+	wh1602_clear_display(&wh);
 }
 
 

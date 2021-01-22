@@ -71,12 +71,11 @@ static void timer_init(void)
 	timer_set_mode(TIM4, TIM_CR1_CKD_CK_INT,
 		       TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP );
 	timer_set_prescaler(TIM4, 999999); /* Timer frequency is 1 MHz */
-	timer_set_period(TIM4, 99999); /* Overflow occures every 100 ms */
+	timer_set_period(TIM4, 9999); /* Overflow occures every 10 ms */
+	timer_one_shot_mode(TIM4);
 
 	nvic_enable_irq(NVIC_TIM4_IRQ);
 	timer_enable_irq(TIM4, TIM_DIER_UIE);
-
-	timer_enable_counter(TIM4);
 }
 
 void tim4_isr(void)

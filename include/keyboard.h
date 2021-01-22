@@ -13,5 +13,6 @@ struct kb {
 
 int keyboard_init(struct kb *obj);
 void keyboard_exit(struct kb *obj);
+int keyboard_push_button(struct kb *obj);
 
 #endif /* KEYBOARD_H */

@@ -78,7 +78,7 @@ static void init(void)
 	};
 
 	board_init();
-	sc_init(&serial);
+	serial_init(&serial);
 	timer_init();
 
 	button_init(&btn);

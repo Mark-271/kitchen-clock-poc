@@ -14,7 +14,7 @@ struct serial_params {
 };
 
 int _write(int fd, char *ptr, int len);
-int sc_init(struct serial_params *params);
-void sc_exit(void);
+int serial_init(struct serial_params *params);
+void serial_exit(void);
 
 #endif /* SERIAL_H */

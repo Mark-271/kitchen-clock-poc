@@ -14,7 +14,7 @@
 
 static uint32_t serial_usart; /* singleton object */
 
-int sc_init(struct serial_params *params)
+int serial_init(struct serial_params *params)
 {
 	serial_usart = params->uart;
 
@@ -29,7 +29,7 @@ int sc_init(struct serial_params *params)
 	return 0;
 }
 
-void sc_exit(void)
+void serial_exit(void)
 {
 	usart_disable(serial_usart);
 	serial_usart = 0;

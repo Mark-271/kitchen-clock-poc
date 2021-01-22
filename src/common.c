@@ -5,12 +5,10 @@
  * Error handling routine.
  *
  * Prints error message and hang in endless loop.
- *
- * @param err Error number
  */
-void __attribute__((__noreturn__)) hang(int err)
+void __attribute__((__noreturn__)) hang(void)
 {
-	printf("Error: %d\n", err);
+	puts("Error: Reboot your board");
 	for (;;)
 		;
 }

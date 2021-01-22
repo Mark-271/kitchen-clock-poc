@@ -60,6 +60,6 @@ do {									\
 		: "memory");						\
 } while (0)
 
-void __attribute__((__noreturn__)) hang(int err);
+void __attribute__((__noreturn__)) hang(void);
 
 #endif /* COMMON_H */

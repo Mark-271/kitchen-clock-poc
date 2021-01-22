@@ -17,11 +17,12 @@
 #include <stdio.h>
 #include <string.h>
 
-#define SCAN_TEMPERATURE_DELAY	10000
-#define LCD_GREETING_DELAY	2000
+#define SCAN_TEMPERATURE_DELAY	5000
 
 static bool exti_event_flag;
 static bool timer_event_flag;
+static bool keyboard_event_flag;
+
 static struct kb kb = {
 	.port = KEYBOARD_GPIO_PORT,
 	.l1_pin = KEYBOARD_GPIO_L1_PIN,
@@ -44,8 +45,8 @@ static void exti_init(void)
 
 	exti_select_source(EXTI1, GPIOA);
 	exti_select_source(EXTI2, GPIOA);
-	exti_set_trigger(EXTI1, EXTI_TRIGGER_BOTH);
-	exti_set_trigger(EXTI2, EXTI_TRIGGER_BOTH);
+	exti_set_trigger(EXTI1, EXTI_TRIGGER_FALLING);
+	exti_set_trigger(EXTI2, EXTI_TRIGGER_FALLING);
 	exti_enable_request(EXTI1);
 	exti_enable_request(EXTI2);
 }
@@ -122,44 +123,65 @@ static void init(void)
 
 	err = wh1602_init(&wh, &wh_gpio);
 	if (err)
-		hang(err);
+		hang();
 
 	wh1602_set_line(&wh, LINE_1);
 	wh1602_print_str(&wh, str);
 	wh1602_control_display(&wh, LCD_ON, CURSOR_OFF, CURSOR_BLINK_OFF);
-	mdelay(LCD_GREETING_DELAY);
-	wh1602_clear_display(&wh);
 }
 
 
 static void __attribute__((__noreturn__)) loop(void)
 {
-	int c = 0 + '0';
-
+	int c = 0;
 	for (;;) {
+		if (exti_event_flag)
+			timer_enable_counter(TIM4);
+
+		if (timer_event_flag) {
+			keyboard_event_flag = true;
+			timer_event_flag = false;
+			exti_event_flag = false;
+		}
+
+		if (keyboard_event_flag) {
+			keyboard_event_flag = false;
+			int val = keyboard_push_button(&kb);
+			printf("%d\n", val);
+
+			switch (val) {
+			case KEYBOARD_BTN_1:
+				wh1602_clear_display(&wh);
+				break;
+			case KEYBOARD_BTN_2:
+				wh1602_write_char(&wh, c + '0');
+				c = (c == 9) ? 0 : c + 1;
+				break;
+			case KEYBOARD_BTN_3:
+				wh1602_set_line(&wh, LINE_1);
+				ow.ow_flag = true;
+				break;
+			case KEYBOARD_BTN_4:
+				wh1602_set_line(&wh, LINE_2);
+				ow.ow_flag = true;
+				break;
+			default:
+				puts("No press");
+				break;
+			}
+		}
+
 		if (ow.ow_flag) {
 			struct tempval temp;
 			char buf[20];
 			char *temper;
+			ow.ow_flag = false;
 
 			temp = ds18b20_get_temperature(&ow);
 			while (temp.frac > 9)
 				temp.frac /= 10;
 			temper = tempval_to_str(&temp, buf);
-			wh1602_set_line(&wh, LINE_2);
 			wh1602_print_str(&wh, temper);
-			mdelay(SCAN_TEMPERATURE_DELAY);
-		}
-
-		if (timer_event_flag) {
-			timer_event_flag = false;
-
-			if (!button_poll_input(&btn)) {
-				puts("Button pushed");
-				wh1602_set_line(&wh, LINE_2);
-				wh1602_write_char(&wh, c);
-				c = (c == 9) ? 0 : c + 1; /* Doesn't zero out */
-			}
 		}
 	}
 }

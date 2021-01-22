@@ -12,27 +12,23 @@
  */
 static int keyboard_poll(struct kb *obj)
 {
-	uint16_t ret;
+	int code = 0;
+
+	gpio_set(obj->port, obj->r2_pin);
+	if (!gpio_get(obj->port, obj->l1_pin))
+		code =  1;
+	if (!gpio_get(obj->port, obj->l2_pin))
+		code =  2;
+	gpio_clear(obj->port, obj->r1_pin | obj->r2_pin);
 
 	gpio_set(obj->port, obj->r1_pin);
-	if (!(ret = gpio_get(obj->port, obj->l1_pin))) {
-		gpio_clear(obj->port, obj->r1_pin | obj->r2_pin);
-		return 1;
-	} else if (!(ret = gpio_get(obj->port, obj->l2_pin))) {
-		gpio_clear(obj->port, obj->r1_pin | obj->r2_pin);
-		return 2;
-	}
-	gpio_toggle(obj->port, obj->r1_pin | obj->r2_pin);
-	if (!(ret = gpio_get(obj->port, obj->l1_pin))) {
-		gpio_clear(obj->port, obj->r1_pin | obj->r2_pin);
-		return 3;
-	} else if (!(ret = gpio_get(obj->port, obj->l2_pin))) {
-		gpio_clear(obj->port, obj->r1_pin | obj->r2_pin);
-		return 4;
-	}
-
+	if (!gpio_get(obj->port, obj->l1_pin))
+		code = 3;
+	if (!gpio_get(obj->port, obj->l2_pin))
+		code = 4;
 	gpio_clear(obj->port, obj->r1_pin | obj->r2_pin);
-	return 0;
+
+	return code;
 }
 
 int keyboard_init(struct kb *obj)

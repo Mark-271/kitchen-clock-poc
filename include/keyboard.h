@@ -11,6 +11,13 @@ struct kb {
 	uint16_t r2_pin;	/* Scan line 2 */
 };
 
+enum keyboard_buttons {
+	KEYBOARD_BTN_1 = 1,
+	KEYBOARD_BTN_2 = 2,
+	KEYBOARD_BTN_3 = 3,
+	KEYBOARD_BTN_4 = 4,
+};
+
 int keyboard_init(struct kb *obj);
 void keyboard_exit(struct kb *obj);
 int keyboard_push_button(struct kb *obj);

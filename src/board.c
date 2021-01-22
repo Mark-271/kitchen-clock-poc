@@ -30,12 +30,6 @@ static struct pin_mode pins[] = {
 		.conf = GPIO_CNF_OUTPUT_PUSHPULL,
 	},
 	{
-		.port = BUTTON_GPIO_PORT,
-		.pins = BUTTON_GPIO_PIN,
-		.mode = GPIO_MODE_INPUT,
-		.conf = GPIO_CNF_INPUT_PULL_UPDOWN,
-	},
-	{
 		.port = KEYBOARD_GPIO_PORT,
 		.pins = KEYBOARD_GPIO_L1_PIN | KEYBOARD_GPIO_L2_PIN,
 		.mode = GPIO_MODE_INPUT,
@@ -45,7 +39,7 @@ static struct pin_mode pins[] = {
 		.port = KEYBOARD_GPIO_PORT,
 		.pins = KEYBOARD_GPIO_R1_PIN | KEYBOARD_GPIO_R2_PIN,
 		.mode = GPIO_MODE_OUTPUT_2_MHZ,
-		.conf = GPIO_CNF_OUTPUT_OPENDRAIN,
+		.conf = GPIO_CNF_OUTPUT_PUSHPULL,
 	},
 };
 

@@ -34,7 +34,19 @@ static struct pin_mode pins[] = {
 		.pins = BUTTON_GPIO_PIN,
 		.mode = GPIO_MODE_INPUT,
 		.conf = GPIO_CNF_INPUT_PULL_UPDOWN,
-	}
+	},
+	{
+		.port = KEYBOARD_GPIO_PORT,
+		.pins = KEYBOARD_GPIO_L1_PIN | KEYBOARD_GPIO_L2_PIN,
+		.mode = GPIO_MODE_INPUT,
+		.conf = GPIO_CNF_INPUT_PULL_UPDOWN,
+	},
+	{
+		.port = KEYBOARD_GPIO_PORT,
+		.pins = KEYBOARD_GPIO_R1_PIN | KEYBOARD_GPIO_R2_PIN,
+		.mode = GPIO_MODE_OUTPUT_2_MHZ,
+		.conf = GPIO_CNF_OUTPUT_OPENDRAIN,
+	},
 };
 
 enum rcc_periph_clken clocks[] = {
@@ -42,7 +54,7 @@ enum rcc_periph_clken clocks[] = {
 	SERIAL_GPIO_RCC,
 	DS18B20_GPIO_RCC,
 	WH1602_GPIO_RCC,
-	BUTTON_GPIO_RCC
+	KEYBOARD_GPIO_RCC
 };
 
 static void board_pinmux_init(void)

@@ -27,10 +27,13 @@
 #define WH1602_DB6_PIN		GPIO2
 #define WH1602_DB7_PIN		GPIO3
 
-/* Push button switch*/
-#define BUTTON_GPIO_RCC		RCC_GPIOA
-#define BUTTON_GPIO_PORT	GPIOA
-#define BUTTON_GPIO_PIN		GPIO1
+/* Matrix keyboard 2x2 */
+#define KEYBOARD_GPIO_RCC	RCC_GPIOA
+#define KEYBOARD_GPIO_PORT	GPIOA
+#define KEYBOARD_GPIO_L1_PIN	GPIO1
+#define KEYBOARD_GPIO_L2_PIN	GPIO2
+#define KEYBOARD_GPIO_R1_PIN	GPIO3
+#define KEYBOARD_GPIO_R2_PIN	GPIO4
 
 int board_init(void);
 

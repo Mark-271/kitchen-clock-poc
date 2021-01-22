@@ -2,10 +2,10 @@
 #include <common.h>
 #include <delay.h>
 #include <ds18b20.h>
+#include <keyboard.h>
 #include <one_wire.h>
 #include <serial.h>
 #include <wh1602.h>
-#include <button.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/usart.h>
@@ -20,16 +20,19 @@
 #define LCD_GREETING_DELAY	2000
 
 static bool timer_event_flag;
+static struct kb kb = {
+	.port = KEYBOARD_GPIO_PORT,
+	.l1_pin = KEYBOARD_GPIO_L1_PIN,
+	.l2_pin = KEYBOARD_GPIO_L2_PIN,
+	.r1_pin = KEYBOARD_GPIO_R1_PIN,
+	.r2_pin = KEYBOARD_GPIO_R2_PIN
+};
 static struct ow ow = {
 	.port = DS18B20_GPIO_PORT,
 	.pin = DS18B20_GPIO_PIN,
 	.ow_flag = false
 };
 static struct wh1602 wh;
-static struct btn btn = {
-	.port = BUTTON_GPIO_PORT,
-	.pin = BUTTON_GPIO_PIN
-};
 
 static void timer_init(void)
 {
@@ -81,7 +84,7 @@ static void init(void)
 	serial_init(&serial);
 	timer_init();
 
-	button_init(&btn);
+	keyboard_init(&kb);
 
 	err = ow_init(&ow);
 	if (err)

@@ -10,6 +10,7 @@
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/usart.h>
 #include <libopencm3/cm3/nvic.h>
+#include <libopencm3/stm32/exti.h>
 #include <libopencm3/stm32/timer.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -19,6 +20,7 @@
 #define SCAN_TEMPERATURE_DELAY	10000
 #define LCD_GREETING_DELAY	2000
 
+static bool exti_event_flag;
 static bool timer_event_flag;
 static struct kb kb = {
 	.port = KEYBOARD_GPIO_PORT,
@@ -33,6 +35,34 @@ static struct ow ow = {
 	.ow_flag = false
 };
 static struct wh1602 wh;
+
+static void exti_init(void)
+{
+	rcc_periph_clock_enable(RCC_AFIO);
+	nvic_enable_irq(NVIC_EXTI1_IRQ);
+	nvic_enable_irq(NVIC_EXTI2_IRQ);
+
+	exti_select_source(EXTI1, GPIOA);
+	exti_select_source(EXTI2, GPIOA);
+	exti_set_trigger(EXTI1, EXTI_TRIGGER_BOTH);
+	exti_set_trigger(EXTI2, EXTI_TRIGGER_BOTH);
+	exti_enable_request(EXTI1);
+	exti_enable_request(EXTI2);
+}
+
+void exti1_isr(void)
+{
+	exti_reset_request(EXTI1);
+	if (!exti_event_flag)
+		exti_event_flag = true;
+}
+
+void exti2_isr(void)
+{
+	exti_reset_request(EXTI2);
+	if (!exti_event_flag)
+		exti_event_flag = true;
+}
 
 static void timer_init(void)
 {
@@ -82,6 +112,7 @@ static void init(void)
 
 	board_init();
 	serial_init(&serial);
+	exti_init();
 	timer_init();
 
 	keyboard_init(&kb);

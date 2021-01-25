@@ -37,7 +37,7 @@ OBJS		+=			\
 		   src/serial.o		\
 		   src/tools.o		\
 		   src/common.o		\
-		   src/keyboard.o
+		   src/keypad.o
 
 # C flags
 

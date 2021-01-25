@@ -2,7 +2,7 @@
 #include <common.h>
 #include <delay.h>
 #include <ds18b20.h>
-#include <keyboard.h>
+#include <keypad.h>
 #include <one_wire.h>
 #include <serial.h>
 #include <wh1602.h>
@@ -21,14 +21,14 @@
 
 static bool exti_event_flag;
 static bool timer_event_flag;
-static bool keyboard_event_flag;
+static bool kpd_event_flag;
 
-static struct kb kb = {
-	.port = KEYBOARD_GPIO_PORT,
-	.l1_pin = KEYBOARD_GPIO_L1_PIN,
-	.l2_pin = KEYBOARD_GPIO_L2_PIN,
-	.r1_pin = KEYBOARD_GPIO_R1_PIN,
-	.r2_pin = KEYBOARD_GPIO_R2_PIN
+static struct kpd kpd = {
+	.port = KPD_GPIO_PORT,
+	.l1_pin = KPD_GPIO_L1_PIN,
+	.l2_pin = KPD_GPIO_L2_PIN,
+	.r1_pin = KPD_GPIO_R1_PIN,
+	.r2_pin = KPD_GPIO_R2_PIN
 };
 static struct ow ow = {
 	.port = DS18B20_GPIO_PORT,
@@ -115,7 +115,7 @@ static void init(void)
 	exti_init();
 	timer_init();
 
-	keyboard_init(&kb);
+	kpd_init(&kpd);
 
 	err = ow_init(&ow);
 	if (err)
@@ -139,29 +139,29 @@ static void __attribute__((__noreturn__)) loop(void)
 			timer_enable_counter(TIM4);
 
 		if (timer_event_flag) {
-			keyboard_event_flag = true;
+			kpd_event_flag = true;
 			timer_event_flag = false;
 			exti_event_flag = false;
 		}
 
-		if (keyboard_event_flag) {
-			keyboard_event_flag = false;
-			int val = keyboard_push_button(&kb);
+		if (kpd_event_flag) {
+			kpd_event_flag = false;
+			int val = kpd_push_button(&kpd);
 			printf("%d\n", val);
 
 			switch (val) {
-			case KEYBOARD_BTN_1:
+			case KPD_BTN_1:
 				wh1602_clear_display(&wh);
 				break;
-			case KEYBOARD_BTN_2:
+			case KPD_BTN_2:
 				wh1602_write_char(&wh, c + '0');
 				c = (c == 9) ? 0 : c + 1;
 				break;
-			case KEYBOARD_BTN_3:
+			case KPD_BTN_3:
 				wh1602_set_line(&wh, LINE_1);
 				ow.ow_flag = true;
 				break;
-			case KEYBOARD_BTN_4:
+			case KPD_BTN_4:
 				wh1602_set_line(&wh, LINE_2);
 				ow.ow_flag = true;
 				break;

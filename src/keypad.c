@@ -1,16 +1,16 @@
-#include <keyboard.h>
+#include <keypad.h>
 #include <common.h>
 #include <libopencm3/stm32/gpio.h>
 
 /**
- * Keyboard polling.
+ * Keypad polling.
  *
  * Alternately polls every button looking for pushed one.
  *
- * @param obj Keyboard object must be initialized before call
+ * @param obj Keypad object must be initialized before call
  * @return Code (1..4) of pushed button or 0 on failure
  */
-static int keyboard_poll(struct kb *obj)
+static int kpd_poll(struct kpd *obj)
 {
 	int code = 0;
 
@@ -31,7 +31,7 @@ static int keyboard_poll(struct kb *obj)
 	return code;
 }
 
-int keyboard_init(struct kb *obj)
+int kpd_init(struct kpd *obj)
 {
 	/* Sampling lines should be configured with pull up resistor */
 	gpio_set(obj->port, obj->l1_pin | obj->l2_pin);
@@ -41,13 +41,13 @@ int keyboard_init(struct kb *obj)
 	return 0;
 }
 
-void keyboard_exit(struct kb *obj)
+void kpd_exit(struct kpd *obj)
 {
 	UNUSED(obj);
 }
 
-/* Returns code name of pushed button on keyboard */
-int keyboard_push_button(struct kb *obj)
+/* Returns code name of pushed button on kpd */
+int kpd_push_button(struct kpd *obj)
 {
-	return keyboard_poll(obj);
+	return kpd_poll(obj);
 }

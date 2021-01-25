@@ -1,5 +1,4 @@
 #include <ds18b20.h>
-#include <delay.h>
 #include <common.h>
 #include <tools.h>
 #include <libopencm3/stm32/gpio.h>

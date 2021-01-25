@@ -1,6 +1,5 @@
 #include <board.h>
 #include <common.h>
-#include <delay.h>
 #include <ds18b20.h>
 #include <keypad.h>
 #include <one_wire.h>

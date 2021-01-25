@@ -1,6 +1,6 @@
 #include <wh1602.h>
-#include <delay.h>
 #include <board.h>
+#include <common.h>
 #include <libopencm3/stm32/gpio.h>
 #include <stdio.h>
 #include <string.h>

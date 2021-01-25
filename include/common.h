@@ -1,9 +1,11 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#define BIT(n)		(1 << n)
-#define ARRAY_SIZE(a)	(sizeof(a) / sizeof(a[0]))
-#define UNUSED(x) (void)x
+#include <libopencm3/cm3/assert.h>
+
+#define BIT(n)			(1 << n)
+#define ARRAY_SIZE(a)		(sizeof(a) / sizeof(a[0]))
+#define UNUSED(x)		(void)x
 
 /**
  * Enter critical section (store IRQ flags and disable interrupts).

@@ -4,8 +4,11 @@
 #include <libopencm3/stm32/gpio.h>
 #include <stddef.h>
 
-#define TEMPERATURE_CONV_TIME 900
+#define TEMPERATURE_CONV_TIME		900
 
+#define CMD_SKIP_ROM			0xcc
+#define CMD_CONVERT_T			0x44
+#define CMD_READ_SCRATCHPAD		0xbe
 /**
  * Parse temperature register from DS18B20.
  *
@@ -13,9 +16,9 @@
  * @param msb Most significant byte of temperature register
  * @return Parsed value
  */
-static struct tempval ds18b20_parse_temp(uint8_t lsb, uint8_t msb)
+static struct ds18b20_temp ds18b20_parse_temp(uint8_t lsb, uint8_t msb)
 {
-	struct tempval tv;
+	struct ds18b20_temp tv;
 
 	tv.integer = (msb << 4) | (lsb >> 4);
 	if (msb & BIT(7)) {
@@ -48,22 +51,22 @@ static struct tempval ds18b20_parse_temp(uint8_t lsb, uint8_t msb)
  * @param obj 1-wire device object
  * @return Parsed value
  */
-struct tempval ds18b20_get_temperature(struct ow *obj)
+struct ds18b20_temp ds18b20_read_temp(struct ow *obj)
 {
 	unsigned long flags;
-	struct tempval tv;
+	struct ds18b20_temp tv;
 	int8_t data[2];
 	size_t i;
 
 	ow_reset_pulse(obj);
-	ow_write_byte(obj, SKIP_ROM);
-	ow_write_byte(obj, CONVERT_T);
+	ow_write_byte(obj, CMD_SKIP_ROM);
+	ow_write_byte(obj, CMD_CONVERT_T);
 	enter_critical(flags);
 	mdelay(TEMPERATURE_CONV_TIME);
 	exit_critical(flags);
 	ow_reset_pulse(obj);
-	ow_write_byte(obj, SKIP_ROM);
-	ow_write_byte(obj, READ_SCRATCHPAD);
+	ow_write_byte(obj, CMD_SKIP_ROM);
+	ow_write_byte(obj, CMD_READ_SCRATCHPAD);
 
 	for (i = 0; i < 2; i++)
 		data[i] = ow_read_byte(obj);
@@ -76,35 +79,35 @@ struct tempval ds18b20_get_temperature(struct ow *obj)
 /**
  * Convert temperature data to null-terminated string.
  *
- * @param tv Contains parsed temperature register from DS18B20
+ * @param obj Contains parsed temperature register from DS18B20
  * @param str Array to store string literal
  * @return Pointer to @ref str
  */
-char *tempval_to_str(struct tempval *tv, char str[])
+char *ds18b20_temp2str(struct ds18b20_temp *obj, char str[])
 {
 	int i = 0;
 	uint16_t rem;
 
-	if (!tv->frac) {
+	if (!obj->frac) {
 		str[i++] = '0';
 	} else {
-		while (tv->frac) {
-			rem = tv->frac % 10;
+		while (obj->frac) {
+			rem = obj->frac % 10;
 			str[i++] = rem + '0';
-			tv->frac /= 10;
+			obj->frac /= 10;
 		}
 	}
 	str[i++] = '.';
-	if (!tv->integer) {
+	if (!obj->integer) {
 		str[i++] = '0';
 	} else {
-		while (tv->integer) {
-			rem = tv->integer % 10;
+		while (obj->integer) {
+			rem = obj->integer % 10;
 			str[i++] = rem + '0';
-			tv->integer /= 10;
+			obj->integer /= 10;
 		}
 	}
-	str[i++] = tv->sign;
+	str[i++] = obj->sign;
 	str[i] = '\0';
 	inplace_reverse(str);
 

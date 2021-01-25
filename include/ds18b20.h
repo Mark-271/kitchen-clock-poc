@@ -1,24 +1,17 @@
-#ifndef DS18b20_H
-#define DS18b20_H
+#ifndef DS18B20_H
+#define DS18B20_H
 
 #include <one_wire.h>
 #include <stdint.h>
 
 /* Contains parsed data from DS18B20 temperature sensor */
-struct tempval {
+struct ds18b20_temp {
 	uint16_t integer:12;
 	uint16_t frac;
 	char sign;		/* '-' or '+' */
 };
 
-/* Function command set */
-enum cmd {
-	SKIP_ROM = 0xCC,
-	CONVERT_T = 0x44,
-	READ_SCRATCHPAD = 0xBE
-};
+struct ds18b20_temp ds18b20_read_temp(struct ow *obj);
+char *ds18b20_temp2str(struct ds18b20_temp *obj, char str[]);
 
-struct tempval ds18b20_get_temperature(struct ow *obj);
-char *tempval_to_str(struct tempval *tv, char str[]);
-
-#endif /* DS18b20_H */
+#endif /* DS18B20_H */

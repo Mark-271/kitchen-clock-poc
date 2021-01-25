@@ -171,15 +171,15 @@ static void __attribute__((__noreturn__)) loop(void)
 		}
 
 		if (ow.ow_flag) {
-			struct tempval temp;
+			struct ds18b20_temp temp;
 			char buf[20];
 			char *temper;
 			ow.ow_flag = false;
 
-			temp = ds18b20_get_temperature(&ow);
+			temp = ds18b20_read_temp(&ow);
 			while (temp.frac > 9)
 				temp.frac /= 10;
-			temper = tempval_to_str(&temp, buf);
+			temper = ds18b20_temp2str(&temp, buf);
 			wh1602_print_str(&wh, temper);
 		}
 	}

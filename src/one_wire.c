@@ -3,6 +3,17 @@
 #include <libopencm3/stm32/gpio.h>
 #include <stddef.h>
 
+/* 1-wire specific delay timings */
+#define OW_PRESENCE_WAIT_TIME		70
+#define OW_READ_INIT_TIME		5
+#define OW_READ_PAUSE			50
+#define OW_READ_SAMPLING_TIME		5
+#define OW_RESET_TIME			500
+#define OW_SLOT_WINDOW			5
+#define OW_WRITE_0_TIME			60
+#define OW_WRITE_1_PAUSE		50
+#define OW_WRITE_1_TIME			10
+
 /* Write bit on 1-wire interface. Caller must disable interrupts*/
 static void ow_write_bit(struct ow *obj, uint8_t bit)
 {

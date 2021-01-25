@@ -21,6 +21,7 @@
 static bool exti_event_flag;
 static bool timer_event_flag;
 static bool kpd_event_flag;
+static bool ds18b20_presence_flag;
 
 static struct kpd kpd = {
 	.port = KPD_GPIO_PORT,
@@ -118,7 +119,7 @@ static void init(void)
 
 	err = ow_init(&ow);
 	if (err)
-		ow.ow_flag = false;
+		ds18b20_presence_flag = false;
 
 	err = wh1602_init(&wh, &wh_gpio);
 	if (err)
@@ -158,11 +159,11 @@ static void __attribute__((__noreturn__)) loop(void)
 				break;
 			case KPD_BTN_3:
 				wh1602_set_line(&wh, LINE_1);
-				ow.ow_flag = true;
+				ds18b20_presence_flag = true;
 				break;
 			case KPD_BTN_4:
 				wh1602_set_line(&wh, LINE_2);
-				ow.ow_flag = true;
+				ds18b20_presence_flag = true;
 				break;
 			default:
 				puts("No press");
@@ -170,11 +171,11 @@ static void __attribute__((__noreturn__)) loop(void)
 			}
 		}
 
-		if (ow.ow_flag) {
+		if (ds18b20_presence_flag) {
 			struct ds18b20_temp temp;
 			char buf[20];
 			char *temper;
-			ow.ow_flag = false;
+			ds18b20_presence_flag = false;
 
 			temp = ds18b20_read_temp(&ow);
 			while (temp.frac > 9)

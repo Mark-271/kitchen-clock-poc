@@ -11,7 +11,15 @@ struct ds18b20_temp {
 	char sign;		/* '-' or '+' */
 };
 
-struct ds18b20_temp ds18b20_read_temp(struct ow *obj);
+struct ds18b20 {
+	uint32_t port;
+	uint16_t pin;
+	struct ds18b20_temp temp;
+};
+
+int ds18b20_init(struct ds18b20 *obj);
+void ds18b20_exit(struct ds18b20 *obj);
+struct ds18b20_temp ds18b20_read_temp(struct ds18b20 *obj);
 char *ds18b20_temp2str(struct ds18b20_temp *obj, char str[]);
 
 #endif /* DS18B20_H */

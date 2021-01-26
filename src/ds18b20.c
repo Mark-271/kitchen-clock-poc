@@ -1,4 +1,5 @@
 #include <ds18b20.h>
+#include <one_wire.h>
 #include <common.h>
 #include <tools.h>
 #include <libopencm3/stm32/gpio.h>
@@ -9,6 +10,9 @@
 #define CMD_SKIP_ROM			0xcc
 #define CMD_CONVERT_T			0x44
 #define CMD_READ_SCRATCHPAD		0xbe
+
+static struct ow ow;
+
 /**
  * Parse temperature register from DS18B20.
  *
@@ -45,35 +49,53 @@ static struct ds18b20_temp ds18b20_parse_temp(uint8_t lsb, uint8_t msb)
 	return tv;
 }
 
+int ds18b20_init(struct ds18b20 *obj)
+{
+	int ret;
+
+	ow.port = obj->port;
+	ow.pin = obj->pin;
+
+	ret = ow_init(&ow);
+
+	return ret;
+}
+
+/* Destroy ds18b20 object */
+void ds18b20_exit(struct ds18b20 *obj)
+{
+	UNUSED(obj);
+	ow_exit(&ow);
+}
+
 /**
  * Read temperature register from DS18B20.
  *
  * @param obj 1-wire device object
  * @return Parsed value
  */
-struct ds18b20_temp ds18b20_read_temp(struct ow *obj)
+struct ds18b20_temp ds18b20_read_temp(struct ds18b20 *obj)
 {
 	unsigned long flags;
-	struct ds18b20_temp tv;
 	int8_t data[2];
 	size_t i;
 
-	ow_reset_pulse(obj);
-	ow_write_byte(obj, CMD_SKIP_ROM);
-	ow_write_byte(obj, CMD_CONVERT_T);
+	ow_reset_pulse(&ow);
+	ow_write_byte(&ow, CMD_SKIP_ROM);
+	ow_write_byte(&ow, CMD_CONVERT_T);
 	enter_critical(flags);
 	mdelay(TEMPERATURE_CONV_TIME);
 	exit_critical(flags);
-	ow_reset_pulse(obj);
-	ow_write_byte(obj, CMD_SKIP_ROM);
-	ow_write_byte(obj, CMD_READ_SCRATCHPAD);
+	ow_reset_pulse(&ow);
+	ow_write_byte(&ow, CMD_SKIP_ROM);
+	ow_write_byte(&ow, CMD_READ_SCRATCHPAD);
 
 	for (i = 0; i < 2; i++)
-		data[i] = ow_read_byte(obj);
-	ow_reset_pulse(obj);
+		data[i] = ow_read_byte(&ow);
+	ow_reset_pulse(&ow);
 
-	tv = ds18b20_parse_temp(data[0], data[1]);
-	return tv;
+	obj->temp = ds18b20_parse_temp(data[0], data[1]);
+	return obj->temp;
 }
 
 /**

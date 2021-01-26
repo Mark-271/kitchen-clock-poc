@@ -2,7 +2,6 @@
 #include <common.h>
 #include <ds18b20.h>
 #include <keypad.h>
-#include <one_wire.h>
 #include <serial.h>
 #include <wh1602.h>
 #include <libopencm3/stm32/gpio.h>
@@ -117,7 +116,7 @@ static void init(void)
 
 	kpd_init(&kpd);
 
-	err = ow_init(&ow);
+	err = ds18b20_init(&ts);
 	if (err)
 		ds18b20_presence_flag = false;
 
@@ -172,15 +171,14 @@ static void __attribute__((__noreturn__)) loop(void)
 		}
 
 		if (ds18b20_presence_flag) {
-			struct ds18b20_temp temp;
 			char buf[20];
 			char *temper;
 			ds18b20_presence_flag = false;
 
-			temp = ds18b20_read_temp(&ow);
-			while (temp.frac > 9)
-				temp.frac /= 10;
-			temper = ds18b20_temp2str(&temp, buf);
+			ts.temp = ds18b20_read_temp(&ts);
+			while (ts.temp.frac > 9)
+				ts.temp.frac /= 10;
+			temper = ds18b20_temp2str(&ts.temp, buf);
 			wh1602_print_str(&wh, temper);
 		}
 	}

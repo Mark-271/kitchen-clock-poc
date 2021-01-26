@@ -3,7 +3,7 @@
 
 #include <libopencm3/cm3/assert.h>
 
-#define BIT(n)			(1 << n)
+#define BIT(n)			(1 << (n))
 #define ARRAY_SIZE(a)		(sizeof(a) / sizeof(a[0]))
 #define UNUSED(x)		(void)x
 
@@ -61,7 +61,6 @@ do {									\
 		: "r" (flags)						\
 		: "memory");						\
 } while (0)
-
 
 /** CPU cycles per 1 iteration of loop in ldelay() */
 #define CYCLES_PER_LOOP		3UL

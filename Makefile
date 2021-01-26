@@ -34,6 +34,7 @@ OBJS		+=			\
 		   src/main.o		\
 		   src/one_wire.o	\
 		   src/wh1602.o		\
+		   src/sched.o		\
 		   src/serial.o		\
 		   src/tools.o		\
 		   src/common.o		\

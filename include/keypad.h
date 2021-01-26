@@ -2,6 +2,10 @@
 #define KEYPAD_H
 
 #include <stdint.h>
+#include <stdbool.h>
+
+extern bool kpd_exti_event_flag;
+extern bool kpd_timer_event_flag;
 
 struct kpd {
 	uint32_t port;

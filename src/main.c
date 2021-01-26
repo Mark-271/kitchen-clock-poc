@@ -17,10 +17,10 @@
 
 #define SCAN_TEMPERATURE_DELAY	5000
 
-static bool exti_event_flag;
-static bool timer_event_flag;
 static bool kpd_event_flag;
 static bool ds18b20_presence_flag;
+bool kpd_exti_event_flag = false;
+bool kpd_timer_event_flag = false;
 
 static struct kpd kpd = {
 	.port = KPD_GPIO_PORT,
@@ -36,54 +36,6 @@ static struct ds18b20 ts = {
 
 static struct wh1602 wh;
 
-static void exti_init(void)
-{
-	rcc_periph_clock_enable(RCC_AFIO);
-	nvic_enable_irq(NVIC_EXTI1_IRQ);
-	nvic_enable_irq(NVIC_EXTI2_IRQ);
-
-	exti_select_source(EXTI1, GPIOA);
-	exti_select_source(EXTI2, GPIOA);
-	exti_set_trigger(EXTI1, EXTI_TRIGGER_FALLING);
-	exti_set_trigger(EXTI2, EXTI_TRIGGER_FALLING);
-	exti_enable_request(EXTI1);
-	exti_enable_request(EXTI2);
-}
-
-void exti1_isr(void)
-{
-	exti_reset_request(EXTI1);
-	if (!exti_event_flag)
-		exti_event_flag = true;
-}
-
-void exti2_isr(void)
-{
-	exti_reset_request(EXTI2);
-	if (!exti_event_flag)
-		exti_event_flag = true;
-}
-
-static void timer_init(void)
-{
-	rcc_periph_clock_enable(RCC_TIM4);
-
-	timer_set_mode(TIM4, TIM_CR1_CKD_CK_INT,
-		       TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP );
-	timer_set_prescaler(TIM4, 999999); /* Timer frequency is 1 MHz */
-	timer_set_period(TIM4, 9999); /* Overflow occures every 10 ms */
-	timer_one_shot_mode(TIM4);
-
-	nvic_enable_irq(NVIC_TIM4_IRQ);
-	timer_enable_irq(TIM4, TIM_DIER_UIE);
-}
-
-void tim4_isr(void)
-{
-	if (timer_get_flag(TIM4, TIM_SR_UIF))
-			timer_clear_flag(TIM4, TIM_SR_UIF);
-	timer_event_flag = true;
-}
 
 static void init(void)
 {
@@ -111,8 +63,6 @@ static void init(void)
 
 	board_init();
 	serial_init(&serial);
-	exti_init();
-	timer_init();
 
 	kpd_init(&kpd);
 
@@ -134,13 +84,13 @@ static void __attribute__((__noreturn__)) loop(void)
 {
 	int c = 0;
 	for (;;) {
-		if (exti_event_flag)
+		if (kpd_exti_event_flag)
 			timer_enable_counter(TIM4);
 
-		if (timer_event_flag) {
+		if (kpd_timer_event_flag) {
 			kpd_event_flag = true;
-			timer_event_flag = false;
-			exti_event_flag = false;
+			kpd_timer_event_flag = false;
+			kpd_exti_event_flag = false;
 		}
 
 		if (kpd_event_flag) {

@@ -29,11 +29,11 @@ static struct kpd kpd = {
 	.r1_pin = KPD_GPIO_R1_PIN,
 	.r2_pin = KPD_GPIO_R2_PIN
 };
-static struct ow ow = {
+static struct ds18b20 ts = {
 	.port = DS18B20_GPIO_PORT,
 	.pin = DS18B20_GPIO_PIN,
-	.ow_flag = false
 };
+
 static struct wh1602 wh;
 
 static void exti_init(void)

@@ -18,10 +18,10 @@
 static void ow_write_bit(struct ow *obj, uint8_t bit)
 {
 	gpio_clear(obj->port, obj->pin);
-	udelay(bit ? WRITE_1_TIME : WRITE_0_TIME);
+	udelay(bit ? OW_WRITE_1_TIME : OW_WRITE_0_TIME);
 	gpio_set(obj->port, obj->pin);
 	if (bit)
-		udelay(WRITE_1_PAUSE);
+		udelay(OW_WRITE_1_PAUSE);
 }
 
 /* Read bit on 1-wire interface. Caller must disable interrupts */
@@ -30,11 +30,11 @@ static uint16_t ow_read_bit(struct ow *obj)
 	uint16_t bit = 0;
 
 	gpio_clear(obj->port, obj->pin);
-	udelay(READ_INIT_TIME);
+	udelay(OW_READ_INIT_TIME);
 	gpio_set(obj->port, obj->pin);
-	udelay(READ_SAMPLING_TIME);
+	udelay(OW_READ_SAMPLING_TIME);
 	bit = gpio_get(obj->port, obj->pin);
-	udelay(READ_PAUSE);
+	udelay(OW_READ_PAUSE);
 
 	return ((bit != 0) ? 1 : 0);
 }
@@ -80,15 +80,15 @@ int ow_reset_pulse(struct ow *obj)
 
 	enter_critical(flags);
 	gpio_clear(obj->port, obj->pin);
-	udelay(RESET_TIME);
+	udelay(OW_RESET_TIME);
 	gpio_set(obj->port, obj->pin);
-	udelay(PRESENCE_WAIT_TIME);
+	udelay(OW_PRESENCE_WAIT_TIME);
 	ret = gpio_get(obj->port, obj->pin);
 	exit_critical(flags);
 	if (ret)
 		return -1;
 	enter_critical(flags);
-	udelay(RESET_TIME);
+	udelay(OW_RESET_TIME);
 	ret = gpio_get(obj->port, obj->pin);
 	exit_critical(flags);
 	if (!ret)
@@ -111,7 +111,7 @@ void ow_write_byte(struct ow *obj, uint8_t byte)
 	enter_critical(flags);
 	for (i = 0; i < 8; i++) {
 		ow_write_bit(obj, byte >> i & 1);
-		udelay(SLOT_WINDOW);
+		udelay(OW_SLOT_WINDOW);
 	}
 	exit_critical(flags);
 }
@@ -131,7 +131,7 @@ int8_t ow_read_byte(struct ow *obj)
 	enter_critical(flags);
 	for (i = 0; i < 8; i++) {
 		byte |= ow_read_bit(obj) << i;
-		udelay(SLOT_WINDOW);
+		udelay(OW_SLOT_WINDOW);
 	}
 	exit_critical(flags);
 

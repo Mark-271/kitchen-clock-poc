@@ -64,7 +64,7 @@ static void kpd_timer_init(void)
 	timer_enable_irq(TIM4, TIM_DIER_UIE);
 }
 
-int kpd_init(struct kpd *obj)
+int kpd_init(struct kpd *obj, kpd_btn_event cb)
 {
 	/* Sampling lines should be configured with pull up resistor */
 	gpio_set(obj->port, obj->l1_pin | obj->l2_pin);
@@ -92,27 +92,21 @@ void kpd_exit(struct kpd *obj)
 
 void exti1_isr(void)
 {
+	timer_enable_counter(TIM4);
 	exti_reset_request(EXTI1);
-	if (!kpd_exti_event_flag)
-		kpd_exti_event_flag = true;
 }
 
 void exti2_isr(void)
 {
+	timer_enable_counter(TIM4);
 	exti_reset_request(EXTI2);
-	if (!kpd_exti_event_flag)
-		kpd_exti_event_flag = true;
 }
 
 void tim4_isr(void)
 {
-	if (timer_get_flag(TIM4, TIM_SR_UIF))
-			timer_clear_flag(TIM4, TIM_SR_UIF);
-	kpd_timer_event_flag = true;
-}
+	if (!timer_get_flag(TIM4, TIM_SR_UIF))
+		return;
 
-/* Returns code name of pushed button on kpd */
-int kpd_push_button(struct kpd *obj)
-{
-	return kpd_poll(obj);
+	kpd_timer_event_flag = true;
+	timer_clear_flag(TIM4, TIM_SR_UIF);
 }

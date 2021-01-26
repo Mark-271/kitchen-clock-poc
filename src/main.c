@@ -19,7 +19,6 @@
 
 static bool kpd_event_flag;
 static bool ds18b20_presence_flag;
-bool kpd_exti_event_flag = false;
 bool kpd_timer_event_flag = false;
 
 static struct kpd kpd = {
@@ -36,6 +35,10 @@ static struct ds18b20 ts = {
 
 static struct wh1602 wh;
 
+static void handle_btn(enum kpd_btn btn, bool pressed)
+{
+	/* TODO: To implement f */
+}
 
 static void init(void)
 {
@@ -64,7 +67,7 @@ static void init(void)
 	board_init();
 	serial_init(&serial);
 
-	kpd_init(&kpd);
+	kpd_init(&kpd, handle_btn);
 
 	err = ds18b20_init(&ts);
 	if (err)
@@ -84,13 +87,9 @@ static void __attribute__((__noreturn__)) loop(void)
 {
 	int c = 0;
 	for (;;) {
-		if (kpd_exti_event_flag)
-			timer_enable_counter(TIM4);
-
 		if (kpd_timer_event_flag) {
 			kpd_event_flag = true;
 			kpd_timer_event_flag = false;
-			kpd_exti_event_flag = false;
 		}
 
 		if (kpd_event_flag) {

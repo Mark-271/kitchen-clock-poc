@@ -4,9 +4,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-extern bool kpd_exti_event_flag;
-extern bool kpd_timer_event_flag;
-
 struct kpd {
 	uint32_t port;
 	uint16_t l1_pin;	/* Sampling line 1 */
@@ -15,15 +12,16 @@ struct kpd {
 	uint16_t r2_pin;	/* Scan line 2 */
 };
 
-enum kpd_button_code {
+enum kpd_btn {
 	KPD_BTN_1 = 1,
-	KPD_BTN_2 = 2,
-	KPD_BTN_3 = 3,
-	KPD_BTN_4 = 4,
+	KPD_BTN_2,
+	KPD_BTN_3,
+	KPD_BTN_4
 };
 
-int kpd_init(struct kpd *obj);
+typedef void (*kpd_btn_event_t)(enum kpd_btn btn, bool pressed);
+
+int kpd_init(struct kpd *obj, kpd_btn_event cb);
 void kpd_exit(struct kpd *obj);
-int kpd_push_button(struct kpd *obj);
 
 #endif /* KEYPAD_H */

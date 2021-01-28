@@ -3,6 +3,7 @@
 #include <ds18b20.h>
 #include <keypad.h>
 #include <serial.h>
+#include <sched.h>
 #include <wh1602.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/rcc.h>
@@ -20,6 +21,7 @@
 static bool kpd_event_flag;
 static bool ds18b20_presence_flag;
 bool kpd_timer_event_flag = false;
+static int showtemp_id; /* task ID */
 
 static struct kpd kpd = {
 	.port = KPD_GPIO_PORT,
@@ -35,11 +37,28 @@ static struct ds18b20 ts = {
 
 static struct wh1602 wh;
 
+static void show_temp(void *data)
+{
+	struct wh1602 *obj = (struct wh1602 *)(data);
+	char buf[20];
+	char *temper;
+	ds18b20_presence_flag = false;
+
+	ts.temp = ds18b20_read_temp(&ts);
+	while (ts.temp.frac > 9)
+		ts.temp.frac /= 10;
+	temper = ds18b20_temp2str(&ts.temp, buf);
+	wh1602_set_address(obj, 0x00);
+	wh1602_print_str(obj, temper);
+	mdelay(1000);
+
+	sched_set_ready(showtemp_id);
+}
+
 static void handle_btn(enum kpd_btn btn, bool pressed)
 {
 	/* TODO: To implement f */
 }
-
 static void init(void)
 {
 	const char *str = "Poc Watch";
@@ -66,6 +85,7 @@ static void init(void)
 
 	board_init();
 	serial_init(&serial);
+	sched_init();
 
 	kpd_init(&kpd, handle_btn);
 
@@ -80,9 +100,17 @@ static void init(void)
 	wh1602_set_line(&wh, LINE_1);
 	wh1602_print_str(&wh, str);
 	wh1602_control_display(&wh, LCD_ON, CURSOR_OFF, CURSOR_BLINK_OFF);
+
+	err = sched_add_task("showtemp", show_temp, &wh, &showtemp_id);
+	if (err < 0) {
+		printf("Can't add task to show_temp\n");
+		hang();
+	}
+	sched_set_ready(showtemp_id);
+
 }
 
-
+#if 0
 static void __attribute__((__noreturn__)) loop(void)
 {
 	int c = 0;
@@ -132,9 +160,9 @@ static void __attribute__((__noreturn__)) loop(void)
 		}
 	}
 }
-
+#endif
 int main(void)
 {
 	init();
-	loop();
+	sched_start();
 }

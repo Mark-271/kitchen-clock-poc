@@ -1,4 +1,4 @@
-#include <keypad.h>
+#include <keyboard.h>
 #include <common.h>
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
@@ -14,28 +14,28 @@
  * @param obj Keypad object must be initialized before call
  * @return Code (1..4) of pushed button or 0 on failure
  */
-static int kpd_poll(struct kpd *obj)
+static int kbd_poll(struct kbd *obj)
 {
 	int code = 0;
 
-	gpio_set(obj->port, obj->r2_pin);
-	if (!gpio_get(obj->port, obj->l1_pin))
+	gpio_set(obj->port, obj->r2);
+	if (!gpio_get(obj->port, obj->l1))
 		code =  1;
-	if (!gpio_get(obj->port, obj->l2_pin))
+	if (!gpio_get(obj->port, obj->l2))
 		code =  2;
-	gpio_clear(obj->port, obj->r1_pin | obj->r2_pin);
+	gpio_clear(obj->port, obj->r1 | obj->r2);
 
-	gpio_set(obj->port, obj->r1_pin);
-	if (!gpio_get(obj->port, obj->l1_pin))
+	gpio_set(obj->port, obj->r1);
+	if (!gpio_get(obj->port, obj->l1))
 		code = 3;
-	if (!gpio_get(obj->port, obj->l2_pin))
+	if (!gpio_get(obj->port, obj->l2))
 		code = 4;
-	gpio_clear(obj->port, obj->r1_pin | obj->r2_pin);
+	gpio_clear(obj->port, obj->r1 | obj->r2);
 
 	return code;
 }
 
-static void kpd_exti_init(void)
+static void kbd_exti_init(void)
 {
 	rcc_periph_clock_enable(RCC_AFIO);
 
@@ -50,7 +50,7 @@ static void kpd_exti_init(void)
 	exti_enable_request(EXTI2);
 }
 
-static void kpd_timer_init(void)
+static void kbd_timer_init(void)
 {
 	rcc_periph_clock_enable(RCC_TIM4);
 
@@ -64,20 +64,20 @@ static void kpd_timer_init(void)
 	timer_enable_irq(TIM4, TIM_DIER_UIE);
 }
 
-int kpd_init(struct kpd *obj, kpd_btn_event cb)
+int kbd_init(struct kbd *obj, kbd_btn_event_t cb)
 {
 	/* Sampling lines should be configured with pull up resistor */
-	gpio_set(obj->port, obj->l1_pin | obj->l2_pin);
+	gpio_set(obj->port, obj->l1 | obj->l2);
 	/* Scan lines should be in low state */
-	gpio_clear(obj->port, obj->r1_pin | obj->r2_pin);
+	gpio_clear(obj->port, obj->r1 | obj->r2);
 
-	kpd_exti_init();
-	kpd_timer_init();
+	kbd_exti_init();
+	kbd_timer_init();
 
 	return 0;
 }
 
-void kpd_exit(struct kpd *obj)
+void kbd_exit(struct kbd *obj)
 {
 	timer_disable_irq(TIM4, TIM_DIER_UIE);
 	nvic_disable_irq(NVIC_TIM4_IRQ);
@@ -106,7 +106,5 @@ void tim4_isr(void)
 {
 	if (!timer_get_flag(TIM4, TIM_SR_UIF))
 		return;
-
-	kpd_timer_event_flag = true;
 	timer_clear_flag(TIM4, TIM_SR_UIF);
 }

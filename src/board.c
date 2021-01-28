@@ -30,14 +30,14 @@ static struct pin_mode pins[] = {
 		.conf = GPIO_CNF_OUTPUT_PUSHPULL,
 	},
 	{
-		.port = KPD_GPIO_PORT,
-		.pins = KPD_GPIO_L1_PIN | KPD_GPIO_L2_PIN,
+		.port = KBD_GPIO_PORT,
+		.pins = KBD_GPIO_L1_PIN | KBD_GPIO_L2_PIN,
 		.mode = GPIO_MODE_INPUT,
 		.conf = GPIO_CNF_INPUT_PULL_UPDOWN,
 	},
 	{
-		.port = KPD_GPIO_PORT,
-		.pins = KPD_GPIO_R1_PIN | KPD_GPIO_R2_PIN,
+		.port = KBD_GPIO_PORT,
+		.pins = KBD_GPIO_R1_PIN | KBD_GPIO_R2_PIN,
 		.mode = GPIO_MODE_OUTPUT_2_MHZ,
 		.conf = GPIO_CNF_OUTPUT_PUSHPULL,
 	},
@@ -48,7 +48,7 @@ enum rcc_periph_clken clocks[] = {
 	SERIAL_GPIO_RCC,
 	DS18B20_GPIO_RCC,
 	WH1602_GPIO_RCC,
-	KPD_GPIO_RCC
+	KBD_GPIO_RCC
 };
 
 static void board_pinmux_init(void)

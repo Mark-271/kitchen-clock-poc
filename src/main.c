@@ -1,7 +1,7 @@
 #include <board.h>
 #include <common.h>
 #include <ds18b20.h>
-#include <keypad.h>
+#include <keyboard.h>
 #include <serial.h>
 #include <sched.h>
 #include <wh1602.h>
@@ -18,17 +18,17 @@
 
 #define SCAN_TEMPERATURE_DELAY	5000
 
-static bool kpd_event_flag;
+static bool kbd_event_flag;
 static bool ds18b20_presence_flag;
-bool kpd_timer_event_flag = false;
+bool kbd_timer_event_flag = false;
 static int showtemp_id; /* task ID */
 
-static struct kpd kpd = {
-	.port = KPD_GPIO_PORT,
-	.l1_pin = KPD_GPIO_L1_PIN,
-	.l2_pin = KPD_GPIO_L2_PIN,
-	.r1_pin = KPD_GPIO_R1_PIN,
-	.r2_pin = KPD_GPIO_R2_PIN
+static struct kbd kbd = {
+	.port = KBD_GPIO_PORT,
+	.l1 = KBD_GPIO_L1_PIN,
+	.l2 = KBD_GPIO_L2_PIN,
+	.r1 = KBD_GPIO_R1_PIN,
+	.r2 = KBD_GPIO_R2_PIN
 };
 static struct ds18b20 ts = {
 	.port = DS18B20_GPIO_PORT,
@@ -55,7 +55,7 @@ static void show_temp(void *data)
 	sched_set_ready(showtemp_id);
 }
 
-static void handle_btn(enum kpd_btn btn, bool pressed)
+static void handle_btn(enum kbd_btn btn, bool pressed)
 {
 	/* TODO: To implement f */
 }
@@ -87,7 +87,7 @@ static void init(void)
 	serial_init(&serial);
 	sched_init();
 
-	kpd_init(&kpd, handle_btn);
+	kbd_init(&kbd, handle_btn);
 
 	err = ds18b20_init(&ts);
 	if (err)
@@ -115,29 +115,29 @@ static void __attribute__((__noreturn__)) loop(void)
 {
 	int c = 0;
 	for (;;) {
-		if (kpd_timer_event_flag) {
-			kpd_event_flag = true;
-			kpd_timer_event_flag = false;
+		if (kbd_timer_event_flag) {
+			kbd_event_flag = true;
+			kbd_timer_event_flag = false;
 		}
 
-		if (kpd_event_flag) {
-			kpd_event_flag = false;
-			int val = kpd_push_button(&kpd);
+		if (kbd_event_flag) {
+			kbd_event_flag = false;
+			int val = kbd_push_button(&kbd);
 			printf("%d\n", val);
 
 			switch (val) {
-			case KPD_BTN_1:
+			case KBD_BTN_1:
 				wh1602_clear_display(&wh);
 				break;
-			case KPD_BTN_2:
+			case KBD_BTN_2:
 				wh1602_write_char(&wh, c + '0');
 				c = (c == 9) ? 0 : c + 1;
 				break;
-			case KPD_BTN_3:
+			case KBD_BTN_3:
 				wh1602_set_line(&wh, LINE_1);
 				ds18b20_presence_flag = true;
 				break;
-			case KPD_BTN_4:
+			case KBD_BTN_4:
 				wh1602_set_line(&wh, LINE_2);
 				ds18b20_presence_flag = true;
 				break;

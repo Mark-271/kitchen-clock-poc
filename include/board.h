@@ -28,12 +28,12 @@
 #define WH1602_DB7_PIN		GPIO3
 
 /* Matrix keypad 2x2 */
-#define KPD_GPIO_RCC		RCC_GPIOA
-#define KPD_GPIO_PORT		GPIOA
-#define KPD_GPIO_L1_PIN		GPIO1
-#define KPD_GPIO_L2_PIN		GPIO2
-#define KPD_GPIO_R1_PIN		GPIO3
-#define KPD_GPIO_R2_PIN		GPIO4
+#define KBD_GPIO_RCC		RCC_GPIOA
+#define KBD_GPIO_PORT		GPIOA
+#define KBD_GPIO_L1_PIN		GPIO1
+#define KBD_GPIO_L2_PIN		GPIO2
+#define KBD_GPIO_R1_PIN		GPIO3
+#define KBD_GPIO_R2_PIN		GPIO4
 
 int board_init(void);
 

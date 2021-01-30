@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define KBD_NOPRESSED_BTN	0
+#define KBD_NOPRESSED		0
 #define KBD_BTN_1		1
 #define KBD_BTN_2		2
 #define KBD_BTN_3		3

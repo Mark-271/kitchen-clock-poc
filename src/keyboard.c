@@ -124,7 +124,7 @@ int kbd_init(struct kbd *obj, struct kbd_gpio *gpio, kbd_btn_event_t cb)
 
 	obj->gpio = *gpio;
 
-	obj->lookup[KBD_NOPRESSED_BTN] = obj->gpio.l1 | obj->gpio.l2;
+	obj->lookup[KBD_NOPRESSED] = obj->gpio.l1 | obj->gpio.l2;
 	obj->lookup[KBD_BTN_1] = obj->gpio.l1 | obj->gpio.r2;
 	obj->lookup[KBD_BTN_2] = obj->gpio.l2 | obj->gpio.r2;
 	obj->lookup[KBD_BTN_3] = obj->gpio.l1 | obj->gpio.r1;

@@ -46,8 +46,32 @@ static void show_temp(void *data)
 
 static void handle_btn(int button, bool pressed)
 {
-	/* TODO: To implement f */
+	if (pressed) {
+		switch (button) {
+		case KBD_BTN_1:
+			wh1602_set_line(&wh, LINE_2);
+			wh1602_write_char(&wh, '1');
+			break;
+		case KBD_BTN_2:
+			wh1602_set_line(&wh, LINE_2);
+			wh1602_write_char(&wh, '2');
+			break;
+		case KBD_BTN_3:
+			wh1602_set_line(&wh, LINE_2);
+			wh1602_write_char(&wh, '3');
+			break;
+		case KBD_BTN_4:
+			wh1602_set_line(&wh, LINE_2);
+			wh1602_write_char(&wh, '4');
+			break;
+		case KBD_NOPRESSED:
+			printf("No response from kbd\n");
+			hang();
+		}
+	}
+
 }
+
 static void init(void)
 {
 	bool ds18b20_presence_flag = true;
@@ -106,60 +130,8 @@ static void init(void)
 		}
 		sched_set_ready(showtemp_id);
 	}
-
 }
 
-#if 0
-static void __attribute__((__noreturn__)) loop(void)
-{
-	int c = 0;
-	for (;;) {
-		if (kbd_timer_event_flag) {
-			kbd_event_flag = true;
-			kbd_timer_event_flag = false;
-		}
-
-		if (kbd_event_flag) {
-			kbd_event_flag = false;
-			int val = kbd_push_button(&kbd);
-			printf("%d\n", val);
-
-			switch (val) {
-			case KBD_BTN_1:
-				wh1602_clear_display(&wh);
-				break;
-			case KBD_BTN_2:
-				wh1602_write_char(&wh, c + '0');
-				c = (c == 9) ? 0 : c + 1;
-				break;
-			case KBD_BTN_3:
-				wh1602_set_line(&wh, LINE_1);
-				ds18b20_presence_flag = true;
-				break;
-			case KBD_BTN_4:
-				wh1602_set_line(&wh, LINE_2);
-				ds18b20_presence_flag = true;
-				break;
-			default:
-				puts("No press");
-				break;
-			}
-		}
-
-		if (ds18b20_presence_flag) {
-			char buf[20];
-			char *temper;
-			ds18b20_presence_flag = false;
-
-			ts.temp = ds18b20_read_temp(&ts);
-			while (ts.temp.frac > 9)
-				ts.temp.frac /= 10;
-			temper = ds18b20_temp2str(&ts.temp, buf);
-			wh1602_print_str(&wh, temper);
-		}
-	}
-}
-#endif
 int main(void)
 {
 	init();

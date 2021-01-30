@@ -5,34 +5,62 @@
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/stm32/exti.h>
 #include <libopencm3/stm32/timer.h>
+#include <stddef.h>
+
+#define BUTTONS		4
+#define SCAN_LINES	2
+#define PIN_MASK	obj->gpio.l1 | obj->gpio.l2 |	\
+			obj->gpio.r1 | obj->gpio.r2
 
 /**
- * Keypad polling.
+ * Read keyboard register.
  *
- * Alternately polls every button looking for pushed one.
- *
- * @param obj Keypad object must be initialized before call
- * @return Code (1..4) of pushed button or 0 on failure
+ * @param obj Keyboard object
+ * @param col Scanning gpio line
+ * @return value held in specific gpio.port allocated fot keyboard
  */
-static int kbd_poll(struct kbd *obj)
+static uint16_t kbd_read(struct kbd *obj, int col)
 {
-	int code = 0;
+	uint16_t ret;
 
-	gpio_set(obj->port, obj->r2);
-	if (!gpio_get(obj->port, obj->l1))
-		code =  1;
-	if (!gpio_get(obj->port, obj->l2))
-		code =  2;
-	gpio_clear(obj->port, obj->r1 | obj->r2);
+	if (col == 0) {
+		gpio_clear(obj->gpio.port, obj->gpio.r1 | obj->gpio.r2);
+		gpio_set(obj->gpio.port, obj->gpio.r2);
+	}
+	if (col == 1) {
+		gpio_clear(obj->gpio.port, obj->gpio.r1 | obj->gpio.r2);
+		gpio_set(obj->gpio.port, obj->gpio.r2);
+	}
 
-	gpio_set(obj->port, obj->r1);
-	if (!gpio_get(obj->port, obj->l1))
-		code = 3;
-	if (!gpio_get(obj->port, obj->l2))
-		code = 4;
-	gpio_clear(obj->port, obj->r1 | obj->r2);
+	ret = gpio_port_read(obj->gpio.port);
+	ret &= PIN_MASK;
 
-	return code;
+	return ret;
+}
+
+/**
+ * Read pressed button.
+ *
+ * Alternatively sets scanning gpio lines to "high" state and scans
+ * reading gpio lines looking for "low" state (i.e. button pressed)
+ * on one of them. Reads register allocated for keyboard.
+ *
+ * @param  obj Keyboard object
+ * @return read val or -1 if no pressed button found
+ */
+static int16_t kbd_read_btn(struct kbd *obj)
+{
+	int16_t val;
+	size_t i;
+
+	for (i = 0; i < SCAN_LINES; i++) {
+		val = kbd_read(obj, i);
+		if (!(val & obj->gpio.l1) || !(val & obj->gpio.l2))
+			return val;
+	}
+
+	return -1;
+}
 }
 
 static void kbd_exti_init(void)

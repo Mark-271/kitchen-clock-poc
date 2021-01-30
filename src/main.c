@@ -44,7 +44,7 @@ static void show_temp(void *data)
 	sched_set_ready(showtemp_id);
 }
 
-static void handle_btn(enum kbd_btn btn, bool pressed)
+static void handle_btn(int button, bool pressed)
 {
 	/* TODO: To implement f */
 }

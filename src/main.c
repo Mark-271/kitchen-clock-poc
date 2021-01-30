@@ -39,7 +39,7 @@ static void show_temp(void *data)
 	temper = ds18b20_temp2str(&ts.temp, buf);
 	wh1602_set_address(obj, 0x00);
 	wh1602_print_str(obj, temper);
-	mdelay(1000);
+	mdelay(GET_TEMPERATURE_DELAY);
 
 	sched_set_ready(showtemp_id);
 }

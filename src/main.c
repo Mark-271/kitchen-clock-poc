@@ -107,15 +107,23 @@ static void init(void)
 	serial_init(&serial);
 	sched_init();
 
-	kbd_init(&kbd, &kbd_gpio, handle_btn);
+	err = kbd_init(&kbd, &kbd_gpio, handle_btn);
+	if (err) {
+		printf("Can't initialize kbd\n");
+		hang();
+	}
 
 	err = ds18b20_init(&ts);
-	if (err)
+	if (err) {
+		printf("Can't initialize ds18b20\n");
 		ds18b20_presence_flag = false;
+	}
 
 	err = wh1602_init(&wh, &wh_gpio);
-	if (err)
+	if (err) {
+		printf("Can't initialize wh1602\n");
 		hang();
+	}
 
 	wh1602_set_line(&wh, LINE_1);
 	wh1602_print_str(&wh, str);

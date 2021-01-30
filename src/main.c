@@ -42,7 +42,6 @@ static void show_temp(void *data)
 	struct wh1602 *obj = (struct wh1602 *)(data);
 	char buf[20];
 	char *temper;
-	ds18b20_presence_flag = false;
 
 	ts.temp = ds18b20_read_temp(&ts);
 	while (ts.temp.frac > 9)
@@ -61,6 +60,7 @@ static void handle_btn(enum kbd_btn btn, bool pressed)
 }
 static void init(void)
 {
+	bool ds18b20_presence_flag = true;
 	const char *str = "Poc Watch";
 	int err;
 	struct serial_params serial = {
@@ -101,12 +101,15 @@ static void init(void)
 	wh1602_print_str(&wh, str);
 	wh1602_control_display(&wh, LCD_ON, CURSOR_OFF, CURSOR_BLINK_OFF);
 
-	err = sched_add_task("showtemp", show_temp, &wh, &showtemp_id);
-	if (err < 0) {
-		printf("Can't add task to show_temp\n");
-		hang();
+	/* If ds18b20 is out of order, the program should skip it */
+	if (ds18b20_presence_flag) {
+		err = sched_add_task("showtemp", show_temp, &wh, &showtemp_id);
+		if (err < 0) {
+			printf("Can't add task to show_temp\n");
+			hang();
+		}
+		sched_set_ready(showtemp_id);
 	}
-	sched_set_ready(showtemp_id);
 
 }
 

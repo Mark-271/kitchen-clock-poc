@@ -1,5 +1,6 @@
 #include <keyboard.h>
 #include <common.h>
+#include <sched.h>
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/cm3/nvic.h>
@@ -11,6 +12,8 @@
 #define SCAN_LINES	2
 #define PIN_MASK	obj->gpio.l1 | obj->gpio.l2 |	\
 			obj->gpio.r1 | obj->gpio.r2
+
+static int btn_task_id;
 
 /**
  * Read keyboard register.
@@ -61,6 +64,29 @@ static int16_t kbd_read_btn(struct kbd *obj)
 
 	return -1;
 }
+
+/*
+ * Task function for scheduler.
+ * Define pressed button and pass it to callback.
+ */
+static void kbd_task(void *data)
+{
+	int16_t val;
+	size_t i;
+	struct kbd *obj = (struct kbd *)(data);
+
+	val = kbd_read_btn(obj);
+	if (val < 0)
+		return;
+
+	for (i = 0; i <= BUTTONS;) {
+		if (val == obj->lookup[i]) {
+			obj->btn = i;
+			break;
+		}
+		i++;
+	}
+	obj->cb(obj->btn, true);
 }
 
 static void kbd_exti_init(void)
@@ -106,7 +132,7 @@ int kbd_init(struct kbd *obj, struct kbd_gpio *gpio, kbd_btn_event_t cb)
 
 	obj->cb = cb; /* register callback */
 
-	ret =  sched_add_task("handlebtn", btn_task, obj, &btn_task_id);
+	ret =  sched_add_task("handlebtn", kbd_task, obj, &btn_task_id);
 	if (ret < 0)
 		return -1;
 
@@ -150,5 +176,8 @@ void tim4_isr(void)
 {
 	if (!timer_get_flag(TIM4, TIM_SR_UIF))
 		return;
+
+	sched_set_ready(btn_task_id);
+
 	timer_clear_flag(TIM4, TIM_SR_UIF);
 }

@@ -16,26 +16,16 @@
 #include <stdio.h>
 #include <string.h>
 
-#define SCAN_TEMPERATURE_DELAY	5000
+#define GET_TEMPERATURE_DELAY	1000
 
-static bool kbd_event_flag;
-static bool ds18b20_presence_flag;
-bool kbd_timer_event_flag = false;
 static int showtemp_id; /* task ID */
 
-static struct kbd kbd = {
-	.port = KBD_GPIO_PORT,
-	.l1 = KBD_GPIO_L1_PIN,
-	.l2 = KBD_GPIO_L2_PIN,
-	.r1 = KBD_GPIO_R1_PIN,
-	.r2 = KBD_GPIO_R2_PIN
-};
+static struct kbd kbd;
+static struct wh1602 wh;
 static struct ds18b20 ts = {
 	.port = DS18B20_GPIO_PORT,
 	.pin = DS18B20_GPIO_PIN,
 };
-
-static struct wh1602 wh;
 
 static void show_temp(void *data)
 {
@@ -72,7 +62,6 @@ static void init(void)
 		.mode = USART_MODE_TX_RX,
 		.flow_control = USART_FLOWCONTROL_NONE
 	};
-
 	struct wh1602_gpio wh_gpio = {
 		.port = WH1602_GPIO_PORT,
 		.rs = WH1602_RS_PIN,
@@ -82,12 +71,19 @@ static void init(void)
 		.db6 = WH1602_DB6_PIN,
 		.db7 = WH1602_DB7_PIN,
 	};
+	struct kbd_gpio kbd_gpio = {
+		.port = KBD_GPIO_PORT,
+		.l1 = KBD_GPIO_L1_PIN,
+		.l2 = KBD_GPIO_L2_PIN,
+		.r1 = KBD_GPIO_R1_PIN,
+		.r2 = KBD_GPIO_R2_PIN
+	};
 
 	board_init();
 	serial_init(&serial);
 	sched_init();
 
-	kbd_init(&kbd, handle_btn);
+	kbd_init(&kbd, &kbd_gpio, handle_btn);
 
 	err = ds18b20_init(&ts);
 	if (err)

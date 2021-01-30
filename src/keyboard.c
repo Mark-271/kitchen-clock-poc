@@ -64,12 +64,28 @@ static void kbd_timer_init(void)
 	timer_enable_irq(TIM4, TIM_DIER_UIE);
 }
 
-int kbd_init(struct kbd *obj, kbd_btn_event_t cb)
+int kbd_init(struct kbd *obj, struct kbd_gpio *gpio, kbd_btn_event_t cb)
 {
+	int ret;
+
+	obj->gpio = *gpio;
+
+	obj->lookup[KBD_NOPRESSED_BTN] = obj->gpio.l1 | obj->gpio.l2;
+	obj->lookup[KBD_BTN_1] = obj->gpio.l1 | obj->gpio.r2;
+	obj->lookup[KBD_BTN_2] = obj->gpio.l2 | obj->gpio.r2;
+	obj->lookup[KBD_BTN_3] = obj->gpio.l1 | obj->gpio.r1;
+	obj->lookup[KBD_BTN_4] = obj->gpio.l2 | obj->gpio.r1;
+
+	obj->cb = cb; /* register callback */
+
+	ret =  sched_add_task("handlebtn", btn_task, obj, &btn_task_id);
+	if (ret < 0)
+		return -1;
+
 	/* Sampling lines should be configured with pull up resistor */
-	gpio_set(obj->port, obj->l1 | obj->l2);
+	gpio_set(obj->gpio.port, obj->gpio.l1 | obj->gpio.l2);
 	/* Scan lines should be in low state */
-	gpio_clear(obj->port, obj->r1 | obj->r2);
+	gpio_clear(obj->gpio.port, obj->gpio.r1 | obj->gpio.r2);
 
 	kbd_exti_init();
 	kbd_timer_init();

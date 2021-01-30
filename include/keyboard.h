@@ -4,6 +4,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define KBD_NOPRESSED_BTN	0
+#define KBD_BTN_1		1
+#define KBD_BTN_2		2
+#define KBD_BTN_3		3
+#define KBD_BTN_4		4
 
 typedef void (*kbd_btn_event_t)(int button, bool pressed);
 
@@ -22,9 +27,7 @@ struct kbd {
 	int btn;		/* button code */
 };
 
-typedef void (*kbd_btn_event_t)(enum kbd_btn btn, bool pressed);
-
-int kbd_init(struct kbd *obj, kbd_btn_event_t cb);
+int kbd_init(struct kbd *obj, struct kbd_gpio *gpio, kbd_btn_event_t cb);
 void kbd_exit(struct kbd *obj);
 
 #endif /* KEYBOARD_H */

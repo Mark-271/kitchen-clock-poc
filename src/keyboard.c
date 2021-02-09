@@ -8,38 +8,10 @@
 #include <libopencm3/stm32/timer.h>
 #include <stddef.h>
 
-#define BUTTONS		4
-#define SCAN_LINES	2
-#define PIN_MASK	obj->gpio.l1 | obj->gpio.l2 |	\
-			obj->gpio.r1 | obj->gpio.r2
+/* Calculate button number by current scan line and read line numbers */
+#define BTN_LOOKUP(i, j) ((j) + (i) * KBD_READ_LINES)
 
 static int btn_task_id;
-
-/**
- * Read keyboard register.
- *
- * @param obj Keyboard object
- * @param col Scanning gpio line
- * @return value held in specific gpio.port allocated fot keyboard
- */
-static uint16_t kbd_read(struct kbd *obj, int col)
-{
-	uint16_t ret;
-
-	if (col == 0) {
-		gpio_clear(obj->gpio.port, obj->gpio.r1 | obj->gpio.r2);
-		gpio_set(obj->gpio.port, obj->gpio.r2);
-	}
-	if (col == 1) {
-		gpio_clear(obj->gpio.port, obj->gpio.r1 | obj->gpio.r2);
-		gpio_set(obj->gpio.port, obj->gpio.r2);
-	}
-
-	ret = gpio_port_read(obj->gpio.port);
-	ret &= PIN_MASK;
-
-	return ret;
-}
 
 /**
  * Read pressed button.
@@ -48,18 +20,27 @@ static uint16_t kbd_read(struct kbd *obj, int col)
  * reading gpio lines looking for "low" state (i.e. button pressed)
  * on one of them. Reads register allocated for keyboard.
  *
- * @param  obj Keyboard object
- * @return read val or -1 if no pressed button found
+ * @param obj Keyboard object
+ * @return Button code or -1 if no pressed button found
  */
-static int16_t kbd_read_btn(struct kbd *obj)
+static int kbd_read_btn(struct kbd *obj)
 {
-	int16_t val;
+	uint16_t val;
 	size_t i;
 
-	for (i = 0; i < SCAN_LINES; i++) {
-		val = kbd_read(obj, i);
-		if (!(val & obj->gpio.l1) || !(val & obj->gpio.l2))
-			return val;
+	for (i = 0; i < KBD_SCAN_LINES; ++i) {
+		size_t j;
+
+		/* Scan next line */
+		gpio_set(obj->gpio.port, obj->scan_mask);
+		gpio_clear(obj->gpio.port, obj->gpio.scan[i]);
+
+		/* Read all read lines */
+		val = gpio_port_read(obj->gpio.port) & obj->read_mask;
+		for (j = 0; j < KBD_READ_LINES; ++j) {
+			if (!(val & obj->gpio.read[j]))
+				return BTN_LOOKUP(i, j);
+		}
 	}
 
 	return -1;
@@ -71,22 +52,15 @@ static int16_t kbd_read_btn(struct kbd *obj)
  */
 static void kbd_task(void *data)
 {
-	int16_t val;
-	size_t i;
 	struct kbd *obj = (struct kbd *)(data);
+	int btn;
 
-	val = kbd_read_btn(obj);
-	if (val < 0)
-		return;
+	UNUSED(obj);
 
-	for (i = 0; i <= BUTTONS;) {
-		if (val == obj->lookup[i]) {
-			obj->btn = i;
-			break;
-		}
-		i++;
-	}
-	obj->cb(obj->btn, true);
+	btn = kbd_read_btn(obj);
+	gpio_clear(obj->gpio.port, obj->scan_mask);
+	if (btn >= 0)
+		obj->cb(btn, true);
 }
 
 static void kbd_exti_init(void)
@@ -118,28 +92,42 @@ static void kbd_timer_init(void)
 	timer_enable_irq(TIM4, TIM_DIER_UIE);
 }
 
-int kbd_init(struct kbd *obj, struct kbd_gpio *gpio, kbd_btn_event_t cb)
+/**
+ * Initialize the keyboard driver.
+ *
+ * @param obj Driver's objects
+ * @param[in] gpio GPIO port and lines where the keyboard is connected
+ * @param cb Callback to call when some button is pressed
+ *
+ * @note Read lines should be configured with pull up resistor before
+ *       running this function.
+ */
+int kbd_init(struct kbd *obj, const struct kbd_gpio *gpio, kbd_btn_event_t cb)
 {
 	int ret;
+	size_t i;
+
+	cm3_assert(obj != NULL);
+	cm3_assert(gpio != NULL);
+	cm3_assert(cb != NULL);
 
 	obj->gpio = *gpio;
 
-	obj->lookup[KBD_NOPRESSED] = obj->gpio.l1 | obj->gpio.l2;
-	obj->lookup[KBD_BTN_1] = obj->gpio.l1 | obj->gpio.r2;
-	obj->lookup[KBD_BTN_2] = obj->gpio.l2 | obj->gpio.r2;
-	obj->lookup[KBD_BTN_3] = obj->gpio.l1 | obj->gpio.r1;
-	obj->lookup[KBD_BTN_4] = obj->gpio.l2 | obj->gpio.r1;
+	/* Prepare mask values for scan and read pins */
+	obj->scan_mask = obj->read_mask = 0;
+	for (i = 0; i < KBD_SCAN_LINES; ++i)
+		obj->scan_mask |= gpio->scan[i];
+	for (i = 0; i < KBD_READ_LINES; ++i)
+		obj->read_mask |= gpio->read[i];
 
-	obj->cb = cb; /* register callback */
+	obj->cb = cb; /* register the callback */
 
-	ret =  sched_add_task("handlebtn", kbd_task, obj, &btn_task_id);
+	ret = sched_add_task("keyboard", kbd_task, obj, &btn_task_id);
 	if (ret < 0)
 		return -1;
 
-	/* Sampling lines should be configured with pull up resistor */
-	gpio_set(obj->gpio.port, obj->gpio.l1 | obj->gpio.l2);
 	/* Scan lines should be in low state */
-	gpio_clear(obj->gpio.port, obj->gpio.r1 | obj->gpio.r2);
+	gpio_clear(obj->gpio.port, obj->scan_mask);
 
 	kbd_exti_init();
 	kbd_timer_init();

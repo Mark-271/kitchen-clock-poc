@@ -47,7 +47,7 @@ static struct pin_mode pins[] = {
 		.port = KBD_GPIO_PORT,
 		.pins = KBD_GPIO_R1_PIN | KBD_GPIO_R2_PIN,
 		.mode = GPIO_MODE_OUTPUT_2_MHZ,
-		.conf = GPIO_CNF_OUTPUT_PUSHPULL,
+		.conf = GPIO_CNF_OUTPUT_OPENDRAIN,
 	},
 };
 

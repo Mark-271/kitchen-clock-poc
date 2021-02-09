@@ -47,29 +47,9 @@ static void show_temp(void *data)
 static void handle_btn(int button, bool pressed)
 {
 	if (pressed) {
-		switch (button) {
-		case KBD_BTN_1:
-			wh1602_set_line(&wh, LINE_2);
-			wh1602_write_char(&wh, '1');
-			break;
-		case KBD_BTN_2:
-			wh1602_set_line(&wh, LINE_2);
-			wh1602_write_char(&wh, '2');
-			break;
-		case KBD_BTN_3:
-			wh1602_set_line(&wh, LINE_2);
-			wh1602_write_char(&wh, '3');
-			break;
-		case KBD_BTN_4:
-			wh1602_set_line(&wh, LINE_2);
-			wh1602_write_char(&wh, '4');
-			break;
-		case KBD_NOPRESSED:
-			printf("No response from kbd\n");
-			hang();
-		}
+		wh1602_set_line(&wh, LINE_2);
+		wh1602_write_char(&wh, button + '1');
 	}
-
 }
 
 static void init(void)
@@ -97,10 +77,10 @@ static void init(void)
 	};
 	struct kbd_gpio kbd_gpio = {
 		.port = KBD_GPIO_PORT,
-		.l1 = KBD_GPIO_L1_PIN,
-		.l2 = KBD_GPIO_L2_PIN,
-		.r1 = KBD_GPIO_R1_PIN,
-		.r2 = KBD_GPIO_R2_PIN
+		.read[0] = KBD_GPIO_L1_PIN,
+		.read[1] = KBD_GPIO_L2_PIN,
+		.scan[0] = KBD_GPIO_R1_PIN,
+		.scan[1] = KBD_GPIO_R2_PIN
 	};
 
 	board_init();

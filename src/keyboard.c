@@ -9,7 +9,8 @@
 #include <stddef.h>
 
 /* Calculate button number by current scan line and read line numbers */
-#define BTN_LOOKUP(i, j) ((j) + (i) * KBD_READ_LINES)
+#define BTN_LOOKUP(i, j)		((j) + (i) * KBD_READ_LINES)
+#define SCAN_LINE_DELAY			10 /* usec */
 
 static int btn_task_id;
 
@@ -34,6 +35,7 @@ static int kbd_read_btn(struct kbd *obj)
 		/* Scan next line */
 		gpio_set(obj->gpio.port, obj->scan_mask);
 		gpio_clear(obj->gpio.port, obj->gpio.scan[i]);
+		udelay(SCAN_LINE_DELAY); /* Wait for voltage to stabilize */
 
 		/* Read all read lines */
 		val = gpio_port_read(obj->gpio.port) & obj->read_mask;

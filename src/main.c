@@ -17,6 +17,7 @@
 #include <string.h>
 
 #define GET_TEMPERATURE_DELAY	1000
+#define LCD_GREETING_DELAY	2000
 
 static int showtemp_id; /* task ID */
 
@@ -57,10 +58,19 @@ static void handle_btn(int button, bool pressed)
 	}
 }
 
+static void show_lcd(const char *greeting)
+{
+	wh1602_set_line(&wh, LINE_1);
+	wh1602_print_str(&wh, greeting);
+	wh1602_control_display(&wh, LCD_ON, CURSOR_OFF, CURSOR_BLINK_OFF);
+	mdelay(LCD_GREETING_DELAY);
+	wh1602_clear_display(&wh);
+}
+
 static void init(void)
 {
 	bool ds18b20_presence_flag = true;
-	const char *str = "Poc Watch";
+	const char *greeting = "Poc Watch";
 	int err;
 	struct serial_params serial = {
 		.uart = SERIAL_USART,
@@ -109,10 +119,7 @@ static void init(void)
 		printf("Can't initialize wh1602\n");
 		hang();
 	}
-
-	wh1602_set_line(&wh, LINE_1);
-	wh1602_print_str(&wh, str);
-	wh1602_control_display(&wh, LCD_ON, CURSOR_OFF, CURSOR_BLINK_OFF);
+	show_lcd(greeting);
 
 	/* If ds18b20 is out of order, the program should skip it */
 	if (ds18b20_presence_flag) {

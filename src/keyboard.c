@@ -11,6 +11,10 @@
 /* Calculate button number by current scan line and read line numbers */
 #define BTN_LOOKUP(i, j)		((j) + (i) * KBD_READ_LINES)
 #define SCAN_LINE_DELAY			10 /* usec */
+/* Set timer prescaler value to obtain frequency 1 MHz */
+#define TIM_PRESCALER			((rcc_ahb_frequency) / 1e6)
+/* Set counter period to trigger overflow every 10 msec */
+#define TIM_PERIOD			1e4
 
 static int btn_task_id;
 
@@ -86,8 +90,8 @@ static void kbd_timer_init(void)
 
 	timer_set_mode(TIM4, TIM_CR1_CKD_CK_INT,
 		       TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP );
-	timer_set_prescaler(TIM4, 999999); /* Timer frequency is 1 MHz */
-	timer_set_period(TIM4, 9999); /* Overflow occures every 10 ms */
+	timer_set_prescaler(TIM4, TIM_PRESCALER);
+	timer_set_period(TIM4, TIM_PERIOD);
 	timer_one_shot_mode(TIM4);
 
 	nvic_enable_irq(NVIC_TIM4_IRQ);

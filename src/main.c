@@ -49,6 +49,11 @@ static void handle_btn(int button, bool pressed)
 	if (pressed) {
 		wh1602_set_line(&wh, LINE_2);
 		wh1602_write_char(&wh, button + '1');
+		wh1602_set_address(&wh, 0x42);
+		wh1602_print_str(&wh, "pressed");
+	} else if (!pressed) {
+		wh1602_set_address(&wh, 0x42);
+		wh1602_print_str(&wh, "released");
 	}
 }
 

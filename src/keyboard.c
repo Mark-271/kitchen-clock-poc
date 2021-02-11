@@ -60,13 +60,15 @@ static void kbd_task(void *data)
 {
 	struct kbd *obj = (struct kbd *)(data);
 	int btn;
+	bool pressed = false;
 
 	UNUSED(obj);
 
 	btn = kbd_read_btn(obj);
 	gpio_clear(obj->gpio.port, obj->scan_mask);
 	if (btn >= 0)
-		obj->cb(btn, true);
+		pressed = true;
+	obj->cb(btn, pressed);
 }
 
 static void kbd_exti_init(void)
@@ -78,8 +80,8 @@ static void kbd_exti_init(void)
 
 	exti_select_source(EXTI1, GPIOA);
 	exti_select_source(EXTI2, GPIOA);
-	exti_set_trigger(EXTI1, EXTI_TRIGGER_FALLING);
-	exti_set_trigger(EXTI2, EXTI_TRIGGER_FALLING);
+	exti_set_trigger(EXTI1, EXTI_TRIGGER_BOTH);
+	exti_set_trigger(EXTI2, EXTI_TRIGGER_BOTH);
 	exti_enable_request(EXTI1);
 	exti_enable_request(EXTI2);
 }

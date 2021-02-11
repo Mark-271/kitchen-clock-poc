@@ -89,7 +89,7 @@ static void kbd_timer_init(void)
 	rcc_periph_clock_enable(RCC_TIM4);
 
 	timer_set_mode(TIM4, TIM_CR1_CKD_CK_INT,
-		       TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP );
+		       TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
 	timer_set_prescaler(TIM4, TIM_PRESCALER);
 	timer_set_period(TIM4, TIM_PERIOD);
 	timer_one_shot_mode(TIM4);

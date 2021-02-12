@@ -15,6 +15,11 @@
 #define TIM_PRESCALER			((rcc_ahb_frequency) / 1e6)
 /* Set counter period to trigger overflow every 10 msec */
 #define TIM_PERIOD			1e4
+/* Set tota number of keyboard buttons */
+#define KEYS				4
+
+static int btn_task_id;
+static bool pressed[KEYS];
 
 /**
  * Read pressed button.
@@ -43,6 +48,11 @@ static int kbd_read_btn(struct kbd *obj)
 		val = gpio_port_read(obj->gpio.port) & obj->read_mask;
 		for (j = 0; j < KBD_READ_LINES; ++j) {
 			if (!(val & obj->gpio.read[j])) {
+				pressed[BTN_LOOKUP(i, j)] = true;
+				return BTN_LOOKUP(i, j);
+			}
+			if (pressed[BTN_LOOKUP(i, j)]) {
+				pressed[BTN_LOOKUP(i, j)] = false;
 				return BTN_LOOKUP(i, j);
 			}
 		}
@@ -64,6 +74,8 @@ static void kbd_task(void *data)
 
 	btn = kbd_read_btn(obj);
 	gpio_clear(obj->gpio.port, obj->scan_mask);
+
+	obj->cb(btn, pressed[btn]);
 }
 
 static void kbd_exti_init(void)

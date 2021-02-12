@@ -15,7 +15,7 @@
 #define TIM_PRESCALER			((rcc_ahb_frequency) / 1e6)
 /* Set counter period to trigger overflow every 10 msec */
 #define TIM_PERIOD			1e4
-/* Set tota number of keyboard buttons */
+/* Set total number of keyboard buttons */
 #define KEYS				4
 
 static int btn_task_id;

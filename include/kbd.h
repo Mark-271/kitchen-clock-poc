@@ -1,5 +1,5 @@
-#ifndef KEYBOARD_H
-#define KEYBOARD_H
+#ifndef KBD_H
+#define KBD_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -25,4 +25,4 @@ struct kbd {
 int kbd_init(struct kbd *obj, const struct kbd_gpio *gpio, kbd_btn_event_t cb);
 void kbd_exit(struct kbd *obj);
 
-#endif /* KEYBOARD_H */
+#endif /* KBD_H */

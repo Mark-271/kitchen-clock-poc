@@ -32,7 +32,7 @@ OBJS		+=			\
 		   src/board.o		\
 		   src/common.o		\
 		   src/ds18b20.o	\
-		   src/keyboard.o	\
+		   src/kbd.o		\
 		   src/main.o		\
 		   src/one_wire.o	\
 		   src/sched.o		\

@@ -1,4 +1,4 @@
-#include <keyboard.h>
+#include <kbd.h>
 #include <common.h>
 #include <sched.h>
 #include <libopencm3/stm32/rcc.h>
@@ -15,8 +15,6 @@
 #define TIM_PRESCALER			((rcc_ahb_frequency) / 1e6)
 /* Set counter period to trigger overflow every 10 msec */
 #define TIM_PERIOD			1e4
-
-static int btn_task_id;
 
 /**
  * Read pressed button.
@@ -44,8 +42,9 @@ static int kbd_read_btn(struct kbd *obj)
 		/* Read all read lines */
 		val = gpio_port_read(obj->gpio.port) & obj->read_mask;
 		for (j = 0; j < KBD_READ_LINES; ++j) {
-			if (!(val & obj->gpio.read[j]))
+			if (!(val & obj->gpio.read[j])) {
 				return BTN_LOOKUP(i, j);
+			}
 		}
 	}
 
@@ -60,15 +59,11 @@ static void kbd_task(void *data)
 {
 	struct kbd *obj = (struct kbd *)(data);
 	int btn;
-	bool pressed = false;
 
 	UNUSED(obj);
 
 	btn = kbd_read_btn(obj);
 	gpio_clear(obj->gpio.port, obj->scan_mask);
-	if (btn >= 0)
-		pressed = true;
-	obj->cb(btn, pressed);
 }
 
 static void kbd_exti_init(void)

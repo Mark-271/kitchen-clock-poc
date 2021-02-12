@@ -75,6 +75,9 @@ static void kbd_task(void *data)
 	btn = kbd_read_btn(obj);
 	gpio_clear(obj->gpio.port, obj->scan_mask);
 
+	if (btn < 0)
+		hang();
+
 	obj->cb(btn, pressed[btn]);
 }
 

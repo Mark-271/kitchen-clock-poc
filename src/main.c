@@ -1,7 +1,7 @@
 #include <board.h>
 #include <common.h>
 #include <ds18b20.h>
-#include <keyboard.h>
+#include <kbd.h>
 #include <serial.h>
 #include <sched.h>
 #include <wh1602.h>
@@ -48,13 +48,11 @@ static void show_temp(void *data)
 static void handle_btn(int button, bool pressed)
 {
 	if (pressed) {
-		wh1602_set_line(&wh, LINE_2);
 		wh1602_write_char(&wh, button + '1');
-		wh1602_set_address(&wh, 0x42);
-		wh1602_print_str(&wh, "pressed");
+		wh1602_write_char(&wh, 'p');
 	} else if (!pressed) {
-		wh1602_set_address(&wh, 0x42);
-		wh1602_print_str(&wh, "released");
+		wh1602_write_char(&wh, button + '1');
+		wh1602_write_char(&wh, 'r');
 	}
 }
 

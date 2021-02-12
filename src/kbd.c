@@ -21,6 +21,22 @@
 static int btn_task_id;
 static bool pressed[KEYS];
 
+static void disable_exti(void)
+{
+	exti_disable_request(EXTI1);
+	exti_disable_request(EXTI2);
+	nvic_disable_irq(NVIC_EXTI1_IRQ);
+	nvic_disable_irq(NVIC_EXTI2_IRQ);
+}
+
+static void enable_exti(void)
+{
+	nvic_enable_irq(NVIC_EXTI1_IRQ);
+	nvic_enable_irq(NVIC_EXTI2_IRQ);
+	exti_enable_request(EXTI1);
+	exti_enable_request(EXTI2);
+}
+
 /**
  * Read pressed button.
  *
@@ -72,7 +88,9 @@ static void kbd_task(void *data)
 
 	UNUSED(obj);
 
+	disable_exti();
 	btn = kbd_read_btn(obj);
+	enable_exti();
 	gpio_clear(obj->gpio.port, obj->scan_mask);
 
 	if (btn < 0)

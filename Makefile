@@ -56,6 +56,7 @@ OBJS		+=			\
 		   src/board.o		\
 		   src/common.o		\
 		   src/ds18b20.o	\
+		   src/irq.o		\
 		   src/kbd.o		\
 		   src/main.o		\
 		   src/one_wire.o	\

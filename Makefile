@@ -27,6 +27,7 @@ APP		:= thermometer
 LIB_DIR		= $(OPENCM3_DIR)/lib
 INCLUDE_DIR	= $(OPENCM3_DIR)/include
 LDSCRIPT	= ld/stm32vl-discovery.ld
+CONFIG_FILE	= include/config.h
 
 LIBNAME		= opencm3_stm32f1
 DEFS		+= -DSTM32F1
@@ -74,6 +75,7 @@ CFLAGS		+= -fno-common -ffunction-sections -fdata-sections
 CPPFLAGS	+= -MD
 CPPFLAGS	+= -Wall -Wundef
 CPPFLAGS	+= $(DEFS)
+CPPFLAGS	+= -imacros $(CONFIG_FILE)
 
 # Linker flags
 

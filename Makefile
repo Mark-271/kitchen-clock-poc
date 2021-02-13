@@ -26,7 +26,7 @@ endif
 APP		:= thermometer
 LIB_DIR		= $(OPENCM3_DIR)/lib
 INCLUDE_DIR	= $(OPENCM3_DIR)/include
-LDSCRIPT	= ld/stm32vl-discovery.ld
+LDSCRIPT	= ld/kitchen.ld
 CONFIG_FILE	= include/config.h
 
 LIBNAME		= opencm3_stm32f1

@@ -26,7 +26,9 @@ endif
 APP		:= thermometer
 LIB_DIR		= $(OPENCM3_DIR)/lib
 INCLUDE_DIR	= $(OPENCM3_DIR)/include
-LDSCRIPT	= ld/kitchen.ld
+SCRIPT_DIR	= scripts
+LDS		= ld/kitchen.ld
+LDS_GEN		= ld/kitchen-gen.ld
 CONFIG_FILE	= include/config.h
 
 LIBNAME		= opencm3_stm32f1
@@ -81,7 +83,7 @@ CPPFLAGS	+= -imacros $(CONFIG_FILE)
 
 LDFLAGS		+= -L$(LIB_DIR)
 LDFLAGS		+= --static -nostartfiles
-LDFLAGS		+= -T$(LDSCRIPT)
+LDFLAGS		+= -T$(LDS_GEN)
 LDFLAGS		+= $(ARCH_FLAGS) $(DEBUG)
 LDFLAGS		+= -Wl,--gc-sections
 
@@ -101,11 +103,16 @@ all: elf
 elf: $(APP).elf
 bin: $(APP).bin
 
+$(LDS_GEN): $(LDS)
+	@printf "  GEN     $(@)\n"
+	$(Q)$(SCRIPT_DIR)/build/gen-lds.sh $(LDS) $(LDS_GEN) \
+		-imacros $(CONFIG_FILE)
+
 %.bin: %.elf
 	@printf "  OBJCOPY $(*).bin\n"
 	$(Q)$(OBJCOPY) -Obinary $(*).elf $(*).bin
 
-%.elf: $(OBJS) $(LDSCRIPT) $(LIB_DIR)/lib$(LIBNAME).a
+%.elf: $(OBJS) $(LDS_GEN) $(LIB_DIR)/lib$(LIBNAME).a
 	@printf "  LD      $(*).elf\n"
 	$(Q)$(LD) $(LDFLAGS) $(OBJS) $(LDLIBS) -o $(*).elf
 
@@ -116,6 +123,7 @@ bin: $(APP).bin
 clean:
 	@printf "  CLEAN\n"
 	$(Q)$(RM) $(APP).elf $(APP).bin $(OBJS) $(OBJS:%.o=%.d)
+	$(Q)$(RM) $(LDS_GEN)
 
 distclean: clean
 	@printf "  DISTCLEAN\n"

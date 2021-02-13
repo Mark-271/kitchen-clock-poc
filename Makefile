@@ -26,7 +26,7 @@ endif
 APP		:= thermometer
 LIB_DIR		= $(OPENCM3_DIR)/lib
 INCLUDE_DIR	= $(OPENCM3_DIR)/include
-LDSCRIPT	= stm32vl-discovery.ld
+LDSCRIPT	= ld/stm32vl-discovery.ld
 
 LIBNAME		= opencm3_stm32f1
 DEFS		+= -DSTM32F1

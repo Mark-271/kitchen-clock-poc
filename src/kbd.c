@@ -72,7 +72,9 @@ static void kbd_task(void *data)
 
 	gpio_clear(obj->gpio.port, obj->scan_mask);
 	udelay(SCAN_LINE_DELAY); /* Wait for voltage to stabilize */
+
 	scan_pending = false;
+	kbd_enable_exti();
 
 	/* Issue callback for each changed button state */
 	for (i = 0; i < KEYS; ++i) {
@@ -117,6 +119,33 @@ static void kbd_timer_init(void)
 
 	nvic_enable_irq(NVIC_TIM4_IRQ);
 	timer_enable_irq(TIM4, TIM_DIER_UIE);
+}
+
+static void kbd_disable_exti(void)
+{
+	size_t i;
+	for (i = 0; i < ARRAY_SIZE(exti); i++) {
+		exti_disable_request(exti.line);
+		nvic_disable_irq(exti.irq)
+	};
+}
+
+static void kbd_enable_exti(void)
+{
+	size_t i;
+	for (i = 0; i < ARRAY_SIZE(exti); i++) {
+		nvic_enable_irq(exti.irq)
+		exti_enable_request(exti.line);
+	};
+}
+
+static void kdb_handle_interrupt(void)
+{
+	if (!scan_pending) {
+		timer_enable_counter(TIM4);
+		kbd_disable_exti();
+		scan_pending = true;
+	}
 }
 
 /**
@@ -177,13 +206,13 @@ void kbd_exit(struct kbd *obj)
 
 void exti1_isr(void)
 {
-	timer_enable_counter(TIM4);
+	kdb_handle_interrupt();
 	exti_reset_request(EXTI1);
 }
 
 void exti2_isr(void)
 {
-	timer_enable_counter(TIM4);
+	kdb_handle_interrupt();
 	exti_reset_request(EXTI2);
 }
 

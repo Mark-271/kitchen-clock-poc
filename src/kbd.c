@@ -19,25 +19,84 @@
 /* Set total number of keyboard buttons */
 #define KEYS				4
 
+struct exti_mode {
+	int line;
+	int irq;
+	int trigger;
+	uint32_t port;
+};
+
+static struct exti_mode exti[] = {
+	{
+		.line = EXTI1,
+		.irq = NVIC_EXTI1_IRQ,
+		.trigger = EXTI_TRIGGER_BOTH,
+		.port = GPIOA,
+	},
+	{
+		.line = EXTI2,
+		.irq = NVIC_EXTI2_IRQ,
+		.trigger = EXTI_TRIGGER_BOTH,
+		.port = GPIOA,
+	},
+};
 static int btn_task_id;
 static bool scan_pending;	/* Allows external interrupts */
 static bool pressed[KEYS];	/* Store state of every button */
 
-
-static void disable_exti(void)
+static void kbd_timer_init(void)
 {
-	exti_disable_request(EXTI1);
-	exti_disable_request(EXTI2);
-	nvic_disable_irq(NVIC_EXTI1_IRQ);
-	nvic_disable_irq(NVIC_EXTI2_IRQ);
+	rcc_periph_clock_enable(RCC_TIM4);
+
+	timer_set_mode(TIM4, TIM_CR1_CKD_CK_INT,
+		       TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
+	timer_set_prescaler(TIM4, TIM_PRESCALER);
+	timer_set_period(TIM4, TIM_PERIOD);
+	timer_one_shot_mode(TIM4);
+
+	nvic_enable_irq(NVIC_TIM4_IRQ);
+	timer_enable_irq(TIM4, TIM_DIER_UIE);
 }
 
-static void enable_exti(void)
+static void kbd_exti_init(void)
 {
-	nvic_enable_irq(NVIC_EXTI1_IRQ);
-	nvic_enable_irq(NVIC_EXTI2_IRQ);
-	exti_enable_request(EXTI1);
-	exti_enable_request(EXTI2);
+	size_t i;
+
+	rcc_periph_clock_enable(RCC_AFIO);
+
+	for (i = 0; i < ARRAY_SIZE(exti); i++) {
+		nvic_enable_irq(exti[i].irq);
+		exti_select_source(exti[i].line, exti[i].port);
+		exti_set_trigger(exti[i].line, exti[i].trigger);
+		exti_enable_request(exti[i].line);
+	}
+}
+
+static void kbd_disable_exti(void)
+{
+	size_t i;
+	for (i = 0; i < ARRAY_SIZE(exti); i++) {
+		exti_disable_request(exti[i].line);
+		nvic_disable_irq(exti[i].irq);
+	};
+}
+
+static void kbd_enable_exti(void)
+{
+	size_t i;
+	for (i = 0; i < ARRAY_SIZE(exti); i++) {
+		nvic_enable_irq(exti[i].irq);
+		exti_enable_request(exti[i].line);
+	};
+}
+
+static void kdb_handle_interrupt(void)
+{
+	if (!scan_pending) {
+		timer_enable_counter(TIM4);
+		kbd_disable_exti();
+		scan_pending = true;
+	}
 }
 
 /*
@@ -93,60 +152,6 @@ static void kbd_task(void *data)
 		printf("Warning: No button is pressed\n");
 }
 
-static void kbd_exti_init(void)
-{
-	size_t i;
-
-	rcc_periph_clock_enable(RCC_AFIO);
-
-	for (i = 0; i < ARRAY_SIZE(exti); i++) {
-		nvic_enable_irq(exti[i].irq);
-		exti_select_source(exti[i].line, exti[i].port);
-		exti_set_trigger(exti[i].line, exti[i].trigger);
-		exti_enable_request(exti[i].line);
-	}
-}
-
-static void kbd_timer_init(void)
-{
-	rcc_periph_clock_enable(RCC_TIM4);
-
-	timer_set_mode(TIM4, TIM_CR1_CKD_CK_INT,
-		       TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
-	timer_set_prescaler(TIM4, TIM_PRESCALER);
-	timer_set_period(TIM4, TIM_PERIOD);
-	timer_one_shot_mode(TIM4);
-
-	nvic_enable_irq(NVIC_TIM4_IRQ);
-	timer_enable_irq(TIM4, TIM_DIER_UIE);
-}
-
-static void kbd_disable_exti(void)
-{
-	size_t i;
-	for (i = 0; i < ARRAY_SIZE(exti); i++) {
-		exti_disable_request(exti.line);
-		nvic_disable_irq(exti.irq)
-	};
-}
-
-static void kbd_enable_exti(void)
-{
-	size_t i;
-	for (i = 0; i < ARRAY_SIZE(exti); i++) {
-		nvic_enable_irq(exti.irq)
-		exti_enable_request(exti.line);
-	};
-}
-
-static void kdb_handle_interrupt(void)
-{
-	if (!scan_pending) {
-		timer_enable_counter(TIM4);
-		kbd_disable_exti();
-		scan_pending = true;
-	}
-}
 
 /**
  * Initialize the keyboard driver.
@@ -182,11 +187,11 @@ int kbd_init(struct kbd *obj, const struct kbd_gpio *gpio, kbd_btn_event_t cb)
 	if (ret < 0)
 		return -1;
 
-	/* Scan lines should be in low state */
-	gpio_clear(obj->gpio.port, obj->scan_mask);
-
 	kbd_exti_init();
 	kbd_timer_init();
+
+	/* Scan lines should be in low state */
+	gpio_clear(obj->gpio.port, obj->scan_mask);
 
 	return 0;
 }
@@ -195,12 +200,7 @@ void kbd_exit(struct kbd *obj)
 {
 	timer_disable_irq(TIM4, TIM_DIER_UIE);
 	nvic_disable_irq(NVIC_TIM4_IRQ);
-
-	exti_disable_request(EXTI1);
-	exti_disable_request(EXTI2);
-	nvic_disable_irq(NVIC_EXTI1_IRQ);
-	nvic_disable_irq(NVIC_EXTI2_IRQ);
-
+	kbd_disable_exti();
 	UNUSED(obj);
 }
 

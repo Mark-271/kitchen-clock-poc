@@ -7,6 +7,7 @@
 #include <libopencm3/stm32/exti.h>
 #include <libopencm3/stm32/timer.h>
 #include <stddef.h>
+#include <stdio.h>
 
 /* Calculate button number by current scan line and read line numbers */
 #define BTN_LOOKUP(i, j)		((j) + (i) * KBD_READ_LINES)
@@ -19,7 +20,9 @@
 #define KEYS				4
 
 static int btn_task_id;
-static bool pressed[KEYS];
+static bool scan_pending;	/* Allows external interrupts */
+static bool pressed[KEYS];	/* Store state of every button */
+
 
 static void disable_exti(void)
 {
@@ -37,21 +40,20 @@ static void enable_exti(void)
 	exti_enable_request(EXTI2);
 }
 
-/**
- * Read pressed button.
- *
- * Alternatively sets scanning gpio lines to "high" state and scans
- * reading gpio lines looking for "low" state (i.e. button pressed)
- * on one of them. Reads register allocated for keyboard.
- *
- * @param obj Keyboard object
- * @return Button code or -1 if no pressed button found
+/*
+ * Task function for scheduler.
+ * Find out pressed button(s) and pas it to callback.
  */
-static int kbd_read_btn(struct kbd *obj)
+static void kbd_task(void *data)
 {
-	uint16_t val;
+	struct kbd *obj = (struct kbd *)(data);
+	int btn;
 	size_t i;
+	uint16_t val;
+	int ret = -1;
+	bool pressed_now[KEYS];
 
+	/* Find out the state of each button */
 	for (i = 0; i < KBD_SCAN_LINES; ++i) {
 		size_t j;
 
@@ -63,55 +65,44 @@ static int kbd_read_btn(struct kbd *obj)
 		/* Read all read lines */
 		val = gpio_port_read(obj->gpio.port) & obj->read_mask;
 		for (j = 0; j < KBD_READ_LINES; ++j) {
-			if (!(val & obj->gpio.read[j])) {
-				pressed[BTN_LOOKUP(i, j)] = true;
-				return BTN_LOOKUP(i, j);
-			}
-			if (pressed[BTN_LOOKUP(i, j)]) {
-				pressed[BTN_LOOKUP(i, j)] = false;
-				return BTN_LOOKUP(i, j);
-			}
+			btn = BTN_LOOKUP(i, j);
+			pressed_now[btn] = !(val & obj->gpio.read[j]);
 		}
 	}
 
-	return -1;
-}
-
-/*
- * Task function for scheduler.
- * Define pressed button and pass it to callback.
- */
-static void kbd_task(void *data)
-{
-	struct kbd *obj = (struct kbd *)(data);
-	int btn;
-
-	UNUSED(obj);
-
-	disable_exti();
-	btn = kbd_read_btn(obj);
-	enable_exti();
 	gpio_clear(obj->gpio.port, obj->scan_mask);
+	udelay(SCAN_LINE_DELAY); /* Wait for voltage to stabilize */
+	scan_pending = false;
 
-	if (btn < 0)
-		hang();
+	/* Issue callback for each changed button state */
+	for (i = 0; i < KEYS; ++i) {
+		if (pressed_now[i] && !pressed[i]) {
+			obj->cb(i, true);
+			pressed[i] = true;
+			ret = 0;
+		} else if (!pressed_now[i] && pressed[i]) {
+			obj->cb(i, false);
+			pressed[i] = false;
+			ret = 0;
+		}
+	}
 
-	obj->cb(btn, pressed[btn]);
+	if (ret == -1)
+		printf("Warning: No button is pressed\n");
 }
 
 static void kbd_exti_init(void)
 {
+	size_t i;
+
 	rcc_periph_clock_enable(RCC_AFIO);
 
-	nvic_enable_irq(NVIC_EXTI1_IRQ);
-	nvic_enable_irq(NVIC_EXTI2_IRQ);
-
-	exti_select_source(EXTI1, GPIOA);
-	exti_select_source(EXTI2, GPIOA);
-	exti_set_trigger(EXTI1, EXTI_TRIGGER_BOTH);
-	exti_set_trigger(EXTI2, EXTI_TRIGGER_BOTH);
-	exti_enable_request(EXTI1);
-	exti_enable_request(EXTI2);
+	for (i = 0; i < ARRAY_SIZE(exti); i++) {
+		nvic_enable_irq(exti[i].irq);
+		exti_select_source(exti[i].line, exti[i].port);
+		exti_set_trigger(exti[i].line, exti[i].trigger);
+		exti_enable_request(exti[i].line);
+	}
 }
 
 static void kbd_timer_init(void)

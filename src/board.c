@@ -103,7 +103,7 @@ static void board_clock_init(void)
 {
 	size_t i;
 
-	rcc_clock_setup_in_hsi_out_48mhz();
+	rcc_clock_setup_in_hse_8mhz_out_24mhz();
 
 	for (i = 0; i < ARRAY_SIZE(clocks); ++i)
 		rcc_periph_clock_enable(clocks[i]);

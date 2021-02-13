@@ -65,7 +65,7 @@ do {									\
 /** CPU cycles per 1 iteration of loop in ldelay() */
 #define CYCLES_PER_LOOP		3UL
 /** How many CPU cycles to wait for 1 usec */
-#define CYCLES_PER_USEC		48UL	   /* for 48 MHz CPU frequency */
+#define CYCLES_PER_USEC		24UL	   /* for 24 MHz CPU frequency */
 /** Delay for "d" micro-seconds */
 #define udelay(d)		ldelay((d) * CYCLES_PER_USEC)
 /** Delay for "d" milliseconds */

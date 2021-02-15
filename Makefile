@@ -12,6 +12,15 @@ endif
 ifneq ($(V),1)
   Q		:= @
 endif
+
+BUILD		?= debug
+ifeq ($(BUILD),release)
+  CFLAGS	+= -DNDEBUG
+  LDFLAGS	+= -s
+else ifeq ($(BUILD),debug)
+  CFLAGS	+= $(DEBUG)
+else
+  $(error Incorrect BUILD variable)
 endif
 
 APP		:= thermometer
@@ -54,11 +63,11 @@ OBJS		+=			\
 
 # C flags
 
-CFLAGS	+= $(OPT) $(CSTD) $(DEBUG)
-CFLAGS	+= $(ARCH_FLAGS)
-CFLAGS	+= -Wextra -Wshadow -Wimplicit-function-declaration
-CFLAGS	+= -Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes
-CFLAGS	+= -fno-common -ffunction-sections -fdata-sections
+CFLAGS		+= $(OPT) $(CSTD)
+CFLAGS		+= $(ARCH_FLAGS)
+CFLAGS		+= -Wextra -Wshadow -Wimplicit-function-declaration
+CFLAGS		+= -Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes
+CFLAGS		+= -fno-common -ffunction-sections -fdata-sections
 
 # C preprocessor common flags
 

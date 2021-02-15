@@ -1,16 +1,28 @@
+# Check if path to libopencm3 directory is specified.
+ifeq ($(strip $(OPENCM3_DIR)),)
+  $(error Please specify libopencm3 library dir through OPENCM3_DIR variable!)
+endif
+
+# Show libopencm3 dir path.
+ifeq ($(V),1)
+  $(info Using $(OPENCM3_DIR) path to library)
+endif
+
 # Be silent per default, but 'make V=1' will show all compiler calls.
 ifneq ($(V),1)
-Q		:= @
+  Q		:= @
+endif
 endif
 
 APP		:= thermometer
-OPENCM3_DIR	= /home/mark/repos/libopencm3
+LIB_DIR		= $(OPENCM3_DIR)/lib
+INCLUDE_DIR	= $(OPENCM3_DIR)/include
 LDSCRIPT	= stm32vl-discovery.ld
 
 LIBNAME		= opencm3_stm32f1
 DEFS		+= -DSTM32F1
 DEFS		+= -Iinclude
-DEFS		+= -I$(OPENCM3_DIR)/include
+DEFS		+= -I$(INCLUDE_DIR)
 
 FP_FLAGS	?= -msoft-float
 ARCH_FLAGS	= -mthumb -mcpu=cortex-m3 $(FP_FLAGS) -mfix-cortex-m3-ldrd
@@ -56,7 +68,7 @@ CPPFLAGS	+= $(DEFS)
 
 # Linker flags
 
-LDFLAGS		+= -L$(OPENCM3_DIR)/lib
+LDFLAGS		+= -L$(LIB_DIR)
 LDFLAGS		+= --static -nostartfiles
 LDFLAGS		+= -T$(LDSCRIPT)
 LDFLAGS		+= $(ARCH_FLAGS) $(DEBUG)
@@ -82,7 +94,7 @@ bin: $(APP).bin
 	@printf "  OBJCOPY $(*).bin\n"
 	$(Q)$(OBJCOPY) -Obinary $(*).elf $(*).bin
 
-%.elf: $(OBJS) $(LDSCRIPT) $(OPENCM3_DIR)/lib/lib$(LIBNAME).a
+%.elf: $(OBJS) $(LDSCRIPT) $(LIB_DIR)/lib$(LIBNAME).a
 	@printf "  LD      $(*).elf\n"
 	$(Q)$(LD) $(LDFLAGS) $(OBJS) $(LDLIBS) -o $(*).elf
 

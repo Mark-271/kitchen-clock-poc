@@ -2,6 +2,7 @@
 #include <common.h>
 #include <ds18b20.h>
 #include <kbd.h>
+#include <irq.h>
 #include <serial.h>
 #include <sched.h>
 #include <wh1602.h>
@@ -133,5 +134,6 @@ static void init(void)
 int main(void)
 {
 	init();
+	irq_init();
 	sched_start();
 }

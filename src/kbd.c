@@ -43,9 +43,6 @@ static struct exti_mode exti[] = {
 		.port = GPIOA,
 	},
 };
-static int btn_task_id;
-static bool scan_pending;		/* Allows external interrupts */
-static bool pressed[KEYS];		/* Store state of every button */
 
 static void kbd_timer_init(void)
 {
@@ -93,12 +90,12 @@ static void kbd_enable_exti(void)
 	};
 }
 
-static void kdb_handle_interrupt(void)
+static void kdb_handle_interrupt(struct kbd *obj)
 {
-	if (!scan_pending) {
+	if (!obj->scan_pending) {
 		timer_enable_counter(TIM4);
 		kbd_disable_exti();
-		scan_pending = true;
+		obj->scan_pending = true;
 	}
 }
 
@@ -135,18 +132,18 @@ static void kbd_task(void *data)
 	gpio_clear(obj->gpio.port, obj->scan_mask);
 	udelay(SCAN_LINE_DELAY); /* Wait for voltage to stabilize */
 
-	scan_pending = false;
+	obj->scan_pending = false;
 	kbd_enable_exti();
 
 	/* Issue callback for each changed button state */
 	for (i = 0; i < KEYS; ++i) {
-		if (pressed_now[i] && !pressed[i]) {
+		if (pressed_now[i] && !obj->pressed[i]) {
 			obj->cb(i, true);
-			pressed[i] = true;
+			obj->pressed[i] = true;
 			ret = 0;
-		} else if (!pressed_now[i] && pressed[i]) {
+		} else if (!pressed_now[i] && obj->pressed[i]) {
 			obj->cb(i, false);
-			pressed[i] = false;
+			obj->pressed[i] = false;
 			ret = 0;
 		}
 	}
@@ -159,10 +156,9 @@ static irqreturn_t exti1_handler(int irq, void *data)
 {
 	struct kbd *obj = (struct kbd *)(data);
 
-	UNUSED(obj);
 	UNUSED(irq);
 
-	kdb_handle_interrupt();
+	kdb_handle_interrupt(obj);
 	exti_reset_request(EXTI1);
 
 	return IRQ_HANDLED;
@@ -172,10 +168,9 @@ static irqreturn_t exti2_handler(int irq, void *data)
 {
 	struct kbd *obj = (struct kbd *)(data);
 
-	UNUSED(obj);
 	UNUSED(irq);
 
-	kdb_handle_interrupt();
+	kdb_handle_interrupt(obj);
 	exti_reset_request(EXTI2);
 
 	return IRQ_HANDLED;
@@ -185,13 +180,12 @@ static irqreturn_t tim4_handler(int irq, void *data)
 {
 	struct kbd *obj = (struct kbd *)(data);
 
-	UNUSED(obj);
 	UNUSED(irq);
 
 	if (!timer_get_flag(TIM4, TIM_SR_UIF))
 		return IRQ_NONE;
 
-	sched_set_ready(btn_task_id);
+	sched_set_ready(obj->btn_task_id);
 	timer_clear_flag(TIM4, TIM_SR_UIF);
 
 	return IRQ_HANDLED;
@@ -246,7 +240,7 @@ int kbd_init(struct kbd *obj, const struct kbd_gpio *gpio, kbd_btn_event_t cb)
 
 	obj->cb = cb; /* register the callback */
 
-	ret = sched_add_task("keyboard", kbd_task, obj, &btn_task_id);
+	ret = sched_add_task("keyboard", kbd_task, obj, &obj->btn_task_id);
 	if (ret < 0)
 		return -1;
 

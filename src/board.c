@@ -56,7 +56,8 @@ enum rcc_periph_clken clocks[] = {
 	SERIAL_GPIO_RCC,
 	DS18B20_GPIO_RCC,
 	WH1602_GPIO_RCC,
-	KBD_GPIO_RCC
+	KBD_GPIO_RCC,
+	KBD_AFIO_RCC,
 };
 
 /**

@@ -1,6 +1,8 @@
 #ifndef BOARD_H
 #define BOARD_H
 
+#include <libopencm3/cm3/nvic.h>
+#include <libopencm3/stm32/exti.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/usart.h>
@@ -28,12 +30,16 @@
 #define WH1602_DB7_PIN		GPIO3
 
 /* Matrix keypad 2x2 */
+#define KBD_AFIO_RCC		RCC_AFIO
 #define KBD_GPIO_RCC		RCC_GPIOA
 #define KBD_GPIO_PORT		GPIOA
 #define KBD_GPIO_L1_PIN		GPIO1
 #define KBD_GPIO_L2_PIN		GPIO2
 #define KBD_GPIO_R1_PIN		GPIO3
 #define KBD_GPIO_R2_PIN		GPIO4
+#define KBD_EXTI_IRQ1		NVIC_EXTI1_IRQ
+#define KBD_EXTI_IRQ2		NVIC_EXTI2_IRQ
+#define KBD_EXTI_TRIGGER	EXTI_TRIGGER_BOTH
 
 int board_init(void);
 

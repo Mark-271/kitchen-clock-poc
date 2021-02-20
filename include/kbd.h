@@ -1,6 +1,8 @@
 #ifndef KBD_H
 #define KBD_H
 
+#include <libopencm3/stm32/exti.h>
+#include <libopencm3/cm3/nvic.h>
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -12,8 +14,10 @@ typedef void (*kbd_btn_event_t)(int button, bool pressed);
 
 struct kbd_gpio {
 	uint32_t port;
-	uint16_t read[KBD_READ_LINES];	/* sampling lines */
-	uint16_t scan[KBD_SCAN_LINES];	/* scan lines */
+	uint16_t read[KBD_READ_LINES];		/* sampling lines */
+	uint16_t scan[KBD_SCAN_LINES];		/* scan lines */
+	int irq[KBD_READ_LINES];		/* user interrupt number */
+	enum exti_trigger_type trigger;		/* exti trigger condition */
 };
 
 struct kbd {

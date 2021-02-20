@@ -4,8 +4,6 @@
 #include <sched.h>
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
-#include <libopencm3/cm3/nvic.h>
-#include <libopencm3/stm32/exti.h>
 #include <libopencm3/stm32/timer.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -22,28 +20,6 @@
 /* Set number of irqs */
 #define KBD_IRQS			3
 
-struct exti_mode {
-	int line;
-	int irq;
-	int trigger;
-	uint32_t port;
-};
-
-static struct exti_mode exti[] = {
-	{
-		.line = EXTI1,
-		.irq = NVIC_EXTI1_IRQ,
-		.trigger = EXTI_TRIGGER_BOTH,
-		.port = GPIOA,
-	},
-	{
-		.line = EXTI2,
-		.irq = NVIC_EXTI2_IRQ,
-		.trigger = EXTI_TRIGGER_BOTH,
-		.port = GPIOA,
-	},
-};
-
 static void kbd_timer_init(void)
 {
 	rcc_periph_clock_enable(RCC_TIM4);
@@ -58,35 +34,35 @@ static void kbd_timer_init(void)
 	timer_enable_irq(TIM4, TIM_DIER_UIE);
 }
 
-static void kbd_exti_init(void)
+static void kbd_exti_init(struct kbd *obj)
 {
 	size_t i;
 
-	rcc_periph_clock_enable(RCC_AFIO);
-
-	for (i = 0; i < ARRAY_SIZE(exti); i++) {
-		nvic_enable_irq(exti[i].irq);
-		exti_select_source(exti[i].line, exti[i].port);
-		exti_set_trigger(exti[i].line, exti[i].trigger);
-		exti_enable_request(exti[i].line);
+	for (i = 0; i < KBD_READ_LINES; i++) {
+		nvic_enable_irq(obj->gpio.irq[i]);
+		exti_select_source(obj->gpio.read[i], obj->gpio.port);
+		exti_set_trigger(obj->gpio.read[i], obj->gpio.trigger);
+		exti_enable_request(obj->gpio.read[i]);
 	}
 }
 
-static void kbd_disable_exti(void)
+static void kbd_disable_exti(struct kbd *obj)
 {
 	size_t i;
-	for (i = 0; i < ARRAY_SIZE(exti); i++) {
-		exti_disable_request(exti[i].line);
-		nvic_disable_irq(exti[i].irq);
+
+	for (i = 0; i < KBD_READ_LINES; i++) {
+		exti_disable_request(obj->gpio.read[i]);
+		nvic_disable_irq(obj->gpio.irq[i]);
 	};
 }
 
-static void kbd_enable_exti(void)
+static void kbd_enable_exti(struct kbd *obj)
 {
 	size_t i;
-	for (i = 0; i < ARRAY_SIZE(exti); i++) {
-		nvic_enable_irq(exti[i].irq);
-		exti_enable_request(exti[i].line);
+
+	for (i = 0; i < KBD_READ_LINES; i++) {
+		nvic_enable_irq(obj->gpio.irq[i]);
+		exti_enable_request(obj->gpio.read[i]);
 	};
 }
 
@@ -94,7 +70,7 @@ static void kdb_handle_interrupt(struct kbd *obj)
 {
 	if (!obj->scan_pending) {
 		timer_enable_counter(TIM4);
-		kbd_disable_exti();
+		kbd_disable_exti(obj);
 		obj->scan_pending = true;
 	}
 }
@@ -133,7 +109,7 @@ static void kbd_task(void *data)
 	udelay(SCAN_LINE_DELAY); /* Wait for voltage to stabilize */
 
 	obj->scan_pending = false;
-	kbd_enable_exti();
+	kbd_enable_exti(obj);
 
 	/* Issue callback for each changed button state */
 	for (i = 0; i < KEYS; ++i) {
@@ -244,7 +220,7 @@ int kbd_init(struct kbd *obj, const struct kbd_gpio *gpio, kbd_btn_event_t cb)
 	if (ret < 0)
 		return -1;
 
-	kbd_exti_init();
+	kbd_exti_init(obj);
 	kbd_timer_init();
 
 	/* Register interrupt handlers */
@@ -267,7 +243,7 @@ void kbd_exit(struct kbd *obj)
 
 	timer_disable_irq(TIM4, TIM_DIER_UIE);
 	nvic_disable_irq(NVIC_TIM4_IRQ);
-	kbd_disable_exti();
+	kbd_disable_exti(obj);
 
 	/* Remove interrupt handlers */
 	for (i = 0; i < KBD_IRQS; i++)

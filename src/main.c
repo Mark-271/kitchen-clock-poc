@@ -94,7 +94,10 @@ static void init(void)
 		.read[0] = KBD_GPIO_L1_PIN,
 		.read[1] = KBD_GPIO_L2_PIN,
 		.scan[0] = KBD_GPIO_R1_PIN,
-		.scan[1] = KBD_GPIO_R2_PIN
+		.scan[1] = KBD_GPIO_R2_PIN,
+		.irq[0] = KBD_EXTI_IRQ1,
+		.irq[1] = KBD_EXTI_IRQ2,
+		.trigger = KBD_EXTI_TRIGGER,
 	};
 
 	board_init();

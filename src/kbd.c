@@ -2,8 +2,10 @@
 #include <common.h>
 #include <irq.h>
 #include <sched.h>
-#include <libopencm3/stm32/rcc.h>
+#include <libopencm3/cm3/nvic.h>
+#include <libopencm3/stm32/exti.h>
 #include <libopencm3/stm32/gpio.h>
+#include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/timer.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -12,7 +14,7 @@
 #define BTN_LOOKUP(i, j)		((j) + (i) * KBD_READ_LINES)
 #define SCAN_LINE_DELAY			10 /* usec */
 /* Set timer prescaler value to obtain frequency 1 MHz */
-#define TIM_PRESCALER			((rcc_ahb_frequency) / 1e6)
+#define TIM_PRESCALER			((rcc_apb1_frequency) / 1e6)
 /* Set counter period to trigger overflow every 10 msec */
 #define TIM_PERIOD			1e4
 /* Set total number of keyboard buttons */
@@ -64,6 +66,19 @@ static void kbd_enable_exti(struct kbd *obj)
 		nvic_enable_irq(obj->gpio.irq[i]);
 		exti_enable_request(obj->gpio.read[i]);
 	};
+}
+
+static void kbd_timer_init(struct kbd *obj)
+{
+	UNUSED(obj);
+	timer_set_mode(TIM4, TIM_CR1_CKD_CK_INT,
+		       TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
+	timer_set_prescaler(TIM4, TIM_PRESCALER);
+	timer_set_period(TIM4, TIM_PERIOD);
+	timer_one_shot_mode(TIM4);
+
+	nvic_enable_irq(NVIC_TIM4_IRQ);
+	timer_enable_irq(TIM4, TIM_DIER_UIE);
 }
 
 static void kdb_handle_interrupt(struct kbd *obj)
@@ -152,7 +167,7 @@ static irqreturn_t exti2_handler(int irq, void *data)
 	return IRQ_HANDLED;
 }
 
-static irqreturn_t tim4_handler(int irq, void *data)
+static irqreturn_t tim_handler(int irq, void *data)
 {
 	struct kbd *obj = (struct kbd *)(data);
 
@@ -180,7 +195,7 @@ static struct irq_action a[KBD_IRQS] = {
 		.name = "kbd_scan2",
 	},
 	{
-		.handler = tim4_handler,
+		.handler = tim_handler,
 		.irq = NVIC_TIM4_IRQ,
 		.name = "kbd_timer",
 	}
@@ -221,7 +236,7 @@ int kbd_init(struct kbd *obj, const struct kbd_gpio *gpio, kbd_btn_event_t cb)
 		return -1;
 
 	kbd_exti_init(obj);
-	kbd_timer_init();
+	kbd_timer_init(obj);
 
 	/* Register interrupt handlers */
 	for (i = 0; i < KBD_IRQS; i++) {

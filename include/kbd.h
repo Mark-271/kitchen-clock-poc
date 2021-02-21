@@ -16,7 +16,7 @@ struct kbd_gpio {
 	uint32_t port;
 	uint16_t read[KBD_READ_LINES];		/* sampling lines */
 	uint16_t scan[KBD_SCAN_LINES];		/* scan lines */
-	int irq[KBD_READ_LINES];		/* user interrupt number */
+	int irq[KBD_READ_LINES];		/* external interrupt number */
 	enum exti_trigger_type trigger;		/* exti trigger condition */
 };
 

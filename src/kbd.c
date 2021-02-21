@@ -20,20 +20,26 @@
 /* Set total number of keyboard buttons */
 #define KEYS				4
 /* Set number of irqs */
-#define KBD_IRQS			3
+#define KBD_IRQS		3
 
-static void kbd_timer_init(void)
+static int kbd_gpio2irq(uint16_t gpio)
 {
-	rcc_periph_clock_enable(RCC_TIM4);
-
-	timer_set_mode(TIM4, TIM_CR1_CKD_CK_INT,
-		       TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
-	timer_set_prescaler(TIM4, TIM_PRESCALER);
-	timer_set_period(TIM4, TIM_PERIOD);
-	timer_one_shot_mode(TIM4);
-
-	nvic_enable_irq(NVIC_TIM4_IRQ);
-	timer_enable_irq(TIM4, TIM_DIER_UIE);
+	if (gpio == GPIO0)
+		return NVIC_EXTI0_IRQ;
+	else if (gpio == GPIO1)
+		return NVIC_EXTI1_IRQ;
+	else if (gpio == GPIO2)
+		return NVIC_EXTI2_IRQ;
+	else if (gpio == GPIO3)
+		return NVIC_EXTI3_IRQ;
+	else if (gpio == GPIO4)
+		return NVIC_EXTI4_IRQ;
+	else if (gpio >= GPIO5 && gpio <= GPIO9)
+		return NVIC_EXTI9_5_IRQ;
+	else if (gpio >= GPIO10 && gpio <= GPIO15)
+		return NVIC_EXTI15_10_IRQ;
+	else
+		return -1;
 }
 
 static void kbd_exti_init(struct kbd *obj)
@@ -150,7 +156,7 @@ static irqreturn_t exti1_handler(int irq, void *data)
 	UNUSED(irq);
 
 	kdb_handle_interrupt(obj);
-	exti_reset_request(EXTI1);
+	exti_reset_request(obj->gpio.irq[0]);
 
 	return IRQ_HANDLED;
 }
@@ -162,7 +168,7 @@ static irqreturn_t exti2_handler(int irq, void *data)
 	UNUSED(irq);
 
 	kdb_handle_interrupt(obj);
-	exti_reset_request(EXTI2);
+	exti_reset_request(obj->gpio.irq[1]);
 
 	return IRQ_HANDLED;
 }
@@ -234,6 +240,14 @@ int kbd_init(struct kbd *obj, const struct kbd_gpio *gpio, kbd_btn_event_t cb)
 	ret = sched_add_task("keyboard", kbd_task, obj, &obj->btn_task_id);
 	if (ret < 0)
 		return -1;
+
+	/* Prepare irq values for external interrupts */
+	for (i = 0; i < KBD_READ_LINES; i++) {
+		 ret = kbd_gpio2irq(gpio->read[i]);
+		 if (ret < 0)
+			 return -1;
+		 obj->gpio.irq[i] = ret;
+	}
 
 	kbd_exti_init(obj);
 	kbd_timer_init(obj);

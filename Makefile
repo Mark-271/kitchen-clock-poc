@@ -23,7 +23,7 @@ else
   $(error Incorrect BUILD variable)
 endif
 
-APP		:= thermometer
+APP		:= kclock
 LIB_DIR		= $(OPENCM3_DIR)/lib
 INCLUDE_DIR	= $(OPENCM3_DIR)/include
 SCRIPT_DIR	= scripts

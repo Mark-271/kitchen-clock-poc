@@ -11,14 +11,14 @@
 #include <stdio.h>
 
 /* Calculate button number by current scan line and read line numbers */
-#define BTN_LOOKUP(i, j)		((j) + (i) * KBD_READ_LINES)
-#define SCAN_LINE_DELAY			10 /* usec */
+#define BTN_LOOKUP(i, j)	((j) + (i) * KBD_READ_LINES)
+#define SCAN_LINE_DELAY		10 /* usec */
 /* Set timer prescaler value to obtain frequency 1 MHz */
-#define TIM_PRESCALER			((rcc_apb1_frequency) / 1e6)
+#define TIM_PRESCALER		((rcc_apb1_frequency) / 1e6)
 /* Set counter period to trigger overflow every 10 msec */
-#define TIM_PERIOD			1e4
+#define TIM_PERIOD		1e4
 /* Set total number of keyboard buttons */
-#define KEYS				4
+#define KEYS			4
 /* Set number of irqs */
 #define KBD_IRQS		3
 

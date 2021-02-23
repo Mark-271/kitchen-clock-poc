@@ -1,6 +1,6 @@
-#include <wh1602.h>
+#include <drivers/wh1602.h>
 #include <board.h>
-#include <common.h>
+#include <tools/common.h>
 #include <libopencm3/stm32/gpio.h>
 #include <stdio.h>
 #include <string.h>

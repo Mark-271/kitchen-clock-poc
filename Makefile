@@ -52,18 +52,18 @@ OPT		:= -O2
 DEBUG		:= -ggdb3
 CSTD		?= -std=gnu89
 
-OBJS		+=			\
-		   src/board.o		\
-		   src/common.o		\
-		   src/ds18b20.o	\
-		   src/irq.o		\
-		   src/kbd.o		\
-		   src/main.o		\
-		   src/one_wire.o	\
-		   src/sched.o		\
-		   src/serial.o		\
-		   src/tools.o		\
-		   src/wh1602.o
+OBJS		+=				\
+		   src/board.o			\
+		   src/core/irq.o		\
+		   src/core/sched.o		\
+		   src/drivers/ds18b20.o	\
+		   src/drivers/kbd.o		\
+		   src/drivers/one_wire.o	\
+		   src/drivers/serial.o		\
+		   src/drivers/wh1602.o		\
+		   src/main.o			\
+		   src/tools/common.o		\
+		   src/tools/tools.o
 
 # C flags
 

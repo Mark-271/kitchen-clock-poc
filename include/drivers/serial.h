@@ -1,5 +1,5 @@
-#ifndef SERIAL_H
-#define SERIAL_H
+#ifndef DRIVERS_SERIAL_H
+#define DRIVERS_SERIAL_H
 
 #include <stdint.h>
 
@@ -17,4 +17,4 @@ int _write(int fd, char *ptr, int len);
 int serial_init(struct serial_params *params);
 void serial_exit(void);
 
-#endif /* SERIAL_H */
+#endif /* DRIVERS_SERIAL_H */

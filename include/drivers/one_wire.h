@@ -1,5 +1,5 @@
-#ifndef ONE_WIRE_H
-#define ONE_WIRE_H
+#ifndef DRIVERS_ONE_WIRE_H
+#define DRIVERS_ONE_WIRE_H
 
 #include <stdint.h>
 
@@ -14,4 +14,4 @@ int ow_reset_pulse(struct ow *obj);
 void ow_write_byte(struct ow *obj, uint8_t byte);
 int8_t ow_read_byte(struct ow *obj);
 
-#endif /* ONE_WIRE_H */
+#endif /* DRIVERS_ONE_WIRE_H */

@@ -1,7 +1,7 @@
-#ifndef SCHED_H
-#define SCHED_H
+#ifndef CORE_SCHED_H
+#define CORE_SCHED_H
 
-#include <common.h>
+#include <tools/common.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -16,4 +16,4 @@ int sched_add_task(const char *name, task_func_t func, void *data,
 int sched_del_task(int task_id);
 void sched_set_ready(int task_id);
 
-#endif /* SCHED_H */
+#endif /* CORE_SCHED_H */

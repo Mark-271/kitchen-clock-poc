@@ -1,4 +1,4 @@
-#include <sched.h>
+#include <core/sched.h>
 #include <string.h>
 
 struct task {

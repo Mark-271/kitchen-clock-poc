@@ -1,5 +1,5 @@
 #include <board.h>
-#include <common.h>
+#include <tools/common.h>
 #include <stddef.h>
 
 enum pull_mode {

@@ -1,5 +1,5 @@
-#include <one_wire.h>
-#include <common.h>
+#include <drivers/one_wire.h>
+#include <tools/common.h>
 #include <libopencm3/stm32/gpio.h>
 #include <stddef.h>
 

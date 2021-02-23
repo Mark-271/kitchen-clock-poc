@@ -1,7 +1,7 @@
-#ifndef DS18B20_H
-#define DS18B20_H
+#ifndef DRIVERS_DS18B20_H
+#define DRIVERS_DS18B20_H
 
-#include <one_wire.h>
+#include <drivers/one_wire.h>
 #include <stdint.h>
 
 /* Contains parsed data from DS18B20 temperature sensor */
@@ -22,4 +22,4 @@ void ds18b20_exit(struct ds18b20 *obj);
 struct ds18b20_temp ds18b20_read_temp(struct ds18b20 *obj);
 char *ds18b20_temp2str(struct ds18b20_temp *obj, char str[]);
 
-#endif /* DS18B20_H */
+#endif /* DRIVERS_DS18B20_H */

@@ -1,7 +1,7 @@
-#ifndef WH1602_H
-#define WH1602_H
+#ifndef DRIVERS_WH1602_H
+#define DRIVERS_WH1602_H
 
-#include <common.h>
+#include <tools/common.h>
 #include <stdint.h>
 
 #define CURSOR_BLINK_OFF	0
@@ -57,4 +57,4 @@ void wh1602_write_char(struct wh1602 *obj, uint8_t data);
 void wh1602_print_str(struct wh1602 *obj, const char *str);
 void wh1602_set_line(struct wh1602 *obj, int line);
 
-#endif /* WH1602_H */
+#endif /* DRIVERS_WH1602_H */

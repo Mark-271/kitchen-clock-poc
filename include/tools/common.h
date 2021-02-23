@@ -1,5 +1,5 @@
-#ifndef COMMON_H
-#define COMMON_H
+#ifndef TOOLS_COMMON_H
+#define TOOLS_COMMON_H
 
 #include <libopencm3/cm3/assert.h>
 
@@ -93,4 +93,4 @@ static inline __attribute__((always_inline)) void ldelay(unsigned long cycles)
 
 void __attribute__((__noreturn__)) hang(void);
 
-#endif /* COMMON_H */
+#endif /* TOOLS_COMMON_H */

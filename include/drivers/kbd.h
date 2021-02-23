@@ -1,5 +1,5 @@
-#ifndef KBD_H
-#define KBD_H
+#ifndef DRIVERS_KBD_H
+#define DRIVERS_KBD_H
 
 #include <libopencm3/stm32/exti.h>
 #include <libopencm3/cm3/nvic.h>
@@ -33,4 +33,4 @@ struct kbd {
 int kbd_init(struct kbd *obj, const struct kbd_gpio *gpio, kbd_btn_event_t cb);
 void kbd_exit(struct kbd *obj);
 
-#endif /* KBD_H */
+#endif /* DRIVERS_KBD_H */

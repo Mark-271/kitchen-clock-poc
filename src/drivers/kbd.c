@@ -1,7 +1,7 @@
-#include <kbd.h>
-#include <common.h>
-#include <irq.h>
-#include <sched.h>
+#include <drivers/kbd.h>
+#include <core/irq.h>
+#include <core/sched.h>
+#include <tools/common.h>
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/stm32/exti.h>
 #include <libopencm3/stm32/gpio.h>

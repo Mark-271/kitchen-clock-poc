@@ -1,7 +1,7 @@
-#include <ds18b20.h>
-#include <one_wire.h>
-#include <common.h>
-#include <tools.h>
+#include <drivers/ds18b20.h>
+#include <drivers/one_wire.h>
+#include <tools/common.h>
+#include <tools/tools.h>
 #include <libopencm3/stm32/gpio.h>
 #include <stddef.h>
 

@@ -1,7 +1,7 @@
-#ifndef IRQ_H
-#define IRQ_H
+#ifndef CORE_IRQ_H
+#define CORE_IRQ_H
 
-#include <common.h>
+#include <tools/common.h>
 
 enum irqreturn {
 	IRQ_NONE	= 0,		/* IRQ was not from this device */
@@ -24,4 +24,4 @@ void irq_exit(void);
 int irq_request(struct irq_action *action);
 int irq_free(struct irq_action *action);
 
-#endif /* IRQ_H */
+#endif /* CORE_IRQ_H */

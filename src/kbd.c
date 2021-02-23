@@ -44,8 +44,8 @@ static struct exti_mode exti[] = {
 	},
 };
 static int btn_task_id;
-static bool scan_pending;	/* Allows external interrupts */
-static bool pressed[KEYS];	/* Store state of every button */
+static bool scan_pending;		/* Allows external interrupts */
+static bool pressed[KEYS];		/* Store state of every button */
 
 static void kbd_timer_init(void)
 {
@@ -187,7 +187,6 @@ static irqreturn_t tim4_handler(int irq, void *data)
 
 	UNUSED(obj);
 	UNUSED(irq);
-
 
 	if (!timer_get_flag(TIM4, TIM_SR_UIF))
 		return IRQ_NONE;

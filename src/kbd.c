@@ -176,7 +176,7 @@ static irqreturn_t exti2_handler(int irq, void *data)
 	UNUSED(irq);
 
 	kdb_handle_interrupt();
-	exti_reset_request(EXTI1);
+	exti_reset_request(EXTI2);
 
 	return IRQ_HANDLED;
 }

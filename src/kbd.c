@@ -1,5 +1,6 @@
 #include <kbd.h>
 #include <common.h>
+#include <irq.h>
 #include <sched.h>
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
@@ -18,6 +19,8 @@
 #define TIM_PERIOD			1e4
 /* Set total number of keyboard buttons */
 #define KEYS				4
+/* Set number of irqs */
+#define KBD_IRQS			3
 
 struct exti_mode {
 	int line;
@@ -152,6 +155,67 @@ static void kbd_task(void *data)
 		printf("Warning: No button is pressed\n");
 }
 
+static irqreturn_t exti1_handler(int irq, void *data)
+{
+	struct kbd *obj = (struct kbd *)(data);
+
+	UNUSED(obj);
+	UNUSED(irq);
+
+	kdb_handle_interrupt();
+	exti_reset_request(EXTI1);
+
+	return IRQ_HANDLED;
+}
+
+static irqreturn_t exti2_handler(int irq, void *data)
+{
+	struct kbd *obj = (struct kbd *)(data);
+
+	UNUSED(obj);
+	UNUSED(irq);
+
+	kdb_handle_interrupt();
+	exti_reset_request(EXTI1);
+
+	return IRQ_HANDLED;
+}
+
+static irqreturn_t tim4_handler(int irq, void *data)
+{
+	struct kbd *obj = (struct kbd *)(data);
+
+	UNUSED(obj);
+	UNUSED(irq);
+
+
+	if (!timer_get_flag(TIM4, TIM_SR_UIF))
+		return IRQ_NONE;
+
+	sched_set_ready(btn_task_id);
+	timer_clear_flag(TIM4, TIM_SR_UIF);
+
+	return IRQ_HANDLED;
+}
+
+/* Store irq objects */
+static struct irq_action a[KBD_IRQS] = {
+	{
+		.handler = exti1_handler,
+		.irq = NVIC_EXTI1_IRQ,
+		.name = "kbd_scan1",
+	},
+	{
+		.handler = exti2_handler,
+		.irq = NVIC_EXTI2_IRQ,
+		.name = "kbd_scan2",
+	},
+	{
+		.handler = tim4_handler,
+		.irq = NVIC_TIM4_IRQ,
+		.name = "kbd_timer",
+	}
+};
 
 /**
  * Initialize the keyboard driver.
@@ -190,6 +254,14 @@ int kbd_init(struct kbd *obj, const struct kbd_gpio *gpio, kbd_btn_event_t cb)
 	kbd_exti_init();
 	kbd_timer_init();
 
+	/* Register interrupt handlers */
+	for (i = 0; i < KBD_IRQS; i++) {
+		a[i].data = (void *)obj;
+		ret = irq_request(&a[i]);
+		if (ret < 0)
+			return ret;
+	}
+
 	/* Scan lines should be in low state */
 	gpio_clear(obj->gpio.port, obj->scan_mask);
 
@@ -198,30 +270,15 @@ int kbd_init(struct kbd *obj, const struct kbd_gpio *gpio, kbd_btn_event_t cb)
 
 void kbd_exit(struct kbd *obj)
 {
+	size_t i;
+
 	timer_disable_irq(TIM4, TIM_DIER_UIE);
 	nvic_disable_irq(NVIC_TIM4_IRQ);
 	kbd_disable_exti();
+
+	/* Remove interrupt handlers */
+	for (i = 0; i < KBD_IRQS; i++)
+		irq_free(&a[i]);
+
 	UNUSED(obj);
-}
-
-void exti1_isr(void)
-{
-	kdb_handle_interrupt();
-	exti_reset_request(EXTI1);
-}
-
-void exti2_isr(void)
-{
-	kdb_handle_interrupt();
-	exti_reset_request(EXTI2);
-}
-
-void tim4_isr(void)
-{
-	if (!timer_get_flag(TIM4, TIM_SR_UIF))
-		return;
-
-	sched_set_ready(btn_task_id);
-
-	timer_clear_flag(TIM4, TIM_SR_UIF);
 }

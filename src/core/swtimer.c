@@ -10,9 +10,12 @@
 
 #include <core/swtimer.h>
 #include <core/irq.h>
+#include <core/sched.h>
 #include <tools/common.h>
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/stm32/timer.h>
+#include <stddef.h>
+#include <stdio.h>
 
 #define SWTIMER_TIMERS_MAX	10
 #define SWTIMER_TASK		"swtimer"
@@ -68,20 +71,28 @@ static irqreturn_t swtimer_isr(int irq, void *data)
 
 static void swtimer_task(void *data)
 {
+	size_t i;
 	struct swtimer *obj = (struct swtimer *)data;
 
 	/*
-	 * TODO: Implement this one:
 	 *   - for each active SW timer:
 	 *     - decrement remaining time for each tick of global tick counter
 	 *     - if remaining time is <= 0:
 	 *       - call timer callback
 	 *       - set remaining time to period time
 	 *   - zero the global "ticks" counter
-	 *
 	 */
+	for (i = 0; i < SWTIMER_TIMERS_MAX; i++) {
+		if (obj->timer_list[i].active) {
+			obj->timer_list[i].remaining -= obj->ticks;
+			if (obj->timer_list[i].remaining <= 0) {
+				obj->timer_list[i].cb();
+				obj->timer_list[i].remaining = obj->timer_list[i].period;
+			}
+		}
+	}
+	obj->ticks = 0;
 }
-
 /* -------------------------------------------------------------------------- */
 
 /**
@@ -102,6 +113,7 @@ int swtimer_init(const struct swtimer_hw_tim *hw_tim)
 	 *   - setup and enable hardware timer
 	 *   - add scheduler task for handling SW timers
 	 */
+	int ret;
 	swtimer.hw_tim = *hw_tim;
 	swtimer.action.handler = swtimer_isr;
 	swtimer.action.irq = swtimer.hw_tim.irq;
@@ -129,6 +141,12 @@ int swtimer_init(const struct swtimer_hw_tim *hw_tim)
 	timer_enable_irq(swtimer.hw_tim.base, TIM_DIER_UIE);
 	timer_enable_counter(swtimer.hw_tim.base);
 
+	ret = sched_add_task(SWTIMER_TASK, swtimer_task, &swtimer,
+			     &swtimer.task_id);
+	if (ret < 0) {
+		printf("Can't add task\n");
+		return ret;
+	}
 	return 0;
 }
 
@@ -162,7 +180,6 @@ void swtimer_reset(void)
 {
 	/* Set global ticks counter to 0 */
 	swtimer.ticks = 0;
-
 }
 
 /**

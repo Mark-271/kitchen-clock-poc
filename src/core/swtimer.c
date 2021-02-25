@@ -95,6 +95,9 @@ int swtimer_init(const struct swtimer_hw_tim *hw_tim)
 	 *   - setup and enable hardware timer
 	 *   - add scheduler task for handling SW timers
 	 */
+	swtimer.hw_tim = *hw_tim;
+
+	return 0;
 }
 
 /**

@@ -138,10 +138,9 @@ void swtimer_exit(void)
  */
 void swtimer_reset(void)
 {
-	/*
-	 * TODO: Implement this one:
-	 *   - set global ticks counter to 0
-	 */
+	/* Set global ticks counter to 0 */
+	swtimer.ticks = 0;
+
 }
 
 /**

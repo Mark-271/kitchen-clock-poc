@@ -9,6 +9,7 @@
  */
 
 #include <core/swtimer.h>
+#include <libopencm3/stm32/timer.h>
 
 #define SWTIMER_TIMERS_MAX	10
 #define SWTIMER_TASK		"swtimer"
@@ -89,13 +90,22 @@ static void swtimer_task(void *data)
 int swtimer_init(const struct swtimer_hw_tim *hw_tim)
 {
 	/*
-	 * TODO: Implement this one:
 	 *   - copy info from "hw_tim" param to driver object
 	 *   - setup IRQ (request IRQ, enable IRQ in NVIC + set priority)
 	 *   - setup and enable hardware timer
 	 *   - add scheduler task for handling SW timers
 	 */
 	swtimer.hw_tim = *hw_tim;
+	rcc_periph_reset_pulse(swtimer.hw_tim.rst);
+	timer_set_mode(swtimer.hw_tim.base, TIM_CR1_CKD_CK_INT,
+		       TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
+	timer_set_prescaler(swtimer.hw_tim.base, swtimer.hw_tim.psc);
+	timer_set_period(swtimer.hw_tim.base, swtimer.hw_tim.arr);
+	timer_disable_preload(swtimer.hw_tim.base);
+	timer_continuous_mode(swtimer.hw_tim.base);
+	timer_enable_update_event(swtimer.hw_tim.base);
+	timer_update_on_overflow(swtimer.hw_tim.base);
+	timer_enable_counter(swtimer.hw_tim.base);
 
 	return 0;
 }

@@ -116,12 +116,17 @@ int swtimer_init(const struct swtimer_hw_tim *hw_tim)
 void swtimer_exit(void)
 {
 	/*
-	 * TODO: Implement this one:
 	 *   - disable hardware timer
 	 *   - unregister the IRQ
 	 *   - remove scheduler task
 	 *   - clean driver object
 	 */
+	timer_disable_counter(swtimer.hw_tim.base);
+	timer_disable_irq(swtimer.hw_tim.base, TIM_DIER_UIE);
+	nvic_disable_irq(swtimer.hw_tim.irq);
+	sched_del_task(swtimer.task_id);
+	irq_free(&action);
+	UNUSED(swtimer);
 }
 
 /**

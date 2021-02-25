@@ -9,6 +9,9 @@
  */
 
 #include <core/swtimer.h>
+#include <core/irq.h>
+#include <tools/common.h>
+#include <libopencm3/cm3/nvic.h>
 #include <libopencm3/stm32/timer.h>
 
 #define SWTIMER_TIMERS_MAX	10
@@ -25,6 +28,7 @@ struct swtimer_sw_tim {
 /* Driver struct (swtimer framework) */
 struct swtimer {
 	struct swtimer_hw_tim hw_tim;
+	struct irq_action action;
 	struct swtimer_sw_tim timer_list[SWTIMER_TIMERS_MAX];
 	volatile int ticks;		/* global ticks counter */
 	int task_id;			/* scheduler task ID */
@@ -34,10 +38,9 @@ struct swtimer {
 static struct swtimer swtimer;
 
 /* -------------------------------------------------------------------------- */
-
 static irqreturn_t swtimer_isr(int irq, void *data)
 {
-	struct swtimer *obj = (struct swtimer *)data;
+	struct swtimer *obj = (struct swtimer *)(data);
 
 	UNUSED(irq);
 
@@ -51,12 +54,16 @@ static irqreturn_t swtimer_isr(int irq, void *data)
 		return IRQ_NONE;
 
 	/*
-	 * TODO: Implement this one:
 	 *   - increment global ticks counter
 	 *   - set task state to "Ready" via scheduler
 	 *   - clear HW timer flag
-	 *   - account for possible race conditions (if any)
+	 *   - account for possible race conditions
 	 */
+	swtimer.ticks += SWTIMER_HW_OVERFLOW;
+	sched_set_ready(obj->task_id);
+	timer_clear_flag(obj->hw_tim.base, TIM_SR_UIF);
+
+	return IRQ_HANDLED;
 }
 
 static void swtimer_task(void *data)
@@ -96,6 +103,17 @@ int swtimer_init(const struct swtimer_hw_tim *hw_tim)
 	 *   - add scheduler task for handling SW timers
 	 */
 	swtimer.hw_tim = *hw_tim;
+	swtimer.action.handler = swtimer_isr;
+	swtimer.action.irq = swtimer.hw_tim.irq;
+	swtimer.action.name = SWTIMER_TASK;
+	swtimer.action.data = &swtimer;
+
+	ret = irq_request(&swtimer.action);
+	if (ret < 0) {
+		printf("Can't register interrupt handler for timer\n");
+		return ret;
+	}
+
 	rcc_periph_reset_pulse(swtimer.hw_tim.rst);
 	timer_set_mode(swtimer.hw_tim.base, TIM_CR1_CKD_CK_INT,
 		       TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
@@ -105,6 +123,10 @@ int swtimer_init(const struct swtimer_hw_tim *hw_tim)
 	timer_continuous_mode(swtimer.hw_tim.base);
 	timer_enable_update_event(swtimer.hw_tim.base);
 	timer_update_on_overflow(swtimer.hw_tim.base);
+
+	nvic_enable_irq(swtimer.hw_tim.irq);
+	nvic_set_priority(swtimer.hw_tim.irq, 1);
+	timer_enable_irq(swtimer.hw_tim.base, TIM_DIER_UIE);
 	timer_enable_counter(swtimer.hw_tim.base);
 
 	return 0;
@@ -125,7 +147,7 @@ void swtimer_exit(void)
 	timer_disable_irq(swtimer.hw_tim.base, TIM_DIER_UIE);
 	nvic_disable_irq(swtimer.hw_tim.irq);
 	sched_del_task(swtimer.task_id);
-	irq_free(&action);
+	irq_free(&swtimer.action);
 	UNUSED(swtimer);
 }
 

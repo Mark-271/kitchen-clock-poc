@@ -329,9 +329,12 @@ void swtimer_tim_set_period(int id, int period)
 int swtimer_tim_get_remaining(int id)
 {
 	/*
-	 * TODO: Implement this one:
 	 *   - calculate slot number from id
 	 *   - add assert() to check if slot number is not in range
 	 *   - return remaining time for timer with specified slot number
 	 */
+	int slot = id -1;
+
+	cm3_assert(slot >= 0 && slot < SWTIMER_TIMERS_MAX);
+	return swtimer.timer_list[slot].remaining;
 }

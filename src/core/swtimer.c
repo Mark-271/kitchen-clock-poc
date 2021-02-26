@@ -95,6 +95,18 @@ static void swtimer_task(void *data)
 }
 /* -------------------------------------------------------------------------- */
 
+static int swtimer_find_empty_slot(void)
+{
+	size_t i;
+
+	for (i = 0; i < SWTIMER_TIMERS_MAX; ++i) {
+		if (!swtimer.timer_list[i].cb)
+			return i;
+	}
+
+	return -1;
+}
+
 /**
  * Initialize software timer framework.
  *
@@ -193,18 +205,27 @@ void swtimer_reset(void)
  */
 int swtimer_tim_register(swtimer_callback_t cb, int period)
 {
-	int slot;
-
-	cm3_assert(cb != NULL);
-	cm3_assert(period >= SWTIMER_HW_OVERFLOW);
-
 	/*
-	 * TODO: Implement this one:
 	 *   - find empty (not used) slot in timer table
 	 *   - configure all fields for timer with found slot using
 	 *     this function params (timer must start when this function ends)
 	 *   - return registered timer ID number (not slot number)
 	 */
+	int slot;
+
+	cm3_assert(cb != NULL);
+	cm3_assert(period >= SWTIMER_HW_OVERFLOW);
+
+	slot = swtimer_find_empty_slot();
+	if (slot < 0)
+		return -1;
+
+	swtimer.timer_list[slot].cb = cb;
+	swtimer.timer_list[slot].period = period;
+	swtimer.timer_list[slot].remaining = period;
+	swtimer.timer_list[slot].active = true;
+
+	return slot + 1;
 }
 
 /**

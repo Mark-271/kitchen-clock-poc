@@ -270,11 +270,15 @@ void swtimer_tim_start(int id)
 void swtimer_tim_stop(int id)
 {
 	/*
-	 * TODO: Implement this one:
 	 *   - calculate slot number from id
 	 *   - add assert() to check if slot number is not in range
 	 *   - make timer with specified slot number "not active"
 	 */
+	int slot = id -1;
+
+	cm3_assert(slot >= 0 && slot < SWTIMER_TIMERS_MAX);
+	swtimer_tim_reset(id);
+	swtimer.timer_list[slot].active = false;
 }
 
 /**

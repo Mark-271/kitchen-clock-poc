@@ -309,11 +309,15 @@ void swtimer_tim_reset(int id)
 void swtimer_tim_set_period(int id, int period)
 {
 	/*
-	 * TODO: Implement this one:
 	 *   - calculate slot number from id
 	 *   - add assert() to check if slot number is not in range
 	 *   - set period for timer with specified slot number
 	 */
+	int slot = id -1;
+
+	cm3_assert(slot >= 0 && slot < SWTIMER_TIMERS_MAX);
+	swtimer.timer_list[slot].period = period;
+
 }
 
 /**

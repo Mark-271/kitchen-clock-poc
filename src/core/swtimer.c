@@ -16,6 +16,7 @@
 #include <libopencm3/stm32/timer.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <string.h>
 
 #define SWTIMER_TIMERS_MAX	10
 #define SWTIMER_TASK		"swtimer"
@@ -235,12 +236,10 @@ int swtimer_tim_register(swtimer_callback_t cb, int period)
  */
 void swtimer_tim_del(int id)
 {
-	/*
-	 * TODO: Implement this one:
-	 *   - calculate slot number from id
-	 *   - add assert() to check if slot number is not in range
-	 *   - clear all fields in timer table for timer with specified ID
-	 */
+	int slot = id - 1;
+
+	cm3_assert(slot >= 0 && slot < SWTIMER_TIMERS_MAX);
+	memset(&swtimer.timer_list[slot], 0, sizeof(struct swtimer_sw_tim));
 }
 
 /**

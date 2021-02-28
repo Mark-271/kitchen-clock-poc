@@ -59,6 +59,7 @@ enum rcc_periph_clken clocks[] = {
 	KBD_GPIO_RCC,
 	KBD_AFIO_RCC,
 	KBD_TIM_RCC,
+	SWTIMER_TIM_RCC,
 };
 
 /**

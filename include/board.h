@@ -41,6 +41,14 @@
 #define KBD_GPIO_R2_PIN		GPIO4
 #define KBD_EXTI_TRIGGER	EXTI_TRIGGER_BOTH
 
+/* General purpose timer */
+#define SWTIMER_TIM_RCC		RCC_TIM2
+#define SWTIMER_TIM_BASE	TIM2
+#define SWTIMER_TIM_IRQ		NVIC_TIM2_IRQ
+#define SWTIMER_TIM_RST		RST_TIM2
+#define SWTIMER_TIM_ARR		19999
+#define SWTIMER_TIM_PSC		5
+
 int board_init(void);
 
 #endif /* BOARD_H */

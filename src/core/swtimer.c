@@ -96,12 +96,12 @@ static void swtimer_task(void *data)
 }
 /* -------------------------------------------------------------------------- */
 
-static int swtimer_find_empty_slot(void)
+static int swtimer_find_empty_slot(struct swtimer *obj)
 {
 	size_t i;
 
 	for (i = 0; i < SWTIMER_TIMERS_MAX; ++i) {
-		if (!swtimer.timer_list[i].cb)
+		if (!obj->timer_list[i].cb)
 			return i;
 	}
 
@@ -223,7 +223,7 @@ int swtimer_tim_register(swtimer_callback_t cb, int period)
 	cm3_assert(cb != NULL);
 	cm3_assert(period >= SWTIMER_HW_OVERFLOW);
 
-	slot = swtimer_find_empty_slot();
+	slot = swtimer_find_empty_slot(&swtimer);
 	if (slot < 0)
 		return -1;
 

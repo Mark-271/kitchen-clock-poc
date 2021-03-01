@@ -108,6 +108,22 @@ static int swtimer_find_empty_slot(void)
 	return -1;
 }
 
+static void swtimer_hw_init(struct swtimer *obj)
+{
+	rcc_periph_reset_pulse(obj->hw_tim.rst);
+	timer_set_mode(obj->hw_tim.base, TIM_CR1_CKD_CK_INT,
+		       TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
+	timer_set_prescaler(obj->hw_tim.base, obj->hw_tim.psc);
+	timer_set_period(obj->hw_tim.base, obj->hw_tim.arr);
+	timer_disable_preload(obj->hw_tim.base);
+	timer_continuous_mode(obj->hw_tim.base);
+	timer_enable_update_event(obj->hw_tim.base);
+	timer_update_on_overflow(obj->hw_tim.base);
+	timer_enable_irq(obj->hw_tim.base, TIM_DIER_UIE);
+	nvic_set_priority(obj->hw_tim.irq, 1);
+	nvic_enable_irq(obj->hw_tim.irq);
+}
+
 /**
  * Initialize software timer framework.
  *
@@ -139,20 +155,7 @@ int swtimer_init(const struct swtimer_hw_tim *hw_tim)
 		return ret;
 	}
 
-	rcc_periph_reset_pulse(swtimer.hw_tim.rst);
-	timer_set_mode(swtimer.hw_tim.base, TIM_CR1_CKD_CK_INT,
-		       TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
-	timer_set_prescaler(swtimer.hw_tim.base, swtimer.hw_tim.psc);
-	timer_set_period(swtimer.hw_tim.base, swtimer.hw_tim.arr);
-	timer_disable_preload(swtimer.hw_tim.base);
-	timer_continuous_mode(swtimer.hw_tim.base);
-	timer_enable_update_event(swtimer.hw_tim.base);
-	timer_update_on_overflow(swtimer.hw_tim.base);
-
-	nvic_enable_irq(swtimer.hw_tim.irq);
-	nvic_set_priority(swtimer.hw_tim.irq, 1);
-	timer_enable_irq(swtimer.hw_tim.base, TIM_DIER_UIE);
-	timer_enable_counter(swtimer.hw_tim.base);
+	swtimer_hw_init(&swtimer);
 
 	ret = sched_add_task(SWTIMER_TASK, swtimer_task, &swtimer,
 			     &swtimer.task_id);
@@ -160,6 +163,9 @@ int swtimer_init(const struct swtimer_hw_tim *hw_tim)
 		printf("Can't add task\n");
 		return ret;
 	}
+
+	timer_enable_counter(swtimer.hw_tim.base);
+
 	return 0;
 }
 

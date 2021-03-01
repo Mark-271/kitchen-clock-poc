@@ -46,8 +46,8 @@
 #define SWTIMER_TIM_BASE	TIM2
 #define SWTIMER_TIM_IRQ		NVIC_TIM2_IRQ
 #define SWTIMER_TIM_RST		RST_TIM2
-#define SWTIMER_TIM_ARR		19999
-#define SWTIMER_TIM_PSC		5
+#define SWTIMER_TIM_ARR_VAL	19999
+#define SWTIMER_TIM_PSC_VAL	5
 
 int board_init(void);
 

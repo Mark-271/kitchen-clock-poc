@@ -283,7 +283,6 @@ void swtimer_tim_stop(int id)
 	int slot = id -1;
 
 	cm3_assert(slot >= 0 && slot < SWTIMER_TIMERS_MAX);
-	swtimer_tim_reset(id);
 	swtimer.timer_list[slot].active = false;
 }
 

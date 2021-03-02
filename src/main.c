@@ -1,6 +1,7 @@
 #include <board.h>
 #include <core/irq.h>
 #include <core/sched.h>
+#include <core/swtimer.h>
 #include <drivers/ds18b20.h>
 #include <drivers/kbd.h>
 #include <drivers/serial.h>
@@ -96,6 +97,13 @@ static void init(void)
 		.scan[0] = KBD_GPIO_R1_PIN,
 		.scan[1] = KBD_GPIO_R2_PIN,
 		.trigger = KBD_EXTI_TRIGGER,
+	};
+	const struct swtimer_hw_tim hw_tim = {
+		.base = SWTIMER_TIM_BASE,
+		.irq = SWTIMER_TIM_IRQ,
+		.rst = SWTIMER_TIM_RST,
+		.arr = SWTIMER_TIM_ARR_VAL,
+		.psc = SWTIMER_TIM_PSC_VAL,
 	};
 
 	board_init();

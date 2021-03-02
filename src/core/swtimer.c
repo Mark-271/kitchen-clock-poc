@@ -111,63 +111,6 @@ static void swtimer_hw_init(struct swtimer *obj)
 }
 
 /**
- * Initialize software timer framework.
- *
- * Setup underneath hardware timer and run it.
- *
- * @param[in] hw_tim Parameters of HW timer to use
- * @return 0 on success or negative number on error
- *
- * @note Scheduler must be initialized before calling this
- */
-int swtimer_init(const struct swtimer_hw_tim *hw_tim)
-{
-	printf("enter %s\n", __func__); /* debug */
-
-	int ret;
-	struct swtimer *obj = &swtimer;
-
-	obj->hw_tim = *hw_tim;
-	obj->action.handler = swtimer_isr;
-	obj->action.irq = swtimer.hw_tim.irq;
-	obj->action.name = SWTIMER_TASK;
-	obj->action.data = (void *)obj;
-
-	ret = irq_request(&obj->action);
-	if (ret < 0) {
-		printf("Can't register interrupt handler for timer\n");
-		return ret;
-	}
-
-	swtimer_hw_init(obj);
-	timer_enable_counter(obj->hw_tim.base);
-
-	ret = sched_add_task(SWTIMER_TASK, swtimer_task, obj,
-			     &obj->task_id);
-	if (ret < 0) {
-		printf("Can't add task\n");
-		return ret;
-	}
-
-	printf("exit %s\n", __func__); /* debug */
-
-	return 0;
-}
-
-/**
- * De-initialize software timer framework.
- */
-void swtimer_exit(void)
-{
-	timer_disable_counter(swtimer.hw_tim.base);
-	timer_disable_irq(swtimer.hw_tim.base, TIM_DIER_UIE);
-	nvic_disable_irq(swtimer.hw_tim.irq);
-	sched_del_task(swtimer.task_id);
-	irq_free(&swtimer.action);
-	UNUSED(swtimer);
-}
-
-/**
  * Reset internal tick counter.
  *
  * This function can be useful e.g. in case when swtimer_init() was called
@@ -285,4 +228,61 @@ int swtimer_tim_get_remaining(int id)
 
 	cm3_assert(slot >= 0 && slot < SWTIMER_TIMERS_MAX);
 	return swtimer.timer_list[slot].remaining;
+}
+
+/**
+ * Initialize software timer framework.
+ *
+ * Setup underneath hardware timer and run it.
+ *
+ * @param[in] hw_tim Parameters of HW timer to use
+ * @return 0 on success or negative number on error
+ *
+ * @note Scheduler must be initialized before calling this
+ */
+int swtimer_init(const struct swtimer_hw_tim *hw_tim)
+{
+	int ret;
+	struct swtimer *obj = &swtimer;
+
+	printf("enter %s\n", __func__); /* debug */
+
+	obj->hw_tim = *hw_tim;
+	obj->action.handler = swtimer_isr;
+	obj->action.irq = swtimer.hw_tim.irq;
+	obj->action.name = SWTIMER_TASK;
+	obj->action.data = (void *)obj;
+
+	ret = irq_request(&obj->action);
+	if (ret < 0) {
+		printf("Can't register interrupt handler for timer\n");
+		return ret;
+	}
+
+	swtimer_hw_init(obj);
+//	timer_enable_counter(obj->hw_tim.base);
+
+	ret = sched_add_task(SWTIMER_TASK, swtimer_task, obj,
+			     &obj->task_id);
+	if (ret < 0) {
+		printf("Can't add task\n");
+		return ret;
+	}
+
+	printf("exit %s\n", __func__); /* debug */
+
+	return 0;
+}
+
+/**
+ * De-initialize software timer framework.
+ */
+void swtimer_exit(void)
+{
+	timer_disable_counter(swtimer.hw_tim.base);
+	timer_disable_irq(swtimer.hw_tim.base, TIM_DIER_UIE);
+	nvic_disable_irq(swtimer.hw_tim.irq);
+	sched_del_task(swtimer.task_id);
+	irq_free(&swtimer.action);
+	UNUSED(swtimer);
 }

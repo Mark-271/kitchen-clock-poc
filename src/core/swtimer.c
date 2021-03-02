@@ -109,6 +109,8 @@ static void swtimer_hw_init(struct swtimer *obj)
 
 	nvic_set_priority(obj->hw_tim.irq, 1);
 	nvic_enable_irq(obj->hw_tim.irq);
+
+	timer_enable_counter(obj->hw_tim.base);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -259,7 +261,6 @@ int swtimer_init(const struct swtimer_hw_tim *hw_tim)
 		return -1;
 
 	swtimer_hw_init(obj);
-//	timer_enable_counter(obj->hw_tim.base);
 
 	ret = sched_add_task(SWTIMER_TASK, swtimer_task, obj, &obj->task_id);
 	if (ret < 0)

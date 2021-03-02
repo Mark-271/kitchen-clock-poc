@@ -106,6 +106,7 @@ static void init(void)
 		.psc = SWTIMER_TIM_PSC_VAL,
 	};
 
+	irq_init();
 	board_init();
 	serial_init(&serial);
 	sched_init();
@@ -141,6 +142,5 @@ static void init(void)
 int main(void)
 {
 	init();
-	irq_init();
 	sched_start();
 }

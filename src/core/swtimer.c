@@ -15,7 +15,6 @@
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/stm32/timer.h>
 #include <stddef.h>
-#include <stdio.h>
 #include <string.h>
 
 #define SWTIMER_TIMERS_MAX	10
@@ -245,8 +244,6 @@ int swtimer_init(const struct swtimer_hw_tim *hw_tim)
 	int ret;
 	struct swtimer *obj = &swtimer;
 
-	printf("enter %s\n", __func__); /* debug */
-
 	obj->hw_tim = *hw_tim;
 	obj->action.handler = swtimer_isr;
 	obj->action.irq = swtimer.hw_tim.irq;
@@ -254,22 +251,15 @@ int swtimer_init(const struct swtimer_hw_tim *hw_tim)
 	obj->action.data = (void *)obj;
 
 	ret = irq_request(&obj->action);
-	if (ret < 0) {
-		printf("Can't register interrupt handler for timer\n");
-		return ret;
-	}
+	if (ret < 0)
+		return -1;
 
 	swtimer_hw_init(obj);
 //	timer_enable_counter(obj->hw_tim.base);
 
-	ret = sched_add_task(SWTIMER_TASK, swtimer_task, obj,
-			     &obj->task_id);
-	if (ret < 0) {
-		printf("Can't add task\n");
-		return ret;
-	}
-
-	printf("exit %s\n", __func__); /* debug */
+	ret = sched_add_task(SWTIMER_TASK, swtimer_task, obj, &obj->task_id);
+	if (ret < 0)
+		return -2;
 
 	return 0;
 }

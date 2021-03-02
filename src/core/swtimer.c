@@ -84,12 +84,12 @@ static void swtimer_task(void *data)
 	 *   - zero the global "ticks" counter
 	 */
 	for (i = 0; i < SWTIMER_TIMERS_MAX; i++) {
-		if (obj->timer_list[i].active) {
-			obj->timer_list[i].remaining -= obj->ticks;
-			if (obj->timer_list[i].remaining <= 0) {
-				obj->timer_list[i].cb();
-				obj->timer_list[i].remaining = obj->timer_list[i].period;
-			}
+		if (!obj->timer_list[i].active)
+			continue;
+		obj->timer_list[i].remaining -= obj->ticks;
+		if (obj->timer_list[i].remaining <= 0) {
+			obj->timer_list[i].cb();
+			obj->timer_list[i].remaining = obj->timer_list[i].period;
 		}
 	}
 	obj->ticks = 0;

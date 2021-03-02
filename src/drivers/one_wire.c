@@ -48,6 +48,7 @@ static uint16_t ow_read_bit(struct ow *obj)
 int ow_init(struct ow *obj)
 {
 	gpio_set(obj->port, obj->pin);
+	udelay(CONFIG_GPIO_STAB_DELAY);
 	/* If device holds bus in low level -- return error */
 	if (!(gpio_get(obj->port, obj->pin)))
 		return -1;

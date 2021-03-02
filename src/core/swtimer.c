@@ -63,7 +63,7 @@ static irqreturn_t swtimer_isr(int irq, void *data)
 	 *   - clear HW timer flag
 	 *   - account for possible race conditions
 	 */
-	swtimer.ticks += SWTIMER_HW_OVERFLOW;
+	obj->ticks = SWTIMER_HW_OVERFLOW;
 	sched_set_ready(obj->task_id);
 	timer_clear_flag(obj->hw_tim.base, TIM_SR_UIF);
 

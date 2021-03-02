@@ -111,6 +111,11 @@ static void init(void)
 	serial_init(&serial);
 	sched_init();
 
+	err = swtimer_init(&hw_tim);
+	if (err) {
+		printf("Can't initialize swtimer\n");
+		hang();
+	}
 	err = kbd_init(&kbd, &kbd_gpio, handle_btn);
 	if (err) {
 		printf("Can't initialize kbd\n");

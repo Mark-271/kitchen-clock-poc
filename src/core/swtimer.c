@@ -142,29 +142,32 @@ int swtimer_init(const struct swtimer_hw_tim *hw_tim)
 	 *   - setup and enable hardware timer
 	 *   - add scheduler task for handling SW timers
 	 */
+	printf("enter %s\n", __func__); /* debug */
 	int ret;
-	swtimer.hw_tim = *hw_tim;
-	swtimer.action.handler = swtimer_isr;
-	swtimer.action.irq = swtimer.hw_tim.irq;
-	swtimer.action.name = SWTIMER_TASK;
-	swtimer.action.data = &swtimer;
+	struct swtimer *obj = &swtimer;
+	obj->hw_tim = *hw_tim;
+	obj->action.handler = swtimer_isr;
+	obj->action.irq = swtimer.hw_tim.irq;
+	obj->action.name = SWTIMER_TASK;
+	obj->action.data = (void *)obj;
 
-	ret = irq_request(&swtimer.action);
-	if (ret < 0) {
-		printf("Can't register interrupt handler for timer\n");
-		return ret;
-	}
-
-	swtimer_hw_init(&swtimer);
-
-	ret = sched_add_task(SWTIMER_TASK, swtimer_task, &swtimer,
-			     &swtimer.task_id);
+	ret = sched_add_task(SWTIMER_TASK, swtimer_task, obj,
+			     &obj->task_id);
 	if (ret < 0) {
 		printf("Can't add task\n");
 		return ret;
 	}
 
-	timer_enable_counter(swtimer.hw_tim.base);
+	swtimer_hw_init(obj);
+
+	ret = irq_request(&obj->action);
+	if (ret < 0) {
+		printf("Can't register interrupt handler for timer\n");
+		return ret;
+	}
+
+	//timer_enable_counter(obj->hw_tim.base);
+	printf("exit %s\n", __func__); /* debug */
 
 	return 0;
 }

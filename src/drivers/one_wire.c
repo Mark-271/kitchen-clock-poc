@@ -43,9 +43,7 @@ static uint16_t ow_read_bit(struct ow *obj)
  * Initialize one-wire interface.
  *
  * @param obj Structure to store corresponding GPIOs
- * @return  0 on success
- * @return -1 if device is damaged
- * @return -2 if data bus is damaged
+ * @return 0 on success, -1 if device is damaged
  */
 int ow_init(struct ow *obj)
 {
@@ -69,9 +67,7 @@ void ow_exit(struct ow *obj)
  * Reset-presence pulse.
  *
  * @param obj Structure to store corresponding GPIOs
- * @return  0 on success
- * @return -1 if device doesn't respond
- * @return -2 if data bus is damaged
+ * @return 0 on success, -1 if device doesn't respond
  */
 int ow_reset_pulse(struct ow *obj)
 {
@@ -84,15 +80,10 @@ int ow_reset_pulse(struct ow *obj)
 	gpio_set(obj->port, obj->pin);
 	udelay(OW_PRESENCE_WAIT_TIME);
 	ret = gpio_get(obj->port, obj->pin);
+	udelay(OW_RESET_TIME);
 	exit_critical(flags);
 	if (ret)
 		return -1;
-	enter_critical(flags);
-	udelay(OW_RESET_TIME);
-	ret = gpio_get(obj->port, obj->pin);
-	exit_critical(flags);
-	if (!ret)
-		return -2;
 
 	return 0;
 }

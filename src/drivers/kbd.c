@@ -12,7 +12,6 @@
 
 /* Calculate button number by current scan line and read line numbers */
 #define BTN_LOOKUP(i, j)	((j) + (i) * KBD_READ_LINES)
-#define SCAN_LINE_DELAY		10 /* usec */
 /* Set timer prescaler value to obtain frequency 1 MHz */
 #define TIM_PRESCALER		((rcc_apb1_frequency) / 1e6)
 /* Set counter period to trigger overflow every 10 msec */
@@ -116,7 +115,7 @@ static void kbd_task(void *data)
 		/* Scan next line */
 		gpio_set(obj->gpio.port, obj->scan_mask);
 		gpio_clear(obj->gpio.port, obj->gpio.scan[i]);
-		udelay(SCAN_LINE_DELAY); /* Wait for voltage to stabilize */
+		udelay(CONFIG_GPIO_STAB_DELAY);
 
 		/* Read all read lines */
 		val = gpio_port_read(obj->gpio.port) & obj->read_mask;
@@ -127,7 +126,7 @@ static void kbd_task(void *data)
 	}
 
 	gpio_clear(obj->gpio.port, obj->scan_mask);
-	udelay(SCAN_LINE_DELAY); /* Wait for voltage to stabilize */
+	udelay(CONFIG_GPIO_STAB_DELAY);
 
 	obj->scan_pending = false;
 	kbd_enable_exti(obj);

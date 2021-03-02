@@ -39,6 +39,7 @@ struct swtimer {
 
 /* Singleton driver object */
 static struct swtimer swtimer;
+
 /* -------------------------------------------------------------------------- */
 
 static irqreturn_t swtimer_isr(int irq, void *data)
@@ -79,7 +80,6 @@ static void swtimer_task(void *data)
 	}
 	obj->ticks = 0;
 }
-/* -------------------------------------------------------------------------- */
 
 static int swtimer_find_empty_slot(struct swtimer *obj)
 {
@@ -96,6 +96,7 @@ static int swtimer_find_empty_slot(struct swtimer *obj)
 static void swtimer_hw_init(struct swtimer *obj)
 {
 	rcc_periph_reset_pulse(obj->hw_tim.rst);
+
 	timer_set_mode(obj->hw_tim.base, TIM_CR1_CKD_CK_INT,
 		       TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
 	timer_set_prescaler(obj->hw_tim.base, obj->hw_tim.psc);
@@ -105,9 +106,12 @@ static void swtimer_hw_init(struct swtimer *obj)
 	timer_enable_update_event(obj->hw_tim.base);
 	timer_update_on_overflow(obj->hw_tim.base);
 	timer_enable_irq(obj->hw_tim.base, TIM_DIER_UIE);
+
 	nvic_set_priority(obj->hw_tim.irq, 1);
 	nvic_enable_irq(obj->hw_tim.irq);
 }
+
+/* -------------------------------------------------------------------------- */
 
 /**
  * Reset internal tick counter.
@@ -244,11 +248,11 @@ int swtimer_init(const struct swtimer_hw_tim *hw_tim)
 	int ret;
 	struct swtimer *obj = &swtimer;
 
-	obj->hw_tim = *hw_tim;
-	obj->action.handler = swtimer_isr;
-	obj->action.irq = swtimer.hw_tim.irq;
-	obj->action.name = SWTIMER_TASK;
-	obj->action.data = (void *)obj;
+	obj->hw_tim		= *hw_tim;
+	obj->action.handler	= swtimer_isr;
+	obj->action.irq		= hw_tim->irq;
+	obj->action.name	= SWTIMER_TASK;
+	obj->action.data	= obj;
 
 	ret = irq_request(&obj->action);
 	if (ret < 0)

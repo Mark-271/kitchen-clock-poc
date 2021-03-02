@@ -40,8 +40,8 @@ struct swtimer {
 
 /* Singleton driver object */
 static struct swtimer swtimer;
-
 /* -------------------------------------------------------------------------- */
+
 static irqreturn_t swtimer_isr(int irq, void *data)
 {
 	struct swtimer *obj = (struct swtimer *)(data);
@@ -57,12 +57,6 @@ static irqreturn_t swtimer_isr(int irq, void *data)
 	if (!timer_get_flag(obj->hw_tim.base, TIM_SR_UIF))
 		return IRQ_NONE;
 
-	/*
-	 *   - increment global ticks counter
-	 *   - set task state to "Ready" via scheduler
-	 *   - clear HW timer flag
-	 *   - account for possible race conditions
-	 */
 	obj->ticks = SWTIMER_HW_OVERFLOW;
 	sched_set_ready(obj->task_id);
 	timer_clear_flag(obj->hw_tim.base, TIM_SR_UIF);
@@ -75,22 +69,14 @@ static void swtimer_task(void *data)
 	size_t i;
 	struct swtimer *obj = (struct swtimer *)data;
 
-	/*
-	 *   - for each active SW timer:
-	 *     - decrement remaining time for each tick of global tick counter
-	 *     - if remaining time is <= 0:
-	 *       - call timer callback
-	 *       - set remaining time to period time
-	 *   - zero the global "ticks" counter
-	 */
 	for (i = 0; i < SWTIMER_TIMERS_MAX; i++) {
 		if (!obj->timer_list[i].active)
 			continue;
-		obj->timer_list[i].remaining -= obj->ticks;
 		if (obj->timer_list[i].remaining <= 0) {
 			obj->timer_list[i].cb();
 			obj->timer_list[i].remaining = obj->timer_list[i].period;
 		}
+		obj->timer_list[i].remaining -= obj->ticks;
 	}
 	obj->ticks = 0;
 }
@@ -136,20 +122,25 @@ static void swtimer_hw_init(struct swtimer *obj)
  */
 int swtimer_init(const struct swtimer_hw_tim *hw_tim)
 {
-	/*
-	 *   - copy info from "hw_tim" param to driver object
-	 *   - setup IRQ (request IRQ, enable IRQ in NVIC + set priority)
-	 *   - setup and enable hardware timer
-	 *   - add scheduler task for handling SW timers
-	 */
 	printf("enter %s\n", __func__); /* debug */
+
 	int ret;
 	struct swtimer *obj = &swtimer;
+
 	obj->hw_tim = *hw_tim;
 	obj->action.handler = swtimer_isr;
 	obj->action.irq = swtimer.hw_tim.irq;
 	obj->action.name = SWTIMER_TASK;
 	obj->action.data = (void *)obj;
+
+	ret = irq_request(&obj->action);
+	if (ret < 0) {
+		printf("Can't register interrupt handler for timer\n");
+		return ret;
+	}
+
+	swtimer_hw_init(obj);
+	timer_enable_counter(obj->hw_tim.base);
 
 	ret = sched_add_task(SWTIMER_TASK, swtimer_task, obj,
 			     &obj->task_id);
@@ -158,15 +149,6 @@ int swtimer_init(const struct swtimer_hw_tim *hw_tim)
 		return ret;
 	}
 
-	swtimer_hw_init(obj);
-
-	ret = irq_request(&obj->action);
-	if (ret < 0) {
-		printf("Can't register interrupt handler for timer\n");
-		return ret;
-	}
-
-	//timer_enable_counter(obj->hw_tim.base);
 	printf("exit %s\n", __func__); /* debug */
 
 	return 0;
@@ -177,12 +159,6 @@ int swtimer_init(const struct swtimer_hw_tim *hw_tim)
  */
 void swtimer_exit(void)
 {
-	/*
-	 *   - disable hardware timer
-	 *   - unregister the IRQ
-	 *   - remove scheduler task
-	 *   - clean driver object
-	 */
 	timer_disable_counter(swtimer.hw_tim.base);
 	timer_disable_irq(swtimer.hw_tim.base, TIM_DIER_UIE);
 	nvic_disable_irq(swtimer.hw_tim.irq);
@@ -200,8 +176,7 @@ void swtimer_exit(void)
  */
 void swtimer_reset(void)
 {
-	/* Set global ticks counter to 0 */
-	swtimer.ticks = 0;
+	swtimer.ticks = 0; /* Set global ticks counter to 0 */
 }
 
 /**
@@ -215,12 +190,6 @@ void swtimer_reset(void)
  */
 int swtimer_tim_register(swtimer_callback_t cb, int period)
 {
-	/*
-	 *   - find empty (not used) slot in timer table
-	 *   - configure all fields for timer with found slot using
-	 *     this function params (timer must start when this function ends)
-	 *   - return registered timer ID number (not slot number)
-	 */
 	int slot;
 
 	cm3_assert(cb != NULL);
@@ -258,16 +227,9 @@ void swtimer_tim_del(int id)
  */
 void swtimer_tim_start(int id)
 {
-	/*
-	 *   - calculate slot number from id
-	 *   - add assert() to check if slot number is not in range
-	 *   - reset timer by ID
-	 *   - make timer with specified slot number "active"
-	 */
 	int slot = id -1;
 
 	cm3_assert(slot >= 0 && slot < SWTIMER_TIMERS_MAX);
-	swtimer_tim_reset(id);
 	swtimer.timer_list[slot].active = true;
 }
 
@@ -278,11 +240,6 @@ void swtimer_tim_start(int id)
  */
 void swtimer_tim_stop(int id)
 {
-	/*
-	 *   - calculate slot number from id
-	 *   - add assert() to check if slot number is not in range
-	 *   - make timer with specified slot number "not active"
-	 */
 	int slot = id -1;
 
 	cm3_assert(slot >= 0 && slot < SWTIMER_TIMERS_MAX);
@@ -296,12 +253,6 @@ void swtimer_tim_stop(int id)
  */
 void swtimer_tim_reset(int id)
 {
-	/*
-	 *   - calculate slot number from id
-	 *   - add assert() to check if slot number is not in range
-	 *   - set remaining time to timer period, for timer with specified slot
-	 *     number
-	 */
 	int slot = id -1;
 
 	cm3_assert(slot >= 0 && slot < SWTIMER_TIMERS_MAX);
@@ -316,16 +267,10 @@ void swtimer_tim_reset(int id)
  */
 void swtimer_tim_set_period(int id, int period)
 {
-	/*
-	 *   - calculate slot number from id
-	 *   - add assert() to check if slot number is not in range
-	 *   - set period for timer with specified slot number
-	 */
 	int slot = id -1;
 
 	cm3_assert(slot >= 0 && slot < SWTIMER_TIMERS_MAX);
 	swtimer.timer_list[slot].period = period;
-
 }
 
 /**
@@ -336,11 +281,6 @@ void swtimer_tim_set_period(int id, int period)
  */
 int swtimer_tim_get_remaining(int id)
 {
-	/*
-	 *   - calculate slot number from id
-	 *   - add assert() to check if slot number is not in range
-	 *   - return remaining time for timer with specified slot number
-	 */
 	int slot = id -1;
 
 	cm3_assert(slot >= 0 && slot < SWTIMER_TIMERS_MAX);

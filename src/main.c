@@ -115,13 +115,11 @@ static void init(void)
 		printf("Can't initialize kbd\n");
 		hang();
 	}
-
 	err = ds18b20_init(&ts);
 	if (err) {
 		printf("Can't initialize ds18b20\n");
 		ds18b20_presence_flag = false;
 	}
-
 	err = wh1602_init(&wh, &wh_gpio);
 	if (err) {
 		printf("Can't initialize wh1602\n");

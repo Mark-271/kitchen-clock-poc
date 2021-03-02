@@ -49,25 +49,6 @@ static struct ds18b20_temp ds18b20_parse_temp(uint8_t lsb, uint8_t msb)
 	return tv;
 }
 
-int ds18b20_init(struct ds18b20 *obj)
-{
-	int ret;
-
-	ow.port = obj->port;
-	ow.pin = obj->pin;
-
-	ret = ow_init(&ow);
-
-	return ret;
-}
-
-/* Destroy ds18b20 object */
-void ds18b20_exit(struct ds18b20 *obj)
-{
-	UNUSED(obj);
-	ow_exit(&ow);
-}
-
 /**
  * Read temperature register from DS18B20.
  *
@@ -134,4 +115,19 @@ char *ds18b20_temp2str(struct ds18b20_temp *obj, char str[])
 	inplace_reverse(str);
 
 	return str;
+}
+
+int ds18b20_init(struct ds18b20 *obj)
+{
+	ow.port = obj->port;
+	ow.pin = obj->pin;
+
+	return ow_init(&ow);
+}
+
+/* Destroy ds18b20 object */
+void ds18b20_exit(struct ds18b20 *obj)
+{
+	UNUSED(obj);
+	ow_exit(&ow);
 }

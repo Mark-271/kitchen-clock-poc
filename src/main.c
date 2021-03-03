@@ -39,11 +39,12 @@ static void show_temp(void *data)
 	while (ts.temp.frac > 9)
 		ts.temp.frac /= 10;
 	temper = ds18b20_temp2str(&ts.temp, buf);
-	wh1602_set_address(obj, 0x00);
+	wh1602_set_line(obj, LINE_2);
 	wh1602_print_str(obj, temper);
 	mdelay(GET_TEMPERATURE_DELAY);
 
 	sched_set_ready(showtemp_id);
+	wh1602_set_line(obj, LINE_1);
 }
 
 static void handle_btn(int button, bool pressed)

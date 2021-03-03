@@ -23,6 +23,7 @@
 /* Software timer parameters */
 struct swtimer_sw_tim {
 	swtimer_callback_t cb;	/* function to call when this timer overflows */
+	void *data;		/* user private data passed to cb */
 	int period;		/* timer overflow period, msec */
 	int remaining;		/* remaining time till overflow, msec */
 	bool active;		/* if true, callback will be executed */
@@ -73,7 +74,7 @@ static void swtimer_task(void *data)
 		if (!obj->timer_list[i].active)
 			continue;
 		if (obj->timer_list[i].remaining <= 0) {
-			obj->timer_list[i].cb();
+			obj->timer_list[i].cb(obj->timer_list[i].data);
 			obj->timer_list[i].remaining = obj->timer_list[i].period;
 		}
 		obj->timer_list[i].remaining -= obj->ticks;
@@ -136,7 +137,7 @@ void swtimer_reset(void)
  *
  * @note This function can be used before swtimer_init()
  */
-int swtimer_tim_register(swtimer_callback_t cb, int period)
+int swtimer_tim_register(swtimer_callback_t cb, void *data, int period)
 {
 	int slot;
 
@@ -148,6 +149,7 @@ int swtimer_tim_register(swtimer_callback_t cb, int period)
 		return -1;
 
 	swtimer.timer_list[slot].cb = cb;
+	swtimer.timer_list[slot].data = data;
 	swtimer.timer_list[slot].period = period;
 	swtimer.timer_list[slot].remaining = period;
 	swtimer.timer_list[slot].active = true;

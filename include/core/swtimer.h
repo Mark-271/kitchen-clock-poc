@@ -7,7 +7,7 @@
 /* HW timer granularity (min SW timer period), msec */
 #define SWTIMER_HW_OVERFLOW	5
 
-typedef void (*swtimer_callback_t)(void);
+typedef void (*swtimer_callback_t)(void *data);
 
 /* Hardware timer parameters */
 struct swtimer_hw_tim {
@@ -25,7 +25,7 @@ void swtimer_exit(void);
 void swtimer_reset(void);
 
 /* SW timers API */
-int swtimer_tim_register(swtimer_callback_t cb, int period);
+int swtimer_tim_register(swtimer_callback_t cb, void *data, int period);
 void swtimer_tim_del(int id);
 void swtimer_tim_start(int id);
 void swtimer_tim_stop(int id);

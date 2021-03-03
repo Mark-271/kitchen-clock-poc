@@ -33,7 +33,6 @@
 /* Matrix keypad 2x2 */
 #define KBD_AFIO_RCC		RCC_AFIO
 #define KBD_GPIO_RCC		RCC_GPIOA
-#define KBD_TIM_RCC		RCC_TIM4
 #define KBD_GPIO_PORT		GPIOA
 #define KBD_GPIO_L1_PIN		GPIO1
 #define KBD_GPIO_L2_PIN		GPIO2

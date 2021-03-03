@@ -18,10 +18,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#define GET_TEMPERATURE_DELAY	1000
-#define LCD_GREETING_DELAY	2000
-
+#define LCD_GREETING_DELAY	2000 /* msec */
 static int showtemp_id; /* task ID */
+#define GET_TEMP_DELAY		5000 /* msec */
 
 static struct kbd kbd;
 static struct wh1602 wh;

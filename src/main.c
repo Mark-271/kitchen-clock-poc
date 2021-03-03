@@ -8,18 +8,12 @@
 #include <drivers/wh1602.h>
 #include <tools/common.h>
 #include <libopencm3/stm32/gpio.h>
-#include <libopencm3/stm32/rcc.h>
-#include <libopencm3/stm32/usart.h>
-#include <libopencm3/cm3/nvic.h>
-#include <libopencm3/stm32/exti.h>
-#include <libopencm3/stm32/timer.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
 #define LCD_GREETING_DELAY	2000 /* msec */
-static int showtemp_id; /* task ID */
 #define GET_TEMP_DELAY		5000 /* msec */
 
 static struct kbd kbd;
@@ -41,9 +35,6 @@ static void show_temp(void *data)
 	temper = ds18b20_temp2str(&ts.temp, buf);
 	wh1602_set_line(obj, LINE_2);
 	wh1602_print_str(obj, temper);
-	mdelay(GET_TEMPERATURE_DELAY);
-
-	sched_set_ready(showtemp_id);
 	wh1602_set_line(obj, LINE_1);
 }
 
@@ -135,12 +126,12 @@ static void init(void)
 
 	/* If ds18b20 is out of order, the program should skip it */
 	if (ds18b20_presence_flag) {
-		err = sched_add_task("showtemp", show_temp, &wh, &showtemp_id);
-		if (err < 0) {
-			printf("Can't add task to show_temp\n");
+		int id;
+		id = swtimer_tim_register(show_temp, &wh, GET_TEMP_DELAY);
+		if (id < 0) {
+			printf("Unable to register swtimer\n");
 			hang();
 		}
-		sched_set_ready(showtemp_id);
 	}
 }
 

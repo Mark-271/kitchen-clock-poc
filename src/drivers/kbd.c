@@ -1,25 +1,21 @@
 #include <drivers/kbd.h>
 #include <core/irq.h>
-#include <core/sched.h>
+#include <core/swtimer.h>
 #include <tools/common.h>
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/stm32/exti.h>
 #include <libopencm3/stm32/gpio.h>
-#include <libopencm3/stm32/rcc.h>
-#include <libopencm3/stm32/timer.h>
 #include <stddef.h>
 #include <stdio.h>
 
 /* Calculate button number by current scan line and read line numbers */
 #define BTN_LOOKUP(i, j)	((j) + (i) * KBD_READ_LINES)
-/* Set timer prescaler value to obtain frequency 1 MHz */
-#define TIM_PRESCALER		((rcc_apb1_frequency) / 1e6)
-/* Set counter period to trigger overflow every 10 msec */
-#define TIM_PERIOD		1e4
+/* Set period for timer in msec */
+#define KBD_TIM_PERIOD		10
 /* Set total number of keyboard buttons */
 #define KEYS			4
 /* Set number of irqs */
-#define KBD_IRQS		3
+#define KBD_IRQS		2
 
 static int kbd_gpio2irq(uint16_t gpio)
 {
@@ -73,33 +69,19 @@ static void kbd_enable_exti(struct kbd *obj)
 	};
 }
 
-static void kbd_timer_init(struct kbd *obj)
-{
-	UNUSED(obj);
-	timer_set_mode(TIM4, TIM_CR1_CKD_CK_INT,
-		       TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
-	timer_set_prescaler(TIM4, TIM_PRESCALER);
-	timer_set_period(TIM4, TIM_PERIOD);
-	timer_one_shot_mode(TIM4);
-
-	nvic_enable_irq(NVIC_TIM4_IRQ);
-	timer_enable_irq(TIM4, TIM_DIER_UIE);
-}
-
 static void kdb_handle_interrupt(struct kbd *obj)
 {
 	if (!obj->scan_pending) {
-		timer_enable_counter(TIM4);
+		swtimer_tim_start(obj->timer_id);
 		kbd_disable_exti(obj);
 		obj->scan_pending = true;
 	}
 }
 
 /*
- * Task function for scheduler.
- * Find out pressed button(s) and pas it to callback.
+ * Find out pressed button(s) and pass it to callback.
  */
-static void kbd_task(void *data)
+static void kbd_handle_btn(void *data)
 {
 	struct kbd *obj = (struct kbd *)(data);
 	int btn;
@@ -172,21 +154,6 @@ static irqreturn_t exti2_handler(int irq, void *data)
 	return IRQ_HANDLED;
 }
 
-static irqreturn_t tim_handler(int irq, void *data)
-{
-	struct kbd *obj = (struct kbd *)(data);
-
-	UNUSED(irq);
-
-	if (!timer_get_flag(TIM4, TIM_SR_UIF))
-		return IRQ_NONE;
-
-	sched_set_ready(obj->btn_task_id);
-	timer_clear_flag(TIM4, TIM_SR_UIF);
-
-	return IRQ_HANDLED;
-}
-
 /* Store irq objects */
 static struct irq_action a[KBD_IRQS] = {
 	{
@@ -198,11 +165,6 @@ static struct irq_action a[KBD_IRQS] = {
 		.handler = exti2_handler,
 		.irq = NVIC_EXTI2_IRQ,
 		.name = "kbd_scan2",
-	},
-	{
-		.handler = tim_handler,
-		.irq = NVIC_TIM4_IRQ,
-		.name = "kbd_timer",
 	}
 };
 
@@ -236,10 +198,6 @@ int kbd_init(struct kbd *obj, const struct kbd_gpio *gpio, kbd_btn_event_t cb)
 
 	obj->cb = cb; /* register the callback */
 
-	ret = sched_add_task("keyboard", kbd_task, obj, &obj->btn_task_id);
-	if (ret < 0)
-		return -1;
-
 	/* Prepare irq values for external interrupts */
 	for (i = 0; i < KBD_READ_LINES; i++) {
 		 ret = kbd_gpio2irq(gpio->read[i]);
@@ -249,7 +207,12 @@ int kbd_init(struct kbd *obj, const struct kbd_gpio *gpio, kbd_btn_event_t cb)
 	}
 
 	kbd_exti_init(obj);
-	kbd_timer_init(obj);
+
+	obj->timer_id = swtimer_tim_register(kbd_handle_btn, obj,
+					     KBD_TIM_PERIOD);
+	if (obj->timer_id < 0)
+		return -1;
+ 	swtimer_tim_stop(obj->timer_id); /* timer should be triggered by exti */
 
 	/* Register interrupt handlers */
 	for (i = 0; i < KBD_IRQS; i++) {
@@ -269,8 +232,7 @@ void kbd_exit(struct kbd *obj)
 {
 	size_t i;
 
-	timer_disable_irq(TIM4, TIM_DIER_UIE);
-	nvic_disable_irq(NVIC_TIM4_IRQ);
+	swtimer_tim_del(obj->timer_id);
 	kbd_disable_exti(obj);
 
 	/* Remove interrupt handlers */

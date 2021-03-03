@@ -28,6 +28,7 @@ struct kbd {
 	bool pressed[KEYS];	/* storage for button pushed/released state */
 	int btn_task_id;	/* task id for task manager */
 	bool scan_pending;	/* Allows external interrupts */
+	int timer_id;		/* timer id for software timer */
 };
 
 int kbd_init(struct kbd *obj, const struct kbd_gpio *gpio, kbd_btn_event_t cb);

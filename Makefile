@@ -57,6 +57,7 @@ OBJS		+=				\
 		   src/core/irq.o		\
 		   src/core/sched.o		\
 		   src/core/swtimer.o		\
+		   src/core/systick.o		\
 		   src/drivers/ds18b20.o	\
 		   src/drivers/kbd.o		\
 		   src/drivers/one_wire.o	\

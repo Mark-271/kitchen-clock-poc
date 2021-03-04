@@ -21,3 +21,12 @@ int systick_init(void)
 
 	return 0;
 }
+
+/**
+ * De-initialize systick timer.
+ */
+void systick_exit(void)
+{
+	systick_counter_disable();
+	systick_interrupt_disable();
+}

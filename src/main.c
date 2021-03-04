@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define LCD_GREETING_DELAY	2000
+#define LCD_GREETING_DELAY	2000 /* msec */
 #define GET_TEMP_DELAY		5000 /* msec */
 
 static struct kbd kbd;

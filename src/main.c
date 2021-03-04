@@ -127,6 +127,7 @@ static void init(void)
 	/* If ds18b20 is out of order, the program should skip it */
 	if (ds18b20_presence_flag) {
 		int id;
+
 		id = swtimer_tim_register(show_temp, &wh, GET_TEMP_DELAY);
 		if (id < 0) {
 			printf("Unable to register swtimer\n");

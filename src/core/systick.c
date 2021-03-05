@@ -4,7 +4,6 @@
 #include <libopencm3/stm32/rcc.h>
 
 #define SYSTICK_FREQ		0x3e8 /* 1000 overflows per second */
-#define SYSTICK_CNT_MASK	0xffffff
 
 static volatile uint32_t ticks;
 
@@ -21,6 +20,14 @@ static volatile uint32_t ticks;
 void sys_tick_handler(void)
 {
 	ticks++;
+}
+
+/*
+ * Precision: +/-1 msec.
+ */
+uint32_t systick_get_time_ms(void)
+{
+	return ticks;
 }
 
 /**

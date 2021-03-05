@@ -1,6 +1,7 @@
 #include <board.h>
 #include <core/irq.h>
 #include <core/sched.h>
+#include <core/systick.h>
 #include <core/swtimer.h>
 #include <drivers/ds18b20.h>
 #include <drivers/kbd.h>
@@ -102,6 +103,11 @@ static void init(void)
 	serial_init(&serial);
 	sched_init();
 
+	err= systick_init();
+	if (err) {
+		printf("Can't initialize systick\n");
+		hang();
+	}
 	err = swtimer_init(&hw_tim);
 	if (err) {
 		printf("Can't initialize swtimer\n");

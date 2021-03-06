@@ -1,6 +1,7 @@
 #include <core/systick.h>
-#include <libopencm3/cm3/systick.h>
+#include <tools/common.h>
 #include <libopencm3/cm3/nvic.h>
+#include <libopencm3/cm3/systick.h>
 #include <libopencm3/stm32/rcc.h>
 
 #define SYSTICK_FREQ		1e3 /* overflows per second */

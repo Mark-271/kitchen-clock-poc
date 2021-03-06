@@ -174,6 +174,7 @@ static struct irq_action a[KBD_IRQS] = {
  * @param obj Driver's objects
  * @param[in] gpio GPIO port and lines where the keyboard is connected
  * @param cb Callback to call when some button is pressed
+ * @return 0 or negative value on error
  *
  * @note Read lines should be configured with pull up resistor before
  *       running this function.

@@ -120,7 +120,7 @@ static void init(void)
 	}
 	err = ds18b20_init(&ts);
 	if (err) {
-		printf("Can't initialize ds18b20\n");
+		printf("Can't initialize ds18b20: %d\n", err);
 		ds18b20_presence_flag = false;
 	}
 	err = wh1602_init(&wh, &wh_gpio);

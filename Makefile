@@ -123,7 +123,7 @@ $(LDS_GEN): $(LDS)
 	@printf "  CC      $(*).c\n"
 	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) -o $(*).o -c $(*).c
 
-clean:
+clean: styleclean
 	@printf "  CLEAN\n"
 	$(Q)$(RM) $(APP).elf $(APP).bin $(OBJS) $(OBJS:%.o=%.d)
 	$(Q)$(RM) $(LDS_GEN)
@@ -135,6 +135,8 @@ distclean: clean
 flash: $(APP).bin
 	@printf "  FLASH  $<\n"
 	$(STFLASH) write $(APP).bin 0x8000000
+
+include Makefile.tools
 
 .PHONY: clean distclean flash elf bin
 

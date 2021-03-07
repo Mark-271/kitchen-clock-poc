@@ -1,0 +1,20 @@
+STYLECHECK	:= checkpatch.pl
+STYLECHECKFLAGS	:= -f --terse --mailback
+STYLECHECKFILES	:= $(shell find src/ include/ -name '*.[ch]')
+
+stylecheck: $(STYLECHECKFILES:=.stylecheck)
+styleclean:
+	$(Q)find . -type f -name '*.stylecheck' -delete
+	$(Q)find . -type f -name '*.checkpatch-*' -delete
+
+# The cat is due to multithreaded nature - we like to have consistent chunks of
+# text on the output
+%.stylecheck: %
+	$(Q)$(SCRIPT_DIR)/$(STYLECHECK) $(STYLECHECKFLAGS) $* > $*.stylecheck; \
+		if [ -s $*.stylecheck ]; then	\
+			cat $*.stylecheck;	\
+		else				\
+			rm -f $*.stylecheck;	\
+		fi;
+
+.PHONY: stylecheck styleclean

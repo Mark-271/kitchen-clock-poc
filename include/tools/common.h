@@ -62,6 +62,36 @@ do {									\
 		: "memory");						\
 } while (0)
 
+/**
+ * Wait for some event (condition) to happen, breaking off on timeout.
+ *
+ * This is blocking wait, of course, as we don't use context switching.
+ * Be aware of watchdog interval!
+ *
+ * @param cond C expression (condition) for the event to wait for
+ * @param timeout Timeout in msec
+ * @return 0 if condition is met or -1 on timeout
+ */
+#define wait_event_timeout(cond, timeout)				\
+({									\
+	uint32_t _t1;							\
+	int _ret = 0;							\
+									\
+	_t1 = systick_get_time_ms();					\
+									\
+	while (!(cond)) {						\
+		uint32_t _t2 = systick_get_time_ms();			\
+		uint32_t _elapsed = systick_calc_diff_ms(_t1, _t2);	\
+									\
+		if (_elapsed > (timeout)) {				\
+			_ret = -1;					\
+			break;						\
+		}							\
+	}								\
+									\
+	_ret;								\
+})
+
 /** CPU cycles per 1 iteration of loop in ldelay() */
 #define CYCLES_PER_LOOP		3UL
 /** How many CPU cycles to wait for 1 usec */

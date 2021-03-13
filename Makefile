@@ -57,11 +57,11 @@ OBJS		+=				\
 		   src/core/irq.o		\
 		   src/core/sched.o		\
 		   src/core/swtimer.o		\
-		   src/core/systick.o		\
 		   src/drivers/ds18b20.o	\
 		   src/drivers/kbd.o		\
 		   src/drivers/one_wire.o	\
 		   src/drivers/serial.o		\
+		   src/drivers/systick.o	\
 		   src/drivers/wh1602.o		\
 		   src/main.o			\
 		   src/tools/common.o		\

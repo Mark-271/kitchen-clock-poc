@@ -1,4 +1,4 @@
-#include <core/systick.h>
+#include <drivers/systick.h>
 #include <tools/common.h>
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/cm3/systick.h>

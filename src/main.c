@@ -1,11 +1,11 @@
 #include <board.h>
 #include <core/irq.h>
 #include <core/sched.h>
-#include <core/systick.h>
 #include <core/swtimer.h>
 #include <drivers/ds18b20.h>
 #include <drivers/kbd.h>
 #include <drivers/serial.h>
+#include <drivers/systick.h>
 #include <drivers/wh1602.h>
 #include <tools/common.h>
 #include <libopencm3/stm32/gpio.h>

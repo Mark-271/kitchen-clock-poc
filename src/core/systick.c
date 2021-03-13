@@ -43,6 +43,15 @@ uint32_t systick_get_time_us(void)
 	return us;
 }
 
+/* Calculate timestamp difference in milliseconds */
+uint32_t systick_calc_diff_ms(uint32_t t1, uint32_t t2)
+{
+	if (t1 > t2)
+		t2 += UINT32_MAX;
+
+	return t2 - t1;
+}
+
 /**
  * Initialize systick timer.
  *

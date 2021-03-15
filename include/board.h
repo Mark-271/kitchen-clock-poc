@@ -4,6 +4,7 @@
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/stm32/exti.h>
 #include <libopencm3/stm32/gpio.h>
+#include <libopencm3/stm32/i2c.h>
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/timer.h>
 #include <libopencm3/stm32/usart.h>
@@ -47,6 +48,16 @@
 #define SWTIMER_TIM_RST		RST_TIM2
 #define SWTIMER_TIM_ARR_VAL	19999
 #define SWTIMER_TIM_PSC_VAL	5
+
+/* Real time clock */
+#define RTC_AFIO_RCC		RCC_AFIO
+#define RTC_GPIO_RCC		RCC_GPIOB
+#define RTC_I2C_RCC		RCC_I2C2
+#define RTC_I2C_BASE		I2C2
+#define RTC_I2C_GPIO_PORT	GPIOB
+#define RTC_I2C_SCL_PIN		GPIO10
+#define RTC_I2C_SDA_PIN		GPIO11
+#define RTC_ALARM_PIN		GPIO12
 
 int board_init(void);
 

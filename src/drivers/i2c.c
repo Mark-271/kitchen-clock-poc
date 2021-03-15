@@ -285,6 +285,68 @@ int i2c_write_buf_poll(uint8_t addr, uint8_t reg, const uint8_t *buf,
 }
 
 /**
+ * Read one byte from I2C slave device using polling mode.
+ *
+ * @param addr Slave device I2C address
+ * @param reg I2C register address in slave device
+ * @return Read data on success or negative value on failure
+ */
+int i2c_read_byte_pol(uint8_t addr, uint8_t reg)
+{
+	uint8_t data;
+	int ret;
+
+	if (READ_ONCE(i2c.state) != I2C_STATE_READY)
+		return -EBUSY;
+
+	if (wait_event_timeout((I2C_SR2(i2c.base) & I2C_SR2_BUSY) == 0,
+			       I2C_TIMEOUT_BUSY)) {
+		return -EBUSY;
+	}
+
+	WRITE_ONCE(i2c.state, I2C_STATE_BUSY_RX);
+	WRITE_ONCE(i2c.error, I2C_ERROR_NONE);
+
+	ret = i2c_send_start_addr_poll(addr, I2C_WRITE);
+	if (ret != 0)
+		return ret;
+
+	ret = i2c_send_byte_poll(reg);
+	if (ret != 0)
+		return ret;
+
+	ret = i2c_send_start_addr_poll(addr, I2C_READ);
+	if (ret != 0)
+		return ret;
+
+	i2c_disable_ack(i2c.base);
+	i2c_send_stop(i2c.base);
+
+	ret = wait_event_timeout(I2C_SR1(i2c.base) & I2C_SR1_RxNE,
+				  I2C_TIMEOUT_FLAG);
+	if (ret != 0)
+		goto err_timeout;
+
+	data = i2c_get_data(i2c.base);
+
+	ret = wait_event_timeout((I2C_CR1(i2c.base) & I2C_CR1_STOP) == 0,
+				 I2C_TIMEOUT_FLAG);
+	if (ret != 0)
+		goto err_timeout;
+
+	i2c_enable_ack(i2c.base);
+
+	WRITE_ONCE(i2c.state, I2C_STATE_READY);
+
+	return (int)data;
+
+err_timeout:
+	WRITE_ONCE(i2c.error, I2C_ERROR_TIMEOUT);
+	WRITE_ONCE(i2c.state, I2C_STATE_READY);
+	return -ETIMEDOUT;
+}
+
+/**
  * Check if slave is present on the bus.
  *
  * @param addr Slave device I2C address

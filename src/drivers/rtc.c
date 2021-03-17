@@ -3,6 +3,16 @@
 #include <tools/common.h>
 #include <stdio.h>
 
+static uint8_t dec2bcd(uint8_t val)
+{
+	return ((val / 10) << 4) | (val % 10);
+}
+
+static uint8_t bcd2dec(uint8_t val)
+{
+	return (val & 0x0f) + (val >> 4) * 10;
+}
+
 /**
  * Initialize RTC module.
  *

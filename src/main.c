@@ -108,26 +108,31 @@ static void init(void)
 		printf("Can't initialize systick\n");
 		hang();
 	}
+
 	err = swtimer_init(&hw_tim);
 	if (err) {
 		printf("Can't initialize swtimer\n");
 		hang();
 	}
+
 	err = kbd_init(&kbd, &kbd_gpio, handle_btn);
 	if (err) {
 		printf("Can't initialize kbd\n");
 		hang();
 	}
+
 	err = ds18b20_init(&ts);
 	if (err) {
 		printf("Can't initialize ds18b20: %d\n", err);
 		ds18b20_presence_flag = false;
 	}
+
 	err = wh1602_init(&wh, &wh_gpio);
 	if (err) {
 		printf("Can't initialize wh1602\n");
 		hang();
 	}
+
 	show_lcd(greeting);
 
 	/* If ds18b20 is out of order, the program should skip it */

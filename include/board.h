@@ -50,6 +50,7 @@
 #define SWTIMER_TIM_PSC_VAL	5
 
 /* Real time clock */
+#define RTC_DEVICE_ADDR		0x68
 #define RTC_AFIO_RCC		RCC_AFIO
 #define RTC_GPIO_RCC		RCC_GPIOB
 #define RTC_I2C_RCC		RCC_I2C2

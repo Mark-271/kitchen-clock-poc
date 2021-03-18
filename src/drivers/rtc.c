@@ -3,6 +3,12 @@
 #include <tools/common.h>
 #include <stdio.h>
 
+#define RTC_CR			0x0e
+#define RTC_SR			0x0f
+#define RTC_SEC_REG		0x00
+#define RTC_MIN_REG		0x01
+#define RTC_HOUR_REG		0x02
+
 static uint8_t dec2bcd(uint8_t val)
 {
 	return ((val / 10) << 4) | (val % 10);

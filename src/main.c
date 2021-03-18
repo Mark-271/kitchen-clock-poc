@@ -4,6 +4,7 @@
 #include <core/swtimer.h>
 #include <drivers/ds18b20.h>
 #include <drivers/kbd.h>
+#include <drivers/rtc.h>
 #include <drivers/serial.h>
 #include <drivers/systick.h>
 #include <drivers/wh1602.h>
@@ -16,8 +17,10 @@
 
 #define LCD_GREETING_DELAY	2000 /* msec */
 #define GET_TEMP_DELAY		5000 /* msec */
+#define RTC_GET_SEC_DELAY	1000 /* msec */
 
 static struct kbd kbd;
+static struct rtc rtc;
 static struct wh1602 wh;
 static struct ds18b20 ts = {
 	.port = DS18B20_GPIO_PORT,
@@ -57,6 +60,14 @@ static void show_lcd(const char *greeting)
 	wh1602_control_display(&wh, LCD_ON, CURSOR_OFF, CURSOR_BLINK_OFF);
 	mdelay(LCD_GREETING_DELAY);
 	wh1602_clear_display(&wh);
+}
+
+static void test_rtc(void *data)
+{
+	struct rtc *obj = (struct rtc *)(data);
+
+	rtc_get_time(obj);
+	printf("%d\n", obj->tm.ss);
 }
 
 static void init(void)
@@ -133,6 +144,12 @@ static void init(void)
 		hang();
 	}
 
+	err = rtc_init(&rtc, RTC_I2C_BASE, RTC_DEVICE_ADDR);
+	if (err) {
+		printf("Can't initialize RTC: %d\n", err);
+		hang();
+	}
+
 	show_lcd(greeting);
 
 	/* If ds18b20 is out of order, the program should skip it */
@@ -144,6 +161,14 @@ static void init(void)
 			printf("Unable to register swtimer\n");
 			hang();
 		}
+	}
+
+	int rtc_id;
+
+	rtc_id = swtimer_tim_register(test_rtc, &rtc, RTC_GET_SEC_DELAY);
+	if (rtc_id < 0) {
+		printf("Unable to register swtimer\n");
+		hang();
 	}
 }
 

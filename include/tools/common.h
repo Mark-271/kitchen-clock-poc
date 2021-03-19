@@ -6,7 +6,7 @@
 
 #define BIT(n)			(1 << (n))
 #define ARRAY_SIZE(a)		(sizeof(a) / sizeof(a[0]))
-#define UNUSED(x)		(void)x
+#define UNUSED(x)		((void)x)
 
 /**
  * Enter critical section (store IRQ flags and disable interrupts).
@@ -70,7 +70,7 @@ do {									\
  * Be aware of watchdog interval!
  *
  * @param cond C expression (condition) for the event to wait for
- * @param timeout Timeout in msec
+ * @param timeout Value given in msec
  * @return 0 if condition is met or -1 on timeout
  */
 #define wait_event_timeout(cond, timeout)				\
@@ -115,8 +115,8 @@ static inline __attribute__((always_inline)) void ldelay(unsigned long cycles)
 
 	cm3_assert(cycles >= CYCLES_PER_LOOP);
 
-	__asm__ __volatile__ (
-			"1:\n" "subs %0, %1, #1\n"
+	__asm__ __volatile__
+			("1:\n" "subs %0, %1, #1\n"
 			"bne 1b"
 			: "=r" (loops)
 			: "0" (loops));
@@ -195,7 +195,7 @@ void __write_once_size(volatile void *p, void *res, int size)
 #define WRITE_ONCE(x, val)						\
 ({									\
 	union { typeof(x) __val; char __c[1]; } __v =			\
-		{ .__val = (typeof(x)) (val) };				\
+		{ .__val = (typeof(x))(val) };				\
 	__write_once_size(&(x), __v.__c, sizeof(x));			\
 	__v.__val;							\
 })

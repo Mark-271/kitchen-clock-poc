@@ -201,10 +201,10 @@ int kbd_init(struct kbd *obj, const struct kbd_gpio *gpio, kbd_btn_event_t cb)
 
 	/* Prepare irq values for external interrupts */
 	for (i = 0; i < KBD_READ_LINES; i++) {
-		 ret = kbd_gpio2irq(gpio->read[i]);
-		 if (ret < 0)
-			 return -1;
-		 obj->gpio.irq[i] = ret;
+		ret = kbd_gpio2irq(gpio->read[i]);
+		if (ret < 0)
+			return -1;
+		obj->gpio.irq[i] = ret;
 	}
 
 	kbd_exti_init(obj);
@@ -213,7 +213,7 @@ int kbd_init(struct kbd *obj, const struct kbd_gpio *gpio, kbd_btn_event_t cb)
 					     KBD_TIM_PERIOD);
 	if (obj->timer_id < 0)
 		return -1;
- 	swtimer_tim_stop(obj->timer_id); /* timer should be triggered by exti */
+	swtimer_tim_stop(obj->timer_id); /* timer should be triggered by exti */
 
 	/* Register interrupt handlers */
 	for (i = 0; i < KBD_IRQS; i++) {

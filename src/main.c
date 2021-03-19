@@ -114,7 +114,7 @@ static void init(void)
 	serial_init(&serial);
 	sched_init();
 
-	err= systick_init();
+	err = systick_init();
 	if (err) {
 		printf("Can't initialize systick\n");
 		hang();

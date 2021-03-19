@@ -323,7 +323,7 @@ int i2c_read_byte_pol(uint8_t addr, uint8_t reg)
 	i2c_send_stop(i2c.base);
 
 	ret = wait_event_timeout(I2C_SR1(i2c.base) & I2C_SR1_RxNE,
-				  I2C_TIMEOUT_FLAG);
+				 I2C_TIMEOUT_FLAG);
 	if (ret != 0)
 		goto err_timeout;
 

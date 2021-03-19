@@ -177,7 +177,7 @@ void swtimer_tim_del(int id)
  */
 void swtimer_tim_start(int id)
 {
-	int slot = id -1;
+	int slot = id - 1;
 
 	cm3_assert(slot >= 0 && slot < SWTIMER_TIMERS_MAX);
 	swtimer.timer_list[slot].active = true;
@@ -190,7 +190,7 @@ void swtimer_tim_start(int id)
  */
 void swtimer_tim_stop(int id)
 {
-	int slot = id -1;
+	int slot = id - 1;
 
 	cm3_assert(slot >= 0 && slot < SWTIMER_TIMERS_MAX);
 	swtimer.timer_list[slot].active = false;
@@ -203,7 +203,7 @@ void swtimer_tim_stop(int id)
  */
 void swtimer_tim_reset(int id)
 {
-	int slot = id -1;
+	int slot = id - 1;
 
 	cm3_assert(slot >= 0 && slot < SWTIMER_TIMERS_MAX);
 	swtimer.timer_list[slot].remaining = swtimer.timer_list[slot].period;
@@ -217,7 +217,7 @@ void swtimer_tim_reset(int id)
  */
 void swtimer_tim_set_period(int id, int period)
 {
-	int slot = id -1;
+	int slot = id - 1;
 
 	cm3_assert(slot >= 0 && slot < SWTIMER_TIMERS_MAX);
 	swtimer.timer_list[slot].period = period;
@@ -231,7 +231,7 @@ void swtimer_tim_set_period(int id, int period)
  */
 int swtimer_tim_get_remaining(int id)
 {
-	int slot = id -1;
+	int slot = id - 1;
 
 	cm3_assert(slot >= 0 && slot < SWTIMER_TIMERS_MAX);
 	return swtimer.timer_list[slot].remaining;

@@ -19,7 +19,7 @@
 
 /* Control bits of corresponding LCD instructions */
 enum wh1602_cmd_control_bit {
-	CLEAR_DISPLAY 	 = BIT(0),
+	CLEAR_DISPLAY	 = BIT(0),
 	RETURN_HOME	 = BIT(1),
 	ENTRY_MODE_SET	 = BIT(2),
 	DISPLAY_CONTROL	 = BIT(3),
@@ -58,7 +58,8 @@ static void wh1602_write(struct wh1602 *obj, uint8_t nibble)
 	wh1602_en_pulse(obj);
 }
 
-static void wh1602_write_cmd(struct wh1602 *obj, uint8_t cmd, unsigned delay_us)
+static void wh1602_write_cmd(struct wh1602 *obj, uint8_t cmd,
+			     unsigned int delay_us)
 {
 	unsigned long flags;
 
@@ -71,7 +72,7 @@ static void wh1602_write_cmd(struct wh1602 *obj, uint8_t cmd, unsigned delay_us)
 }
 
 static void wh1602_write_data(struct wh1602 *obj, uint8_t data,
-			      unsigned delay_us)
+			      unsigned int delay_us)
 {
 	unsigned long flags;
 
@@ -146,7 +147,7 @@ void wh1602_control_display(struct wh1602 *obj, int d, int c, int b)
 /**
  * Function set.
  *
- * Contol data bus length, display line number and font size.
+ * Control data bus length, display line number and font size.
  *
  * @param obj Structe should be filled by the caller
  * @param dl Interface data length control bit.
@@ -217,7 +218,7 @@ void wh1602_set_address(struct wh1602 *obj, uint8_t addr)
  * Write data into internal RAM (DDRAM or CGRAM).
  *
  * @param obj Structure whose fields should be filled previously by the caller
- * @param data Data to be writen to RAM
+ * @param data Byte of data to be writen to RAM
  */
 void wh1602_write_char(struct wh1602 *obj, uint8_t data)
 {
@@ -241,7 +242,7 @@ void wh1602_print_str(struct wh1602 *obj, const char *str)
  * Set line on LCD to print data.
  *
  * @param obj LCD object
- * @param line Line number to set (0 or 1)
+ * @param line Number of string to set (0 or 1)
  */
 void wh1602_set_line(struct wh1602 *obj, int line)
 {

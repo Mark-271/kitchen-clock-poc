@@ -231,8 +231,6 @@ err_timeout:
  * Write buffer of data to I2C slave device using polling mode (no DMA, no IRQ).
  *
  * This function is synchronous, implements waiting events by polling registers.
- * Caller must ensure that the previous transfer is finished before calling this
- * functions, otherwise -EI2CBUSY error will be returned.
  *
  * Possible errors:
  *   -EBUSY: previous I2C transaction is not finished

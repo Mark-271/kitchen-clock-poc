@@ -13,6 +13,7 @@
 #include <libopencm3/stm32/i2c.h>
 #include <libopencm3/stm32/rcc.h>
 #include <errno.h>
+#include <stddef.h>
 
 /* Timeout values */
 #define I2C_TIMEOUT_FLAG	35	/* wait for generic flag, msec */
@@ -200,6 +201,63 @@ static int i2c_send_buf_poll(const uint8_t *buf, uint16_t len)
 }
 
 /**
+ * Receive buffer of bytes on the bus.
+ *
+ * @param[out] buf Buffer to store received bytes
+ * @param[in] len Buffer length
+ * @return 0 on success or negative value on error
+ */
+static int i2c_receive_buf_poll(uint8_t *buf, uint16_t len)
+{
+	size_t i;
+	int ret;
+
+	for (i = 0; i < len; len--) {
+		if (len == 3)
+			break;
+		ret = wait_event_timeout(I2C_SR1(i2c.base) & I2C_SR1_BTF,
+				I2C_TIMEOUT_FLAG);
+		if (ret != 0)
+			goto err_timeout;
+		buf[i++] = i2c_get_data(i2c.base);
+	}
+
+	ret = wait_event_timeout(I2C_SR1(i2c.base) & I2C_SR1_BTF,
+			I2C_TIMEOUT_FLAG);
+		if (ret != 0)
+			goto err_timeout;
+
+	i2c_disable_ack(i2c.base);
+	buf[i++] = i2c_get_data(i2c.base);
+
+	i2c_send_stop(i2c.base);
+	buf[i++] = i2c_get_data(i2c.base);
+
+	ret = wait_event_timeout(I2C_SR1(i2c.base) & I2C_SR1_RxNE,
+			I2C_TIMEOUT_FLAG);
+		if (ret != 0)
+			goto err_timeout;
+	buf[i] = i2c_get_data(i2c.base);
+
+	/* Make sure that the STOP bit is cleared by hardware */
+	ret = wait_event_timeout((I2C_CR1(i2c.base) & I2C_CR1_STOP) == 0,
+				 I2C_TIMEOUT_FLAG);
+	if (ret != 0)
+		goto err_timeout;
+
+	i2c_enable_ack(i2c.base);
+
+	WRITE_ONCE(i2c.state, I2C_STATE_READY);
+
+	return 0;
+
+err_timeout:
+	WRITE_ONCE(i2c.error, I2C_ERROR_TIMEOUT);
+	WRITE_ONCE(i2c.state, I2C_STATE_READY);
+	return -ETIMEDOUT;
+}
+
+/**
  * Send STOP condition on I2C bus.
  *
  * @return 0 on success or negative value on failure
@@ -353,6 +411,61 @@ err_timeout:
 	WRITE_ONCE(i2c.error, I2C_ERROR_TIMEOUT);
 	WRITE_ONCE(i2c.state, I2C_STATE_READY);
 	return -ETIMEDOUT;
+}
+
+/**
+ * Read n bytes of data into the buffer from I2C slave device using polling
+ * mode (no DMA, no IRQ).
+ *
+ * This function is synchronous, implements waiting events by polling registers.
+ *
+ * Possible errors:
+ *   -EBUSY: previous I2C transaction is not finished
+ *   -ETIMEDOUT: timeout happened during I2C transaction
+ *   -EIO: I/O error during I2C transaction
+ *
+ * @param addr Slave device I2C address
+ * @param reg I2C register address in slave device
+ * @param[out] buf Buffer of data to read in
+ * @param len Buffer size, in bytes
+ * @return 0 on success or negative value on failure
+ */
+int i2c_read_buf_poll(uint8_t addr, uint8_t reg, uint8_t *buf, uint16_t len)
+{
+	int ret;
+
+	cm3_assert(len > 2);
+
+	if (READ_ONCE(i2c.state) != I2C_STATE_READY)
+		return -EBUSY;
+
+	if (wait_event_timeout((I2C_SR2(i2c.base) & I2C_SR2_BUSY) == 0,
+			       I2C_TIMEOUT_BUSY)) {
+		return -EBUSY;
+	}
+
+	WRITE_ONCE(i2c.state, I2C_STATE_BUSY_RX);
+	WRITE_ONCE(i2c.error, I2C_ERROR_NONE);
+
+	ret = i2c_send_start_addr_poll(addr, I2C_WRITE);
+	if (ret != 0)
+		return ret;
+
+	ret = i2c_send_byte_poll(reg);
+	if (ret != 0)
+		return ret;
+
+	ret = i2c_send_start_addr_poll(addr, I2C_READ);
+	if (ret != 0)
+		return ret;
+
+	ret = i2c_receive_buf_poll(buf, len);
+	if (ret != 0)
+		return ret;
+
+	WRITE_ONCE(i2c.state, I2C_STATE_READY);
+
+	return 0;
 }
 
 /**

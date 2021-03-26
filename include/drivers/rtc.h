@@ -22,5 +22,6 @@ struct rtc {
 int rtc_init(struct rtc *obj, uint32_t base, uint8_t addr);
 void rtc_exit(struct rtc *obj);
 void rtc_get_date(struct rtc *obj);
+void rtc_set_time(struct rtc *obj, uint8_t ss, uint8_t mm, uint8_t hh);
 
 #endif /* RTC_H */

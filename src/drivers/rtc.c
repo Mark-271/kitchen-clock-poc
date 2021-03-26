@@ -38,6 +38,34 @@ void rtc_get_date(struct rtc *obj)
 		buf[i] = bcd2dec(temp[i]);
 	memcpy(&obj->tm, &buf[0], RTC_TM_BUF_LEN);
 }
+ * Set time to RTC.
+ *
+ * 24-hour mode is selected by default.
+ *
+ * @param obj RTC device
+ * @param ss Seconds
+ * @param mm Minutes
+ * @param hh Hours
+ */
+void rtc_set_time(struct rtc *obj, uint8_t hh, uint8_t mm, uint8_t ss)
+{
+	int ret;
+	uint8_t buf[3];
+
+	cm3_assert(ss < 60);
+	cm3_assert(mm < 60);
+	cm3_assert(hh < 24);
+
+	buf[0] = dec2bcd(ss);
+	buf[1] = dec2bcd(mm);
+	buf[2] = dec2bcd(hh);
+
+	ret = i2c_write_buf_poll(obj->addr, RTC_SECONDS, buf, 3);
+	if (ret != 0)
+		return;
+}
+
+/**
 int rtc_init(struct rtc *obj, uint32_t base, uint8_t addr)
 {
 	int ret;

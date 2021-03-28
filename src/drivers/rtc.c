@@ -20,6 +20,7 @@ static uint8_t bcd2dec(uint8_t val)
 	return (val & 0x0f) + (val >> 4) * 10;
 }
 
+/**
  * Read date/time registers from RTC device.
  *
  * @param obj RTC device
@@ -36,8 +37,11 @@ void rtc_get_date(struct rtc *obj)
 
 	for (i = 0; i <  RTC_TM_BUF_LEN; i++)
 		buf[i] = bcd2dec(temp[i]);
+
 	memcpy(&obj->tm, &buf[0], RTC_TM_BUF_LEN);
 }
+
+/**
  * Set time to RTC.
  *
  * 24-hour mode is selected by default.
@@ -66,6 +70,12 @@ void rtc_set_time(struct rtc *obj, uint8_t hh, uint8_t mm, uint8_t ss)
 }
 
 /**
+ * Initialize real-time clock device.
+ *
+ * @param obj RTC device
+ * @param base I2C base
+ * @param addr Address of device
+ */
 int rtc_init(struct rtc *obj, uint32_t base, uint8_t addr)
 {
 	int ret;

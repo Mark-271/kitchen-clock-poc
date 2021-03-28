@@ -118,12 +118,15 @@ static int i2c_send_start_addr_poll(uint8_t addr, uint8_t rw)
 	(void)I2C_SR2(i2c.base); /* clear ADDR flag (SR1 already read above) */
 
 	/* Wait for TxE = 1 to be set by hardware in response to ADDR */
-	ret = wait_event_timeout(I2C_SR1(i2c.base) & I2C_SR1_TxE,
-				 I2C_TIMEOUT_FLAG);
+	if (rw == I2C_WRITE) {
+		ret = wait_event_timeout(I2C_SR1(i2c.base) & I2C_SR1_TxE,
+					I2C_TIMEOUT_FLAG);
+		if (ret != 0)
+			goto err_timeout;
+	}
+
 	if (I2C_SR1(i2c.base) & I2C_SR1_AF)
 		goto err_nack;
-	if (ret != 0)
-		goto err_timeout;
 
 	return 0;
 

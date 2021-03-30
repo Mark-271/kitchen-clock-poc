@@ -66,7 +66,7 @@ static void test_rtc(void *data)
 {
 	struct rtc *obj = (struct rtc *)(data);
 
-	rtc_get_date(obj);
+	rtc_read_date(obj);
 	printf("%d\n", obj->tm.ss);
 }
 

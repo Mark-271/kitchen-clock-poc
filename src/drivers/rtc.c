@@ -9,6 +9,7 @@
 #define RTC_SR			0x0f
 #define RTC_SECONDS		0x00	/* DS3231 seconds register address */
 #define RTC_TM_BUF_LEN		4	/* Number of time registers */
+#define RTC_DT_BUF_LEN		3	/* Quantity of date registers */
 
 static uint8_t dec2bcd(uint8_t val)
 {
@@ -49,24 +50,30 @@ int rtc_read_time(struct rtc *obj)
 }
 
 /**
- * Read date/time registers from RTC device.
+ * Read date registers from RTC device.
+ *
+ * Read values contained inside DS3231 date registers (day, month, year).
  *
  * @param obj RTC device
+ * @return 0 on success or negative value on failure
  */
-void rtc_get_date(struct rtc *obj)
+int rtc_read_date(struct rtc *obj)
 {
 	int ret;
 	size_t i;
-	uint8_t temp[RTC_TM_BUF_LEN];
-	uint8_t buf[RTC_TM_BUF_LEN];
-	ret = i2c_read_buf_poll(obj->addr, RTC_SECONDS, temp, RTC_TM_BUF_LEN);
-	if (ret != 0)
-		return;
+	uint8_t temp[RTC_DT_BUF_LEN];
+	uint8_t buf[RTC_DT_BUF_LEN];
 
-	for (i = 0; i <  RTC_TM_BUF_LEN; i++)
+	ret = i2c_read_buf_poll(obj->addr, RTC_SECONDS, temp, RTC_DT_BUF_LEN);
+	if (ret != 0)
+		return ret;
+
+	for (i = 0; i <  RTC_DT_BUF_LEN; i++)
 		buf[i] = bcd2dec(temp[i]);
 
-	memcpy(&obj->tm, &buf[0], RTC_TM_BUF_LEN);
+	memcpy(&obj->tm, &buf[0], RTC_DT_BUF_LEN);
+
+	return 0;
 }
 
 /**

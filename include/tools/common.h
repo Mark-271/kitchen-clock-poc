@@ -201,5 +201,6 @@ void __write_once_size(volatile void *p, void *res, int size)
 })
 
 void __attribute__((__noreturn__)) hang(void);
+int gpio2irq(uint16_t gpio);
 
 #endif /* TOOLS_COMMON_H */

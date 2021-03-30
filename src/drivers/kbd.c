@@ -17,26 +17,6 @@
 /* Set number of irqs */
 #define KBD_IRQS		2
 
-static int kbd_gpio2irq(uint16_t gpio)
-{
-	if (gpio == GPIO0)
-		return NVIC_EXTI0_IRQ;
-	else if (gpio == GPIO1)
-		return NVIC_EXTI1_IRQ;
-	else if (gpio == GPIO2)
-		return NVIC_EXTI2_IRQ;
-	else if (gpio == GPIO3)
-		return NVIC_EXTI3_IRQ;
-	else if (gpio == GPIO4)
-		return NVIC_EXTI4_IRQ;
-	else if (gpio >= GPIO5 && gpio <= GPIO9)
-		return NVIC_EXTI9_5_IRQ;
-	else if (gpio >= GPIO10 && gpio <= GPIO15)
-		return NVIC_EXTI15_10_IRQ;
-	else
-		return -1;
-}
-
 static void kbd_exti_init(struct kbd *obj)
 {
 	size_t i;
@@ -201,7 +181,7 @@ int kbd_init(struct kbd *obj, const struct kbd_gpio *gpio, kbd_btn_event_t cb)
 
 	/* Prepare irq values for external interrupts */
 	for (i = 0; i < KBD_READ_LINES; i++) {
-		ret = kbd_gpio2irq(gpio->read[i]);
+		ret = gpio2irq(gpio->read[i]);
 		if (ret < 0)
 			return -1;
 		obj->gpio.irq[i] = ret;

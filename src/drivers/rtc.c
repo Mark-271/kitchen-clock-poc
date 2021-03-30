@@ -79,14 +79,17 @@ int rtc_read_date(struct rtc *obj)
 /**
  * Set time to RTC.
  *
+ * Write time values to corresponding registers of DS3231
+ * (seconds, minutes, hours).
  * 24-hour mode is selected by default.
  *
  * @param obj RTC device
  * @param ss Seconds
  * @param mm Minutes
  * @param hh Hours
+ * @return 0 on success or negative value on error
  */
-void rtc_set_time(struct rtc *obj, uint8_t hh, uint8_t mm, uint8_t ss)
+int rtc_set_time(struct rtc *obj, uint8_t hh, uint8_t mm, uint8_t ss)
 {
 	int ret;
 	uint8_t buf[3];
@@ -101,7 +104,9 @@ void rtc_set_time(struct rtc *obj, uint8_t hh, uint8_t mm, uint8_t ss)
 
 	ret = i2c_write_buf_poll(obj->addr, RTC_SECONDS, buf, 3);
 	if (ret != 0)
-		return;
+		return ret;
+
+	return 0;
 }
 
 /**

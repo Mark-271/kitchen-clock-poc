@@ -110,6 +110,35 @@ int rtc_set_time(struct rtc *obj, uint8_t hh, uint8_t mm, uint8_t ss)
 }
 
 /**
+ * Set date to RTC.
+ *
+ * @param obj RTC device
+ * @param date Day of month
+ * @param mnth Month
+ * @param year Year
+ * @return 0 on success or negative value on error
+ */
+int rtc_set_calendar(struct rtc *obj, uint8_t date, uint8_t mnth, uint8_t year)
+{
+	int ret;
+	uint8_t buf[RTC_DT_BUF_LEN];
+
+	cm3_assert(date >= 1 && date <= 31);
+	cm3_assert(mnth >= 1 && mnth <= 12);
+	cm3_assert(year < 100);
+
+	buf[0] = dec2bcd(date);
+	buf[1] = dec2bcd(mnth);
+	buf[2] = dec2bcd(year);
+
+	ret = i2c_write_buf_poll(obj->addr, RTC_SECONDS, buf, RTC_DT_BUF_LEN);
+	if (ret != 0)
+		return ret;
+
+	return 0;
+}
+
+/**
  * Initialize real-time clock device.
  *
  * @param obj RTC device

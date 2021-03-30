@@ -24,5 +24,6 @@ void rtc_exit(struct rtc *obj);
 int rtc_read_time(struct rtc *obj);
 int rtc_read_date(struct rtc *obj);
 int rtc_set_time(struct rtc *obj, uint8_t ss, uint8_t mm, uint8_t hh);
+int rtc_set_calendar(struct rtc *obj, uint8_t date, uint8_t mnth, uint8_t year);
 
 #endif /* RTC_H */

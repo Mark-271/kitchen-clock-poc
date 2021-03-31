@@ -59,6 +59,7 @@
 #define RTC_I2C_SCL_PIN		GPIO10
 #define RTC_I2C_SDA_PIN		GPIO11
 #define RTC_ALARM_PIN		GPIO12
+#define RTC_EXTI_TRIGGER	EXTI_TRIGGER_FALLING
 
 int board_init(void);
 

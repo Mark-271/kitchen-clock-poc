@@ -20,7 +20,7 @@
 #define RTC_GET_SEC_DELAY	1000 /* msec */
 
 static struct kbd kbd;
-static struct rtc rtc;
+static struct rtc_tm tm;
 static struct wh1602 wh;
 static struct ds18b20 ts = {
 	.port = DS18B20_GPIO_PORT,
@@ -64,10 +64,10 @@ static void show_lcd(const char *greeting)
 
 static void test_rtc(void *data)
 {
-	struct rtc *obj = (struct rtc *)(data);
+	struct rtc_tm *obj = (struct rtc_tm *)(data);
 
 	rtc_read_date(obj);
-	printf("%d\n", obj->tm.ss);
+	printf("%d:%d:%d\n", obj->hh, obj->mm, obj->ss);
 }
 
 static void init(void)
@@ -108,6 +108,13 @@ static void init(void)
 		.arr = SWTIMER_TIM_ARR_VAL,
 		.psc = SWTIMER_TIM_PSC_VAL,
 	};
+	const struct rtc_device rtc = {
+		.port = RTC_I2C_GPIO_PORT,
+		.pin = RTC_ALARM_PIN,
+		.trig = RTC_EXTI_TRIGGER,
+		.i2c_base = RTC_I2C_BASE,
+		.addr = RTC_DEVICE_ADDR,
+	};
 
 	irq_init();
 	board_init();
@@ -144,13 +151,24 @@ static void init(void)
 		hang();
 	}
 
-	err = rtc_init(&rtc, RTC_I2C_BASE, RTC_DEVICE_ADDR);
+	err = rtc_init(&rtc);
 	if (err) {
 		printf("Can't initialize RTC: %d\n", err);
 		hang();
 	}
 
 	show_lcd(greeting);
+
+	/* Testing rtc */
+	tm.ss = 0;
+	tm.mm = 17;
+	tm.hh = 23;
+
+	err = rtc_set_time(&tm);
+	if (err != 0) {
+		printf("Error %d: Can't set time to rtc\n", err);
+		hang();
+	}
 
 	/* If ds18b20 is out of order, the program should skip it */
 	if (ds18b20_presence_flag) {
@@ -165,7 +183,7 @@ static void init(void)
 
 	int rtc_id;
 
-	rtc_id = swtimer_tim_register(test_rtc, &rtc, RTC_GET_SEC_DELAY);
+	rtc_id = swtimer_tim_register(test_rtc, &tm, RTC_GET_SEC_DELAY);
 	if (rtc_id < 0) {
 		printf("Unable to register swtimer\n");
 		hang();

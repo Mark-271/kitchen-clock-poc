@@ -50,6 +50,12 @@ static void rtc_exti_init(struct rtc *obj)
 
 static irqreturn_t rtc_exti_isr(int irq, void *data)
 {
+	struct rtc *obj = (struct rtc *)(data);
+
+	UNUSED(irq);
+
+	nvic_disable_irq(obj->device.irq);
+	sched_set_ready(obj->alarm.task_id);
 
 	return IRQ_HANDLED;
 }

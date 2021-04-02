@@ -1,5 +1,5 @@
-#ifndef RTC_H
-#define RTC_H
+#ifndef DRIVERS_RTC_H
+#define DRIVERS_RTC_H
 
 #include <libopencm3/stm32/exti.h>
 #include <stdint.h>
@@ -35,4 +35,4 @@ int rtc_read_date(struct rtc_tm *obj);
 int rtc_set_time(struct rtc_tm *obj);
 int rtc_set_calendar(struct rtc_tm *obj);
 
-#endif /* RTC_H */
+#endif /* DRIVERS_RTC_H */

@@ -21,10 +21,11 @@
 #define RTC_DATE		0x04	/* Register of date */
 #define RTC_TM_BUF_LEN		4	/* Number of time registers */
 #define RTC_DT_BUF_LEN		3	/* Quantity of date registers */
+#define RTC_TASK		"rtc"
 
 struct rtc_alarm {
 	int task_id;
-	struct irq_action act;
+	struct irq_action action;
 	struct rtc_tm time;
 };
 
@@ -46,6 +47,13 @@ static void rtc_exti_init(struct rtc *obj)
 	exti_set_trigger(obj->device.pin, obj->device.trig);
 	exti_enable_request(obj->device.pin);
 }
+
+static irqreturn_t rtc_exti_isr(int irq, void *data)
+{
+
+	return IRQ_HANDLED;
+}
+
 /**
  * Read time registers from RTC device.
  *
@@ -178,6 +186,11 @@ int rtc_init(const struct rtc_device *obj)
 
 	rtc.device = *obj;
 
+	rtc.alarm.action.handler = rtc_exti_isr;
+	rtc.alarm.action.irq = rtc.device.irq;
+	rtc.alarm.action.name = RTC_TASK;
+	rtc.alarm.action.data = &rtc;
+
 	ret = gpio2irq(rtc.device.pin);
 	if (ret < 0)
 		return -1;
@@ -190,12 +203,25 @@ int rtc_init(const struct rtc_device *obj)
 
 	rtc_exti_init(&rtc);
 
+	ret = irq_request(&rtc.alarm.action);
+	if (ret != 0)
+		return ret;
+
+	/*
+	 * Setup irq manager:
+	 *  - fill irq_action structure (handler, irq, name, data)
+	 *  - irq_request(&rtc.alarm.act);
+	 * Add task for scheduler: sched_add_task(ALARM_TASK, alarm_task, &rtc,
+	 * 					 &rtc.alarm.task_id);
+	 */
 	return 0;
 }
 
+/* TODO: complete function */
 /**
  * De-initialize software timer framework.
  */
 void rtc_exit(void)
 {
+	irq_free(&rtc.alarm.action);
 }

@@ -111,6 +111,7 @@ static void init(void)
 	const struct rtc_device rtc = {
 		.port = RTC_I2C_GPIO_PORT,
 		.pin = RTC_ALARM_PIN,
+		.irq = RTC_EXTI_IRQ,
 		.trig = RTC_EXTI_TRIGGER,
 		.i2c_base = RTC_I2C_BASE,
 		.addr = RTC_DEVICE_ADDR,

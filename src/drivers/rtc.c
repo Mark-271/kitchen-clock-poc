@@ -1,5 +1,11 @@
+/* TODO:
+ * Setup alarm.
+ * Add and Fix comments
+ */
+
 #include <drivers/rtc.h>
 #include <drivers/i2c.h>
+#include <tools/bcd.h>
 #include <tools/common.h>
 #include <core/irq.h>
 #include <core/sched.h>
@@ -30,16 +36,6 @@ struct rtc {
 
 /* Singleton driver object */
 static struct rtc rtc;
-
-static uint8_t dec2bcd(uint8_t val)
-{
-	return ((val / 10) << 4) | (val % 10);
-}
-
-static uint8_t bcd2dec(uint8_t val)
-{
-	return (val & 0x0f) + (val >> 4) * 10;
-}
 
 /**
  * Read time registers from RTC device.

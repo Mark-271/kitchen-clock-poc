@@ -37,6 +37,15 @@ struct rtc {
 /* Singleton driver object */
 static struct rtc rtc;
 
+/* -------------------------------------------------------------------------- */
+
+static void rtc_exti_init(struct rtc *obj)
+{
+	nvic_enable_irq(obj->device.irq);
+	exti_select_source(obj->device.pin, obj->device.port);
+	exti_set_trigger(obj->device.pin, obj->device.trig);
+	exti_enable_request(obj->device.pin);
+}
 /**
  * Read time registers from RTC device.
  *
@@ -178,6 +187,8 @@ int rtc_init(const struct rtc_device *obj)
 	ret = i2c_detect_device(rtc.device.addr);
 	if (ret != 0)
 		return ret;
+
+	rtc_exti_init(&rtc);
 
 	return 0;
 }

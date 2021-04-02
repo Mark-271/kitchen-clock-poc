@@ -22,11 +22,13 @@
 #define RTC_TM_BUF_LEN		4	/* Number of time registers */
 #define RTC_DT_BUF_LEN		3	/* Quantity of date registers */
 #define RTC_TASK		"rtc"
+#define RTC_A1F			(1 << 0) /* Alarm 1 flag */
 
 struct rtc_alarm {
 	int task_id;
 	struct irq_action action;
 	struct rtc_tm time;
+	rtc_callback_t cb;
 };
 
 /* Driver structure */
@@ -62,6 +64,19 @@ static irqreturn_t rtc_exti_isr(int irq, void *data)
 
 static void rtc_task(void *data)
 {
+	int ret;
+	uint8_t buf[] = {~RTC_A1F};
+
+	struct rtc *obj = (struct rtc *)(data);
+
+	ret = i2c_write_buf_poll(rtc.device.addr, RTC_SR, buf, ARRAY_SIZE(buf));
+	if (ret != 0) {
+		printf("Error %d: Can't write data\n", ret);
+		return;
+	}
+
+	nvic_enable_irq(obj->device.irq);
+	obj->alarm.cb();
 }
 
 /**

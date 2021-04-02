@@ -4,7 +4,7 @@
 #include <libopencm3/stm32/exti.h>
 #include <stdint.h>
 
-typedef void (*rtc_callback_t)(void *data);
+typedef void (*rtc_callback_t)(void);
 
 /* RTC time / date registers */
 struct rtc_tm {

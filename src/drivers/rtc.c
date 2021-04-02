@@ -54,6 +54,10 @@ static irqreturn_t rtc_exti_isr(int irq, void *data)
 	return IRQ_HANDLED;
 }
 
+static void rtc_task(void *data)
+{
+}
+
 /**
  * Read time registers from RTC device.
  *
@@ -207,13 +211,10 @@ int rtc_init(const struct rtc_device *obj)
 	if (ret != 0)
 		return ret;
 
-	/*
-	 * Setup irq manager:
-	 *  - fill irq_action structure (handler, irq, name, data)
-	 *  - irq_request(&rtc.alarm.act);
-	 * Add task for scheduler: sched_add_task(ALARM_TASK, alarm_task, &rtc,
-	 * 					 &rtc.alarm.task_id);
-	 */
+	ret = sched_add_task(RTC_TASK, rtc_task, &rtc, &rtc.alarm.task_id);
+	if (ret != 0)
+		return ret;
+
 	return 0;
 }
 
@@ -223,5 +224,6 @@ int rtc_init(const struct rtc_device *obj)
  */
 void rtc_exit(void)
 {
+	sched_del_task(rtc.alarm.task_id);
 	irq_free(&rtc.alarm.action);
 }

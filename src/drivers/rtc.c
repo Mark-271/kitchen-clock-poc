@@ -239,12 +239,13 @@ int rtc_init(const struct rtc_device *obj)
 	return 0;
 }
 
-/* TODO: complete function */
 /**
- * De-initialize software timer framework.
+ * De-initialize rtc.
  */
-void rtc_exit(void)
+void rtc_exit(struct rtc_tm *obj)
 {
 	sched_del_task(rtc.alarm.task_id);
 	irq_free(&rtc.alarm.action);
+	UNUSED(obj);
+	UNUSED(rtc);
 }

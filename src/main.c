@@ -62,14 +62,6 @@ static void show_lcd(const char *greeting)
 	wh1602_clear_display(&wh);
 }
 
-static void test_rtc(void *data)
-{
-	struct rtc_tm *obj = (struct rtc_tm *)(data);
-
-	rtc_read_date(obj);
-	printf("%d:%d:%d\n", obj->hh, obj->mm, obj->ss);
-}
-
 static void init(void)
 {
 	bool ds18b20_presence_flag = true;
@@ -160,17 +152,6 @@ static void init(void)
 
 	show_lcd(greeting);
 
-	/* Testing rtc */
-	tm.ss = 0;
-	tm.mm = 17;
-	tm.hh = 23;
-
-	err = rtc_set_time(&tm);
-	if (err != 0) {
-		printf("Error %d: Can't set time to rtc\n", err);
-		hang();
-	}
-
 	/* If ds18b20 is out of order, the program should skip it */
 	if (ds18b20_presence_flag) {
 		int id;
@@ -180,14 +161,6 @@ static void init(void)
 			printf("Unable to register swtimer\n");
 			hang();
 		}
-	}
-
-	int rtc_id;
-
-	rtc_id = swtimer_tim_register(test_rtc, &tm, RTC_GET_SEC_DELAY);
-	if (rtc_id < 0) {
-		printf("Unable to register swtimer\n");
-		hang();
 	}
 }
 

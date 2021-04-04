@@ -19,7 +19,7 @@
 #define RTC_SR			0x0f	/* Status register */
 #define RTC_SECONDS		0x00	/* Register of seconds */
 #define RTC_DAY			0x03	/* Day offset register */
-#define RTC_BUF_LEN		7
+#define RTC_BUF_LEN		7	/* Number of data registers */
 #define RTC_TM_BUF_LEN		3	/* Number of time registers */
 #define RTC_DT_BUF_LEN		4	/* Quantity of date registers */
 #define RTC_TASK		"rtc"
@@ -80,61 +80,61 @@ static void rtc_task(void *data)
 	obj->alarm.cb();
 }
 
-/**
- * Read time registers from RTC device.
- *
- * Read values contained in time specific DS3231 registers:
- * seconds, minutes, hours, day of the week.
- *
- * @param obj RTC device
- * @return 0 on success or negative value on error
- */
-int rtc_read_time(struct rtc_tm *tm)
+/* Read time/date registers from rtc device */
+static int rtc_get_date_registers(uint8_t *buf)
 {
 	int ret;
 	size_t i;
-	uint8_t temp[RTC_TM_BUF_LEN];
-	uint8_t buf[RTC_TM_BUF_LEN];
+	uint8_t temp[RTC_BUF_LEN];
+
 	struct rtc_device *obj = &rtc.device;
 
-	ret = i2c_read_buf_poll(obj->addr, RTC_SECONDS, temp, RTC_TM_BUF_LEN);
+	ret = i2c_read_buf_poll(obj->addr, RTC_SECONDS, temp, RTC_BUF_LEN);
 	if (ret != 0)
 		return ret;
 
-	for (i = 0; i <  RTC_TM_BUF_LEN; i++)
+	for (i = 0; i <  RTC_BUF_LEN; i++)
 		buf[i] = bcd2dec(temp[i]);
-
-	memcpy(&tm, &buf[0], RTC_TM_BUF_LEN);
 
 	return 0;
 }
 
 /**
- * Read date registers from RTC device.
+ * Read time from rtc device.
  *
- * Read values contained inside DS3231 date registers (day, month, year).
+ * Read values contained in time specific registers (seconds, minutes, hours)
  *
- * @param obj RTC device
- * @return 0 on success or negative value on failure
+ * @param[out] tm Structure used to store time/date values
  */
-int rtc_read_date(struct rtc_tm *tm)
+void rtc_read_time(struct rtc_tm *tm)
 {
-	int ret;
-	size_t i;
-	uint8_t temp[RTC_DT_BUF_LEN];
-	uint8_t buf[RTC_DT_BUF_LEN];
-	struct rtc_device *obj = &rtc.device;
+	int err;
+	uint8_t buf[RTC_BUF_LEN];
 
-	ret = i2c_read_buf_poll(obj->addr, RTC_DATE, temp, RTC_DT_BUF_LEN);
-	if (ret != 0)
-		return ret;
+	err = rtc_get_date_registers(buf);
+	if (err)
+		return;
 
-	for (i = 0; i <  RTC_DT_BUF_LEN; i++)
-		buf[i] = bcd2dec(temp[i]);
+	memcpy(tm, &buf[0], RTC_TM_BUF_LEN);
+}
 
-	memcpy(&tm, &buf[0], RTC_DT_BUF_LEN);
+/**
+ * Read date registers from rtc device.
+ *
+ * Read values contained in date registers (day of week/month, month, year)
+ *
+ * @param[out] tm Structure used to store time/date values
+ */
+void rtc_read_date(struct rtc_tm *tm)
+{
+	int err;
+	uint8_t buf[RTC_BUF_LEN];
 
-	return 0;
+	err = rtc_get_date_registers(buf);
+	if (err)
+		return;
+
+	memcpy(&tm->day, &buf[3], RTC_DT_BUF_LEN);
 }
 
 /**

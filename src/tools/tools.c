@@ -17,7 +17,7 @@ void inplace_reverse(char *str)
 	if (str) {
 		char *end = str + strlen(str) - 1;
 
-#define XOR_SWAP(a,b) do	\
+#define XOR_SWAP(a, b) do	\
 		{		\
 			a ^= b;	\
 			b ^= a;	\

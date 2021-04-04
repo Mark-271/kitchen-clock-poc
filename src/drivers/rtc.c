@@ -1,8 +1,3 @@
-/* TODO:
- * Setup alarm.
- * Add and Fix comments
- */
-
 #include <drivers/rtc.h>
 #include <drivers/i2c.h>
 #include <tools/bcd.h>
@@ -23,7 +18,7 @@
 #define RTC_TM_BUF_LEN		3	/* Number of time registers */
 #define RTC_DT_BUF_LEN		4	/* Quantity of date registers */
 #define RTC_TASK		"rtc"
-#define RTC_A1F			(1 << 0) /* Alarm 1 flag */
+#define RTC_A1F			BIT(0) /* Alarm 1 flag */
 
 struct rtc_alarm {
 	int task_id;

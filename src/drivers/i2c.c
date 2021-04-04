@@ -120,7 +120,7 @@ static int i2c_send_start_addr_poll(uint8_t addr, uint8_t rw)
 	/* Wait for TxE = 1 to be set by hardware in response to ADDR */
 	if (rw == I2C_WRITE) {
 		ret = wait_event_timeout(I2C_SR1(i2c.base) & I2C_SR1_TxE,
-					I2C_TIMEOUT_FLAG);
+					 I2C_TIMEOUT_FLAG);
 		if (ret != 0)
 			goto err_timeout;
 	}
@@ -226,7 +226,7 @@ static int i2c_receive_buf_poll(uint8_t *buf, uint16_t len)
 	}
 
 	ret = wait_event_timeout(I2C_SR1(i2c.base) & I2C_SR1_BTF,
-			I2C_TIMEOUT_FLAG);
+				 I2C_TIMEOUT_FLAG);
 		if (ret != 0)
 			goto err_timeout;
 
@@ -237,7 +237,7 @@ static int i2c_receive_buf_poll(uint8_t *buf, uint16_t len)
 	buf[i++] = i2c_get_data(i2c.base);
 
 	ret = wait_event_timeout(I2C_SR1(i2c.base) & I2C_SR1_RxNE,
-			I2C_TIMEOUT_FLAG);
+				 I2C_TIMEOUT_FLAG);
 		if (ret != 0)
 			goto err_timeout;
 	buf[i] = i2c_get_data(i2c.base);

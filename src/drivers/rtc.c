@@ -18,9 +18,9 @@
 #define RTC_CR			0x0e	/* Config register */
 #define RTC_SR			0x0f	/* Status register */
 #define RTC_SECONDS		0x00	/* Register of seconds */
-#define RTC_TM_BUF_LEN		4	/* Number of time registers */
 #define RTC_DAY			0x03	/* Day offset register */
 #define RTC_BUF_LEN		7
+#define RTC_TM_BUF_LEN		3	/* Number of time registers */
 #define RTC_DT_BUF_LEN		4	/* Quantity of date registers */
 #define RTC_TASK		"rtc"
 #define RTC_A1F			(1 << 0) /* Alarm 1 flag */
@@ -138,22 +138,20 @@ int rtc_read_date(struct rtc_tm *tm)
 }
 
 /**
- * Set time to RTC.
+ * Set time to rtc.
  *
- * Write time values to corresponding registers of DS3231
- * (seconds, minutes, hours).
+ * Write time to corresponding registers (seconds, minutes, hours).
  * 24-hour mode is selected by default.
  *
- * @param obj RTC device
- * @param ss Seconds
- * @param mm Minutes
- * @param hh Hours
+ * @param[in] tm Structure used to store time/date values. Should be
+ * 		 filled by caller.
  * @return 0 on success or negative value on error
  */
 int rtc_set_time(struct rtc_tm *tm)
 {
 	int ret;
-	uint8_t buf[3];
+	uint8_t buf[RTC_TM_BUF_LEN];
+
 	struct rtc_device *obj = &rtc.device;
 
 	cm3_assert(tm->ss < 60);
@@ -164,7 +162,7 @@ int rtc_set_time(struct rtc_tm *tm)
 	buf[1] = dec2bcd(tm->mm);
 	buf[2] = dec2bcd(tm->hh);
 
-	ret = i2c_write_buf_poll(obj->addr, RTC_SECONDS, buf, 3);
+	ret = i2c_write_buf_poll(obj->addr, RTC_SECONDS, buf, RTC_TM_BUF_LEN);
 	if (ret != 0)
 		return ret;
 

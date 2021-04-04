@@ -70,6 +70,8 @@ static void kbd_handle_btn(void *data)
 	int ret = -1;
 	bool pressed_now[KEYS];
 
+	swtimer_tim_stop(obj->timer_id);
+
 	/* Find out the state of each button */
 	for (i = 0; i < KBD_SCAN_LINES; ++i) {
 		size_t j;

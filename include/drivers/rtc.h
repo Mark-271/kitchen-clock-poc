@@ -34,5 +34,6 @@ void rtc_read_time(struct rtc_tm *obj);
 void rtc_read_date(struct rtc_tm *obj);
 int rtc_set_time(struct rtc_tm *obj);
 int rtc_set_date(struct rtc_tm *obj);
+int rtc_set_alarm(struct rtc_tm *obj, uint8_t period);
 
 #endif /* DRIVERS_RTC_H */

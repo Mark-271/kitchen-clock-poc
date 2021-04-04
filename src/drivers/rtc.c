@@ -197,6 +197,15 @@ int rtc_set_date(struct rtc_tm *tm)
 	return 0;
 }
 
+/* TODO: complete function */
+int rtc_set_alarm(struct rtc_tm *obj, uint8_t period)
+{
+	UNUSED(obj);
+	UNUSED(period);
+
+	return 0;
+}
+
 /**
  * Initialize real-time clock device.
  *

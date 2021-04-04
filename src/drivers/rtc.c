@@ -18,9 +18,10 @@
 #define RTC_CR			0x0e	/* Config register */
 #define RTC_SR			0x0f	/* Status register */
 #define RTC_SECONDS		0x00	/* Register of seconds */
-#define RTC_DATE		0x04	/* Register of date */
 #define RTC_TM_BUF_LEN		4	/* Number of time registers */
-#define RTC_DT_BUF_LEN		3	/* Quantity of date registers */
+#define RTC_DAY			0x03	/* Day offset register */
+#define RTC_BUF_LEN		7
+#define RTC_DT_BUF_LEN		4	/* Quantity of date registers */
 #define RTC_TASK		"rtc"
 #define RTC_A1F			(1 << 0) /* Alarm 1 flag */
 
@@ -171,29 +172,32 @@ int rtc_set_time(struct rtc_tm *tm)
 }
 
 /**
- * Set date to RTC.
+ * Set date to rtc.
  *
- * @param obj RTC device
- * @param date Day of month
- * @param month Month
- * @param year Year
+ * Write date to corresponding registers (day of week/month, month, year)
+ *
+ * @param[in] tm Structure used to store time/date values. Should be
+ * 		 filled by caller.
  * @return 0 on success or negative value on error
  */
-int rtc_set_calendar(struct rtc_tm *tm)
+int rtc_set_date(struct rtc_tm *tm)
 {
 	int ret;
 	uint8_t buf[RTC_DT_BUF_LEN];
+
 	struct rtc_device *obj = &rtc.device;
 
+	cm3_assert(tm->day >= 1 && tm->day <= 7);
 	cm3_assert(tm->date >= 1 && tm->date <= 31);
 	cm3_assert(tm->month >= 1 && tm->month <= 12);
 	cm3_assert(tm->year < 100);
 
-	buf[0] = dec2bcd(tm->date);
-	buf[1] = dec2bcd(tm->month);
+	buf[0] = dec2bcd(tm->day);
+	buf[1] = dec2bcd(tm->date);
+	buf[2] = dec2bcd(tm->month);
 	buf[2] = dec2bcd(tm->year);
 
-	ret = i2c_write_buf_poll(obj->addr, RTC_DATE, buf, RTC_DT_BUF_LEN);
+	ret = i2c_write_buf_poll(obj->addr, RTC_DAY, buf, RTC_DT_BUF_LEN);
 	if (ret != 0)
 		return ret;
 

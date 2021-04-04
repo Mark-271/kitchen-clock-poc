@@ -33,6 +33,6 @@ int rtc_read_time(struct rtc_tm *obj);
 int rtc_read_date(struct rtc_tm *obj);
 void rtc_exit(struct rtc_tm *obj);
 int rtc_set_time(struct rtc_tm *obj);
-int rtc_set_calendar(struct rtc_tm *obj);
+int rtc_set_date(struct rtc_tm *obj);
 
 #endif /* DRIVERS_RTC_H */

@@ -1,6 +1,30 @@
 #include <tools/tools.h>
 #include <string.h>
 
+static int yisleap(int year)
+{
+	return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+}
+
+/**
+ * Calculate day number beginning from January 1.
+ *
+ * @param mon Month should be in range 0 - 11
+ * @param day Day in range 1 - 31
+ * @param year Year
+ * @return Number of a day in range 1 - 366
+ */
+int get_yday(int mon, int day, int year)
+{
+	static const int days[2][13] = {
+		{0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334},
+		{0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335}
+	};
+	int leap = yisleap(year);
+
+	return days[leap][mon] + day;
+}
+
 /**
  *  Reverse the given null-terminated string in place.
  *
@@ -35,4 +59,3 @@ void inplace_reverse(char *str)
 #undef XOR_SWAP
 	}
 }
-

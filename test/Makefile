@@ -4,6 +4,9 @@ parse_temp:
 tempval_to_str:
 	@gcc -Wall -O2 test_tempval_to_str.c -o test
 
+bcd:
+	@gcc -Wall -O2 test_bcd.c -o test
+
 clean:
 	@-rm -f test
 

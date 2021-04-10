@@ -58,10 +58,10 @@ OBJS		+=				\
 		   src/core/sched.o		\
 		   src/core/swtimer.o		\
 		   src/drivers/ds18b20.o	\
+		   src/drivers/ds3231.o		\
 		   src/drivers/i2c.o		\
 		   src/drivers/kbd.o		\
 		   src/drivers/one_wire.o	\
-		   src/drivers/rtc.o		\
 		   src/drivers/serial.o		\
 		   src/drivers/systick.o	\
 		   src/drivers/wh1602.o		\

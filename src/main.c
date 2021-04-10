@@ -3,8 +3,8 @@
 #include <core/sched.h>
 #include <core/swtimer.h>
 #include <drivers/ds18b20.h>
+#include <drivers/ds3231.h>
 #include <drivers/kbd.h>
-#include <drivers/rtc.h>
 #include <drivers/serial.h>
 #include <drivers/systick.h>
 #include <drivers/wh1602.h>
@@ -17,10 +17,11 @@
 
 #define LCD_GREETING_DELAY	2000 /* msec */
 #define GET_TEMP_DELAY		5000 /* msec */
-#define RTC_GET_SEC_DELAY	1000 /* msec */
+#define DS3231_GET_SEC_DELAY	1000 /* msec */
+#define EPOCH_YEAR		2021 /* years */
 
 static struct kbd kbd;
-static struct rtc_tm tm;
+static struct rtc_time tm;
 static struct wh1602 wh;
 static struct ds18b20 ts = {
 	.port = DS18B20_GPIO_PORT,
@@ -100,7 +101,7 @@ static void init(void)
 		.arr = SWTIMER_TIM_ARR_VAL,
 		.psc = SWTIMER_TIM_PSC_VAL,
 	};
-	const struct rtc_device rtc = {
+	const struct ds3231_device device = {
 		.port = RTC_I2C_GPIO_PORT,
 		.pin = RTC_ALARM_PIN,
 		.irq = RTC_EXTI_IRQ,
@@ -144,7 +145,7 @@ static void init(void)
 		hang();
 	}
 
-	err = rtc_init(&rtc);
+	err = ds3231_init(&device, EPOCH_YEAR);
 	if (err) {
 		printf("Can't initialize RTC: %d\n", err);
 		hang();

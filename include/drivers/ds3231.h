@@ -31,5 +31,7 @@ struct ds3231_device {
 /* RTC API */
 int ds3231_init(const struct ds3231_device *obj, int epoch_year);
 void ds3231_exit(const struct ds3231_device *obj);
+int ds3231_read_time(struct rtc_time *tm);
+int ds3231_set_time(struct rtc_time *tm);
 
 #endif /* DRIVERS_DS3231_H */

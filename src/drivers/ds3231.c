@@ -56,6 +56,47 @@ static struct ds3231 ds3231;
 
 /* -------------------------------------------------------------------------- */
 
+static bool ds3231_time2regs(const struct rtc_time *tm,
+			     struct ds3231_regs *regs)
+{
+	const int regs_year = tm->tm_year + TM_START_YEAR - ds3231.epoch_year;
+
+	if (regs_year > MAX_REGS_YEAR || regs_year < MIN_REGS_YEAR)
+		return false;
+
+	regs->ss	= dec2bcd(tm->tm_sec);
+	regs->mm	= dec2bcd(tm->tm_min);
+	regs->hh	= dec2bcd(tm->tm_hour);
+	regs->day	= tm->tm_wday + 1;
+	regs->date	= dec2bcd(tm->tm_mday);
+	regs->month	= dec2bcd(tm->tm_mon + 1);
+	regs->year	= dec2bcd(regs_year);
+
+	return true;
+}
+
+static bool ds3231_regs2time(const struct ds3231_regs *regs,
+			     struct rtc_time *tm)
+{
+	const int year = bcd2dec(regs->year) + ds3231.epoch_year;
+	const int tm_year = year - TM_START_YEAR;
+
+	if (tm_year < MIN_TM_YEAR)
+		return false;
+
+	tm->tm_sec	= bcd2dec(regs->ss);
+	tm->tm_min	= bcd2dec(regs->mm);
+	tm->tm_hour	= bcd2dec(regs->hh);
+	tm->tm_mday	= bcd2dec(regs->date);
+	tm->tm_mon	= bcd2dec(regs->month - 1);
+	tm->tm_year	= tm_year;
+	tm->tm_wday	= regs->day - 1;
+	tm->tm_yday	= get_yday(tm->tm_mon, tm->tm_mday, tm->tm_year) - 1;
+	tm->tm_isdst	= 0;
+
+	return true;
+}
+
 static void ds3231_exti_init(struct ds3231 *obj)
 {
 	nvic_enable_irq(obj->device.irq);
@@ -91,6 +132,74 @@ static void ds3231_task(void *data)
 
 	nvic_enable_irq(obj->device.irq);
 	obj->alarm.cb();
+}
+
+/**
+ * Read time/date registers from ds3231 device.
+ *
+ * @param[out] tm Structure used to store time/date values
+ * @return 0 on success or negative value on error
+ */
+int ds3231_read_time(struct rtc_time *tm)
+{
+	int ret;
+	bool res;
+	uint8_t buf[RTC_BUF_LEN];
+
+	ret = i2c_read_buf_poll(ds3231.device.addr, RTC_SECONDS, buf,
+				RTC_BUF_LEN);
+	if (ret != 0)
+		return ret;
+
+	ds3231.regs.ss		= buf[0];
+	ds3231.regs.mm		= buf[1];
+	ds3231.regs.hh		= buf[2];
+	ds3231.regs.day		= buf[3];
+	ds3231.regs.date	= buf[4];
+	ds3231.regs.month	= buf[5];
+	ds3231.regs.year	= buf[6];
+
+	res = ds3231_regs2time(&ds3231.regs, tm);
+	if (!res)
+		return -1;
+
+	return 0;
+}
+
+/**
+ * Set time/date to ds3231.
+ *
+ * Write data to ds3231 time/date registers.
+ * 24-hour mode is selected by default.
+ *
+ * @param[in] tm Structure used to store time/date values. Should be
+ * 		 filled by caller.
+ * @return 0 on success or negative value on error
+ */
+int ds3231_set_time(struct rtc_time *tm)
+{
+	int ret;
+	bool res;
+	uint8_t buf[RTC_BUF_LEN];
+
+	res = ds3231_time2regs(tm, &ds3231.regs);
+	if (!res)
+		return -1;
+
+	buf[0] = ds3231.regs.ss;
+	buf[1] = ds3231.regs.mm;
+	buf[2] = ds3231.regs.hh;
+	buf[3] = ds3231.regs.day;
+	buf[4] = ds3231.regs.date;
+	buf[5] = ds3231.regs.month;
+	buf[6] = ds3231.regs.year;
+
+	ret = i2c_write_buf_poll(ds3231.device.addr, RTC_SECONDS,
+				 buf,RTC_BUF_LEN);
+	if (ret != 0)
+		return ret;
+
+	return 0;
 }
 
 /**

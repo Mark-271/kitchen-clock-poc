@@ -2,7 +2,6 @@
 #include <drivers/i2c.h>
 #include <tools/bcd.h>
 #include <tools/common.h>
-#include <core/irq.h>
 #include <core/sched.h>
 #include <tools/tools.h>
 #include <libopencm3/cm3/nvic.h>
@@ -26,40 +25,12 @@
 #define MAX_REGS_YEAR		99
 #define TM_MDAYS		30
 
-struct ds3231_regs {
-	uint8_t ss;	/* 0-59 */
-	uint8_t mm;	/* 0-59 */
-	uint8_t hh;	/* 0-23 */
-	uint8_t day;	/* 1-7 */
-	uint8_t date;	/* 1-31 */
-	uint8_t month;	/* 1-12 + century */
-	uint8_t year;	/* 0-99 */
-};
-
-struct ds3231_alarm {
-	int task_id;
-	struct irq_action action;
-	struct ds3231_regs time;
-	ds3231_callback_t cb;
-};
-
-/* Driver structure */
-struct ds3231 {
-	int epoch_year;
-	struct ds3231_device device;
-	struct ds3231_alarm alarm;
-	struct ds3231_regs regs;
-};
-
-/* Singleton driver object */
-static struct ds3231 ds3231;
-
 /* -------------------------------------------------------------------------- */
 
-static bool ds3231_time2regs(const struct rtc_time *tm,
+static bool ds3231_time2regs(struct ds3231 *obj, const struct rtc_time *tm,
 			     struct ds3231_regs *regs)
 {
-	const int regs_year = tm->tm_year + TM_START_YEAR - ds3231.epoch_year;
+	const int regs_year = tm->tm_year + TM_START_YEAR - obj->epoch_year;
 
 	if (regs_year > MAX_REGS_YEAR || regs_year < MIN_REGS_YEAR)
 		return false;
@@ -75,10 +46,10 @@ static bool ds3231_time2regs(const struct rtc_time *tm,
 	return true;
 }
 
-static bool ds3231_regs2time(const struct ds3231_regs *regs,
+static bool ds3231_regs2time(struct ds3231 *obj, const struct ds3231_regs *regs,
 			     struct rtc_time *tm)
 {
-	const int year = bcd2dec(regs->year) + ds3231.epoch_year;
+	const int year = bcd2dec(regs->year) + obj->epoch_year;
 	const int tm_year = year - TM_START_YEAR;
 
 	if (tm_year < MIN_TM_YEAR)
@@ -137,29 +108,30 @@ static void ds3231_task(void *data)
 /**
  * Read time/date registers from ds3231 device.
  *
+ * @param obj RTC device object
  * @param[out] tm Structure used to store time/date values
  * @return 0 on success or negative value on error
  */
-int ds3231_read_time(struct rtc_time *tm)
+int ds3231_read_time(struct ds3231 *obj, struct rtc_time *tm)
 {
 	int ret;
 	bool res;
 	uint8_t buf[RTC_BUF_LEN];
 
-	ret = i2c_read_buf_poll(ds3231.device.addr, RTC_SECONDS, buf,
+	ret = i2c_read_buf_poll(obj->device.addr, RTC_SECONDS, buf,
 				RTC_BUF_LEN);
 	if (ret != 0)
 		return ret;
 
-	ds3231.regs.ss		= buf[0];
-	ds3231.regs.mm		= buf[1];
-	ds3231.regs.hh		= buf[2];
-	ds3231.regs.day		= buf[3];
-	ds3231.regs.date	= buf[4];
-	ds3231.regs.month	= buf[5];
-	ds3231.regs.year	= buf[6];
+	obj->regs.ss	= buf[0];
+	obj->regs.mm	= buf[1];
+	obj->regs.hh	= buf[2];
+	obj->regs.day	= buf[3];
+	obj->regs.date	= buf[4];
+	obj->regs.month	= buf[5];
+	obj->regs.year	= buf[6];
 
-	res = ds3231_regs2time(&ds3231.regs, tm);
+	res = ds3231_regs2time(obj, &obj->regs, tm);
 	if (!res)
 		return -1;
 
@@ -172,29 +144,30 @@ int ds3231_read_time(struct rtc_time *tm)
  * Write data to ds3231 time/date registers.
  * 24-hour mode is selected by default.
  *
+ * @param obj RTC device object
  * @param[in] tm Structure used to store time/date values. Should be
  * 		 filled by caller.
  * @return 0 on success or negative value on error
  */
-int ds3231_set_time(struct rtc_time *tm)
+int ds3231_set_time(struct ds3231 *obj, struct rtc_time *tm)
 {
 	int ret;
 	bool res;
 	uint8_t buf[RTC_BUF_LEN];
 
-	res = ds3231_time2regs(tm, &ds3231.regs);
+	res = ds3231_time2regs(obj, tm, &obj->regs);
 	if (!res)
 		return -1;
 
-	buf[0] = ds3231.regs.ss;
-	buf[1] = ds3231.regs.mm;
-	buf[2] = ds3231.regs.hh;
-	buf[3] = ds3231.regs.day;
-	buf[4] = ds3231.regs.date;
-	buf[5] = ds3231.regs.month;
-	buf[6] = ds3231.regs.year;
+	buf[0] = obj->regs.ss;
+	buf[1] = obj->regs.mm;
+	buf[2] = obj->regs.hh;
+	buf[3] = obj->regs.day;
+	buf[4] = obj->regs.date;
+	buf[5] = obj->regs.month;
+	buf[6] = obj->regs.year;
 
-	ret = i2c_write_buf_poll(ds3231.device.addr, RTC_SECONDS,
+	ret = i2c_write_buf_poll(obj->device.addr, RTC_SECONDS,
 				 buf,RTC_BUF_LEN);
 	if (ret != 0)
 		return ret;
@@ -202,43 +175,54 @@ int ds3231_set_time(struct rtc_time *tm)
 	return 0;
 }
 
+/* TODO: complete function */
+int ds3231_set_alarm(struct ds3231 *obj, uint8_t alarm)
+{
+	UNUSED(obj);
+	UNUSED(alarm);
+
+	return 0;
+}
+
 /**
  * Initialize real-time clock device.
  *
- * @param obj RTC device
+ * @param obj RTC object
+ * @param dev RTC device hardware parameters
  * @param epoch_year Min year value which RTC can be set up with; >= 1900
  * @return 0 on success or negative value on error
  */
-int ds3231_init(const struct ds3231_device *obj, int epoch_year)
+int ds3231_init(struct ds3231 *obj, const struct ds3231_device *dev,
+		int epoch_year)
 {
 	int ret;
 
-	ds3231.device = *obj;
-	ds3231.epoch_year = epoch_year;
+	obj->device = *dev;
+	obj->epoch_year = epoch_year;
 
-	ds3231.alarm.action.handler = ds3231_exti_isr;
-	ds3231.alarm.action.irq = ds3231.device.irq;
-	ds3231.alarm.action.name = RTC_TASK;
-	ds3231.alarm.action.data = &ds3231;
+	obj->alarm.action.handler = ds3231_exti_isr;
+	obj->alarm.action.irq = obj->device.irq;
+	obj->alarm.action.name = RTC_TASK;
+	obj->alarm.action.data = obj;
 
-	ret = gpio2irq(ds3231.device.pin);
+	ret = gpio2irq(obj->device.pin);
 	if (ret < 0)
 		return -1;
-	ds3231.device.irq = ret;
+	obj->device.irq = ret;
 
-	i2c_init(ds3231.device.i2c_base);
-	ret = i2c_detect_device(ds3231.device.addr);
+	i2c_init(obj->device.i2c_base);
+	ret = i2c_detect_device(obj->device.addr);
 	if (ret != 0)
 		return ret;
 
-	ds3231_exti_init(&ds3231);
+	ds3231_exti_init(obj);
 
-	ret = irq_request(&ds3231.alarm.action);
+	ret = irq_request(&obj->alarm.action);
 	if (ret != 0)
 		return ret;
 
-	ret = sched_add_task(RTC_TASK, ds3231_task, &ds3231,
-			     &ds3231.alarm.task_id);
+	ret = sched_add_task(RTC_TASK, ds3231_task, obj,
+			     &obj->alarm.task_id);
 	if (ret != 0)
 		return ret;
 
@@ -248,10 +232,11 @@ int ds3231_init(const struct ds3231_device *obj, int epoch_year)
 /**
  * De-initialize ds3231 device.
  */
-void ds3231_exit(const struct ds3231_device *obj)
+void ds3231_exit(struct ds3231 *obj, const struct ds3231_device *dev)
 {
 	UNUSED(obj);
+	UNUSED(dev);
 
-	sched_del_task(ds3231.alarm.task_id);
-	irq_free(&ds3231.alarm.action);
+	sched_del_task(obj->alarm.task_id);
+	irq_free(&obj->alarm.action);
 }

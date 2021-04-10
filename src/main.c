@@ -22,6 +22,7 @@
 
 static struct kbd kbd;
 static struct rtc_time tm;
+static struct ds3231 rtc;
 static struct wh1602 wh;
 static struct ds18b20 ts = {
 	.port = DS18B20_GPIO_PORT,
@@ -145,7 +146,7 @@ static void init(void)
 		hang();
 	}
 
-	err = ds3231_init(&device, EPOCH_YEAR);
+	err = ds3231_init(&rtc, &device, EPOCH_YEAR);
 	if (err) {
 		printf("Can't initialize RTC: %d\n", err);
 		hang();

@@ -1,6 +1,7 @@
 #ifndef DRIVERS_DS3231_H
 #define DRIVERS_DS3231_H
 
+#include <core/irq.h>
 #include <libopencm3/stm32/exti.h>
 #include <stdint.h>
 
@@ -18,6 +19,16 @@ struct rtc_time {
 	int tm_isdst;	/* Daylight Saving Time flag		*/
 };
 
+struct ds3231_regs {
+	uint8_t ss;	/* 0-59 */
+	uint8_t mm;	/* 0-59 */
+	uint8_t hh;	/* 0-23 */
+	uint8_t day;	/* 1-7 */
+	uint8_t date;	/* 1-31 */
+	uint8_t month;	/* 1-12 + century */
+	uint8_t year;	/* 0-99 */
+};
+
 /* RTC hardware parameters */
 struct ds3231_device {
 	uint32_t port;
@@ -28,10 +39,27 @@ struct ds3231_device {
 	uint8_t addr;
 };
 
+struct ds3231_alarm {
+	int task_id;
+	struct irq_action action;
+	struct ds3231_regs time;
+	ds3231_callback_t cb;
+};
+
+/* Driver structure */
+struct ds3231 {
+	int epoch_year;
+	struct ds3231_alarm alarm;
+	struct ds3231_device device;
+	struct ds3231_regs regs;
+};
+
 /* RTC API */
-int ds3231_init(const struct ds3231_device *obj, int epoch_year);
-void ds3231_exit(const struct ds3231_device *obj);
-int ds3231_read_time(struct rtc_time *tm);
-int ds3231_set_time(struct rtc_time *tm);
+int ds3231_init(struct ds3231 *obj, const struct ds3231_device *dev,
+		int epoch_year);
+void ds3231_exit(struct ds3231 *obj, const struct ds3231_device *dev);
+int ds3231_read_time(struct ds3231 *obj, struct rtc_time *tm);
+int ds3231_set_time(struct ds3231 *obj, struct rtc_time *tm);
+int ds3231_set_alarm(struct ds3231 *obj, uint8_t alarm);
 
 #endif /* DRIVERS_DS3231_H */

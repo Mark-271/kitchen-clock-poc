@@ -66,7 +66,6 @@ OBJS		+=				\
 		   src/drivers/systick.o	\
 		   src/drivers/wh1602.o		\
 		   src/main.o			\
-		   src/tools/bcd.o		\
 		   src/tools/common.o		\
 		   src/tools/tools.o
 

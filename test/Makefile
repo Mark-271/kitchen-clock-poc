@@ -7,6 +7,9 @@ tempval_to_str:
 bcd:
 	@gcc -Wall -O2 test_bcd.c -o test
 
+rtc:
+	@gcc -Wall -O2 test_rtc_conv.c -o test
+
 clean:
 	@-rm -f test
 

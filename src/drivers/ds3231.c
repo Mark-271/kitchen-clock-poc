@@ -17,8 +17,12 @@
 #define RTC_DAY			0x03	/* Day offset register */
 #define RTC_BUF_LEN		7	/* Number of data registers */
 #define RTC_TASK		"ds3231"
-#define RTC_A1F			BIT(0) /* Alarm 1 flag */
-
+#define RTC_A1F			BIT(0)	/* DS3231 Alarm 1 flag */
+#define RTC_A1IE		BIT(0)	/* DS3231 Alarm 1 interrupt bit */
+#define RTC_INTCN		BIT(2)	/* Controls INT/SCW signal */
+#define RTC_ALARM1		0x0b	/* DS3231 Alarm 1 offset register */
+#define RTC_ALARM_MASK		BIT(7) /* DS3231 alarm mask bit */
+#define ALARM1_BUF_LEN		4
 #define TM_START_YEAR		1900
 #define MIN_TM_YEAR		0
 #define MIN_REGS_YEAR		0
@@ -175,11 +179,40 @@ int ds3231_set_time(struct ds3231 *obj, struct rtc_time *tm)
 	return 0;
 }
 
-/* TODO: complete function */
-int ds3231_set_alarm(struct ds3231 *obj, uint8_t alarm)
+/**
+ * Set alarm.
+ *
+ * DS3231 contains two alarms. Only Alarm1 is in use. Alarm occures when
+ * hours, minutes and seconds match. Day of a week or date are ignored.
+ * Time data to trigger alarm should be set by caller.
+ *
+ * @param obj Device object
+ * @return 0 on success or negative value on error
+ */
+int ds3231_set_alarm(struct ds3231 *obj)
 {
-	UNUSED(obj);
-	UNUSED(alarm);
+	int err;
+	bool res;
+	uint8_t buf[ALARM1_BUF_LEN];
+
+	res = ds3231_time2regs(obj, &obj->alarm.time, &obj->regs);
+	if (!res)
+		return -1;
+
+	/* TODO: Clear pending (A1F) flag */
+	/* TODO: Clear interrupt (A1IE) flag */
+	buf[0] = obj->regs.ss;
+	buf[1] = obj->regs.mm;
+	buf[2] = obj->regs.hh;
+	buf[3] = RTC_ALARM_MASK;
+
+	err = i2c_write_buf_poll(obj->device.addr, RTC_ALARM1,
+				 buf, ALARM1_BUF_LEN);
+	if (err)
+		return err;
+
+	/* TODO: Set A1IE bit */
+	/* TODO: SET INTCN bit */
 
 	return 0;
 }

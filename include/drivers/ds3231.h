@@ -42,7 +42,7 @@ struct ds3231_device {
 struct ds3231_alarm {
 	int task_id;
 	struct irq_action action;
-	struct ds3231_regs time;
+	struct rtc_time time;
 	ds3231_callback_t cb;
 };
 
@@ -60,6 +60,6 @@ int ds3231_init(struct ds3231 *obj, const struct ds3231_device *dev,
 void ds3231_exit(struct ds3231 *obj, const struct ds3231_device *dev);
 int ds3231_read_time(struct ds3231 *obj, struct rtc_time *tm);
 int ds3231_set_time(struct ds3231 *obj, struct rtc_time *tm);
-int ds3231_set_alarm(struct ds3231 *obj, uint8_t alarm);
+int ds3231_set_alarm(struct ds3231 *obj);
 
 #endif /* DRIVERS_DS3231_H */

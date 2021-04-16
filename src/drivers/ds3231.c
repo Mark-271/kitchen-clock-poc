@@ -11,10 +11,10 @@
 #include <string.h>
 
 /* DS3231 registers */
-#define RTC_CR			0x0e	/* Config register */
-#define RTC_SR			0x0f	/* Status register */
-#define RTC_SECONDS		0x00	/* Register of seconds */
-#define RTC_DAY			0x03	/* Day offset register */
+#define RTC_CR			0x0e	/* DS3231 Config register */
+#define RTC_SR			0x0f	/* DS3231 Status register */
+#define RTC_SECONDS		0x00	/* DS3231 Register of seconds */
+#define RTC_DAY			0x03	/* DS3231Day offset register */
 #define RTC_BUF_LEN		7	/* Number of data registers */
 #define RTC_TASK		"ds3231"
 #define RTC_A1F			BIT(0)	/* DS3231 Alarm 1 flag */
@@ -29,7 +29,7 @@
 #define MAX_REGS_YEAR		99
 #define TM_MDAYS		30
 
-/* -------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
 
 static bool ds3231_time2regs(struct ds3231 *obj, const struct rtc_time *tm,
 			     struct ds3231_regs *regs)

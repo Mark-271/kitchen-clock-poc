@@ -179,6 +179,26 @@ int ds3231_set_time(struct ds3231 *obj, struct rtc_time *tm)
 	return 0;
 }
 
+int ds3231_enable_alarm(struct ds3231 *obj)
+{
+	int err;
+
+	UNUSED(err);
+	UNUSED(obj);
+
+	return 0;
+}
+
+int ds3231_disable_alarm(struct ds3231 *obj)
+{
+	int err;
+
+	UNUSED(err);
+	UNUSED(obj);
+
+	return 0;
+}
+
 /**
  * Set alarm.
  *

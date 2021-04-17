@@ -21,6 +21,7 @@
 #define RTC_A1IE		BIT(0)	/* DS3231 Alarm 1 interrupt bit */
 #define RTC_INTCN		BIT(2)	/* Controls INT/SCW signal */
 #define RTC_ALARM1		0x0b	/* DS3231 Alarm 1 offset register */
+#define RTC_ALARM1_EN		(RTC_A1IE | RTC_INTCN)
 #define RTC_ALARM_MASK		BIT(7) /* DS3231 alarm mask bit */
 #define ALARM1_BUF_LEN		4
 #define TM_START_YEAR		1900
@@ -179,22 +180,31 @@ int ds3231_set_time(struct ds3231 *obj, struct rtc_time *tm)
 	return 0;
 }
 
+/* Turn on alarm */
 int ds3231_enable_alarm(struct ds3231 *obj)
 {
 	int err;
+	uint8_t buf[] = {RTC_ALARM1_EN};
 
-	UNUSED(err);
-	UNUSED(obj);
+	err = i2c_write_buf_poll(obj->device.addr, RTC_CR,
+				 buf, 1);
+	if (err)
+		return err;
 
 	return 0;
 }
 
+/* Turn off alarm */
 int ds3231_disable_alarm(struct ds3231 *obj)
 {
 	int err;
+	uint8_t buf[] = {~RTC_ALARM1_EN, ~RTC_A1F};
 
-	UNUSED(err);
-	UNUSED(obj);
+
+	err = i2c_write_buf_poll(obj->device.addr, RTC_CR,
+				 buf, 2);
+	if (err)
+		return err;
 
 	return 0;
 }
@@ -219,8 +229,12 @@ int ds3231_set_alarm(struct ds3231 *obj)
 	if (!res)
 		return -1;
 
-	/* TODO: Clear pending (A1F) flag */
-	/* TODO: Clear interrupt (A1IE) flag */
+	/* Clear A1F flag */
+	buf[0] = ~RTC_A1F;
+	err = i2c_write_buf_poll(obj->device.addr, RTC_CR, buf, 1);
+	if (err)
+		return err;
+
 	buf[0] = obj->regs.ss;
 	buf[1] = obj->regs.mm;
 	buf[2] = obj->regs.hh;
@@ -231,8 +245,9 @@ int ds3231_set_alarm(struct ds3231 *obj)
 	if (err)
 		return err;
 
-	/* TODO: Set A1IE bit */
-	/* TODO: SET INTCN bit */
+	err = ds3231_enable_alarm(obj);
+	if (err)
+		return err;
 
 	return 0;
 }

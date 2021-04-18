@@ -253,6 +253,35 @@ int ds3231_set_alarm(struct ds3231 *obj)
 }
 
 /**
+ * Read alarm time.
+ *
+ * Read data (minutes and hours) contained in alarm1 offset registers.
+ *
+ * @param obj Device object
+ * @return 0 on success or negative value on error
+ */
+int ds3231_read_alarm(struct ds3231 *obj)
+{
+	int ret;
+	int res;
+	uint8_t buf[ALARM1_BUF_LEN];
+
+	ret = i2c_read_buf_poll(obj->device.addr, RTC_ALARM1, buf,
+				ALARM1_BUF_LEN);
+	if (ret != 0)
+		return ret;
+
+	obj->regs.mm = buf[1];
+	obj->regs.hh = buf[2];
+
+	res = ds3231_regs2time(obj, &obj->regs, &obj->alarm.time);
+	if (!res)
+		return -1;
+
+	return 0;
+}
+
+/**
  * Initialize real-time clock device.
  *
  * @param obj RTC object

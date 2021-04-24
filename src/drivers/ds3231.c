@@ -12,18 +12,18 @@
 #include <time.h>
 
 /* DS3231 registers */
-#define RTC_CR			0x0e	/* DS3231 Config register */
-#define RTC_SR			0x0f	/* DS3231 Status register */
-#define RTC_SECONDS		0x00	/* DS3231 Register of seconds */
-#define RTC_DAY			0x03	/* DS3231Day offset register */
-#define RTC_BUF_LEN		7	/* Number of data registers */
-#define RTC_TASK		"ds3231"
-#define RTC_A1F			BIT(0)	/* DS3231 Alarm 1 flag */
-#define RTC_A1IE		BIT(0)	/* DS3231 Alarm 1 interrupt bit */
-#define RTC_INTCN		BIT(2)	/* Controls INT/SCW signal */
-#define RTC_ALARM1		0x0b	/* DS3231 Alarm 1 offset register */
-#define RTC_ALARM1_EN		(RTC_A1IE | RTC_INTCN)
-#define RTC_ALARM_MASK		BIT(7) /* DS3231 alarm mask bit */
+#define DS3231_CR		0x0e	/* DS3231 Config register */
+#define DS3231_SR		0x0f	/* DS3231 Status register */
+#define DS3231_SECONDS		0x00	/* DS3231 Register of seconds */
+#define DS3231_DAY		0x03	/* DS3231Day offset register */
+#define DS3231_BUF_LEN		7	/* Number of data registers */
+#define DS3231_TASK		"ds3231"
+#define DS3231_A1F		BIT(0)	/* DS3231 Alarm 1 flag */
+#define DS3231_A1IE		BIT(0)	/* DS3231 Alarm 1 interrupt bit */
+#define DS3231_INTCN		BIT(2)	/* Controls INT/SCW signal */
+#define DS3231_ALARM1		0x0b	/* DS3231 Alarm 1 offset register */
+#define DS3231_ALARM1_EN	(DS3231_A1IE | DS3231_INTCN)
+#define DS3231_ALARM_MASK	BIT(7) /* DS3231 alarm mask bit */
 #define ALARM1_BUF_LEN		4
 #define TM_START_YEAR		1900
 #define MIN_TM_YEAR		0
@@ -97,11 +97,11 @@ static irqreturn_t ds3231_exti_isr(int irq, void *data)
 static void ds3231_task(void *data)
 {
 	int ret;
-	uint8_t buf[] = {~RTC_A1F};
+	uint8_t buf[] = {~DS3231_A1F};
 
 	struct ds3231 *obj = (struct ds3231 *)(data);
 
-	ret = i2c_write_buf_poll(obj->device.addr, RTC_SR, buf, 1);
+	ret = i2c_write_buf_poll(obj->device.addr, DS3231_SR, buf, 1);
 	if (ret != 0) {
 		printf("Error %d: Can't write data\n", ret);
 		return;
@@ -114,7 +114,7 @@ static void ds3231_task(void *data)
 /**
  * Read time/date registers from ds3231 device.
  *
- * @param obj RTC device object
+ * @param obj DS3231 device object
  * @param[out] tm Structure used to store time/date values
  * @return 0 on success or negative value on error
  */
@@ -122,10 +122,10 @@ int ds3231_read_time(struct ds3231 *obj, struct rtc_time *tm)
 {
 	int ret;
 	bool res;
-	uint8_t buf[RTC_BUF_LEN];
+	uint8_t buf[DS3231_BUF_LEN];
 
-	ret = i2c_read_buf_poll(obj->device.addr, RTC_SECONDS, buf,
-				RTC_BUF_LEN);
+	ret = i2c_read_buf_poll(obj->device.addr, DS3231_SECONDS, buf,
+				DS3231_BUF_LEN);
 	if (ret != 0)
 		return ret;
 
@@ -150,16 +150,16 @@ int ds3231_read_time(struct ds3231 *obj, struct rtc_time *tm)
  * Write data to ds3231 time/date registers.
  * 24-hour mode is selected by default.
  *
- * @param obj RTC device object
+ * @param obj DS3231 device object
  * @param[in] tm Structure used to store time/date values. Should be
- * 		 filled by caller.
+ * 		filled by caller.
  * @return 0 on success or negative value on error
  */
 int ds3231_set_time(struct ds3231 *obj, struct rtc_time *tm)
 {
 	int ret;
 	bool res;
-	uint8_t buf[RTC_BUF_LEN];
+	uint8_t buf[DS3231_BUF_LEN];
 
 	res = ds3231_time2regs(obj, tm, &obj->regs);
 	if (!res)
@@ -173,8 +173,8 @@ int ds3231_set_time(struct ds3231 *obj, struct rtc_time *tm)
 	buf[5] = obj->regs.month;
 	buf[6] = obj->regs.year;
 
-	ret = i2c_write_buf_poll(obj->device.addr, RTC_SECONDS,
-				 buf,RTC_BUF_LEN);
+	ret = i2c_write_buf_poll(obj->device.addr, DS3231_SECONDS, buf,
+				 DS3231_BUF_LEN);
 	if (ret != 0)
 		return ret;
 
@@ -185,10 +185,9 @@ int ds3231_set_time(struct ds3231 *obj, struct rtc_time *tm)
 int ds3231_enable_alarm(struct ds3231 *obj)
 {
 	int err;
-	uint8_t buf[] = {RTC_ALARM1_EN};
+	uint8_t buf[] = {DS3231_ALARM1_EN};
 
-	err = i2c_write_buf_poll(obj->device.addr, RTC_CR,
-				 buf, 1);
+	err = i2c_write_buf_poll(obj->device.addr, DS3231_CR, buf, 1);
 	if (err)
 		return err;
 
@@ -199,11 +198,9 @@ int ds3231_enable_alarm(struct ds3231 *obj)
 int ds3231_disable_alarm(struct ds3231 *obj)
 {
 	int err;
-	uint8_t buf[] = {~RTC_ALARM1_EN, ~RTC_A1F};
+	uint8_t buf[] = {~DS3231_ALARM1_EN, ~DS3231_A1F};
 
-
-	err = i2c_write_buf_poll(obj->device.addr, RTC_CR,
-				 buf, 2);
+	err = i2c_write_buf_poll(obj->device.addr, DS3231_CR, buf, 2);
 	if (err)
 		return err;
 
@@ -231,17 +228,17 @@ int ds3231_set_alarm(struct ds3231 *obj)
 		return -1;
 
 	/* Clear A1F flag */
-	buf[0] = ~RTC_A1F;
-	err = i2c_write_buf_poll(obj->device.addr, RTC_CR, buf, 1);
+	buf[0] = ~DS3231_A1F;
+	err = i2c_write_buf_poll(obj->device.addr, DS3231_CR, buf, 1);
 	if (err)
 		return err;
 
 	buf[0] = obj->regs.ss;
 	buf[1] = obj->regs.mm;
 	buf[2] = obj->regs.hh;
-	buf[3] = RTC_ALARM_MASK;
+	buf[3] = DS3231_ALARM_MASK;
 
-	err = i2c_write_buf_poll(obj->device.addr, RTC_ALARM1,
+	err = i2c_write_buf_poll(obj->device.addr, DS3231_ALARM1,
 				 buf, ALARM1_BUF_LEN);
 	if (err)
 		return err;
@@ -267,7 +264,7 @@ int ds3231_read_alarm(struct ds3231 *obj)
 	int res;
 	uint8_t buf[ALARM1_BUF_LEN];
 
-	ret = i2c_read_buf_poll(obj->device.addr, RTC_ALARM1, buf,
+	ret = i2c_read_buf_poll(obj->device.addr, DS3231_ALARM1, buf,
 				ALARM1_BUF_LEN);
 	if (ret != 0)
 		return ret;
@@ -282,7 +279,6 @@ int ds3231_read_alarm(struct ds3231 *obj)
 	return 0;
 }
 
-/* TODO */
 /**
  * Convert time data to string.
  *
@@ -303,9 +299,9 @@ char *ds3231_time2str(const struct rtc_time *time, char buf[], int len)
 /**
  * Initialize real-time clock device.
  *
- * @param obj RTC object
- * @param dev RTC device hardware parameters
- * @param epoch_year Min year value which RTC can be set up with; >= 1900
+ * @param obj DS3231 object
+ * @param dev DS3231 device hardware parameters
+ * @param epoch_year Min year value which DS3231 can be set up with; >= 1900
  * @return 0 on success or negative value on error
  */
 int ds3231_init(struct ds3231 *obj, const struct ds3231_device *dev,
@@ -318,7 +314,7 @@ int ds3231_init(struct ds3231 *obj, const struct ds3231_device *dev,
 
 	obj->alarm.action.handler = ds3231_exti_isr;
 	obj->alarm.action.irq = obj->device.irq;
-	obj->alarm.action.name = RTC_TASK;
+	obj->alarm.action.name = DS3231_TASK;
 	obj->alarm.action.data = obj;
 
 	ret = gpio2irq(obj->device.pin);
@@ -337,7 +333,7 @@ int ds3231_init(struct ds3231 *obj, const struct ds3231_device *dev,
 	if (ret != 0)
 		return ret;
 
-	ret = sched_add_task(RTC_TASK, ds3231_task, obj,
+	ret = sched_add_task(DS3231_TASK, ds3231_task, obj,
 			     &obj->alarm.task_id);
 	if (ret != 0)
 		return ret;

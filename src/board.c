@@ -50,8 +50,9 @@ static struct pin_mode pins[] = {
 		.conf = GPIO_CNF_OUTPUT_OPENDRAIN,
 	},
 	{
-		.port = RTC_I2C_GPIO_PORT,
-		.pins = RTC_I2C_SCL_PIN | RTC_I2C_SDA_PIN | RTC_ALARM_PIN,
+		.port = DS3231_I2C_GPIO_PORT,
+		.pins = DS3231_I2C_SCL_PIN | DS3231_I2C_SDA_PIN |
+			DS3231_ALARM_PIN,
 		.mode = GPIO_MODE_OUTPUT_10_MHZ,
 		.conf = GPIO_CNF_OUTPUT_ALTFN_OPENDRAIN,
 	},
@@ -65,9 +66,9 @@ enum rcc_periph_clken clocks[] = {
 	KBD_GPIO_RCC,
 	KBD_AFIO_RCC,
 	SWTIMER_TIM_RCC,
-	RTC_AFIO_RCC,
-	RTC_GPIO_RCC,
-	RTC_I2C_RCC,
+	DS3231_AFIO_RCC,
+	DS3231_GPIO_RCC,
+	DS3231_I2C_RCC,
 };
 
 /**

@@ -103,12 +103,12 @@ static void init(void)
 		.psc = SWTIMER_TIM_PSC_VAL,
 	};
 	const struct ds3231_device device = {
-		.port = RTC_I2C_GPIO_PORT,
-		.pin = RTC_ALARM_PIN,
-		.irq = RTC_EXTI_IRQ,
-		.trig = RTC_EXTI_TRIGGER,
-		.i2c_base = RTC_I2C_BASE,
-		.addr = RTC_DEVICE_ADDR,
+		.port = DS3231_I2C_GPIO_PORT,
+		.pin = DS3231_ALARM_PIN,
+		.irq = DS3231_EXTI_IRQ,
+		.trig = DS3231_EXTI_TRIGGER,
+		.i2c_base = DS3231_I2C_BASE,
+		.addr = DS3231_DEVICE_ADDR,
 	};
 
 	irq_init();
@@ -148,7 +148,7 @@ static void init(void)
 
 	err = ds3231_init(&rtc, &device, EPOCH_YEAR);
 	if (err) {
-		printf("Can't initialize RTC: %d\n", err);
+		printf("Can't initialize RTC device DS3231: %d\n", err);
 		hang();
 	}
 

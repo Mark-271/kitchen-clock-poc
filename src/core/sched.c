@@ -8,7 +8,7 @@ struct task {
 };
 
 /* Contains status of each task (1 - data is ready; 0 - blocked) */
-static volatile uint32_t sched_ready;
+static uint32_t sched_ready;
 static struct task task_list[TASK_NR];
 static int current;			/* current pos in task_list[] */
 
@@ -22,7 +22,7 @@ static void sched_set_blocked(int task_id)
 	unsigned long flags;
 
 	enter_critical(flags);
-	sched_ready &= ~BIT(task_id);
+	WRITE_ONCE(sched_ready, sched_ready & ~BIT(task_id));
 	exit_critical(flags);
 }
 
@@ -57,7 +57,7 @@ static int sched_slot_by_name(const char *name)
  */
 static int sched_find_next(void)
 {
-	uint32_t tasks_ready = sched_ready;
+	uint32_t tasks_ready = READ_ONCE(sched_ready);
 	int i;
 
 	/*
@@ -86,7 +86,7 @@ static int sched_run_next(void)
 	int next;
 
 	enter_critical(irq_flags);
-	if (!sched_ready) {
+	if (!READ_ONCE(sched_ready)) {
 		exit_critical(irq_flags);
 		return -1;
 	}
@@ -209,6 +209,6 @@ void sched_set_ready(int task_id)
 	unsigned long flags;
 
 	enter_critical(flags);
-	sched_ready |= BIT(task_id - 1);
+	WRITE_ONCE(sched_ready, sched_ready | BIT(task_id - 1));
 	exit_critical(flags);
 }

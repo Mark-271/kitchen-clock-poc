@@ -34,7 +34,7 @@ struct swtimer {
 	struct swtimer_hw_tim hw_tim;
 	struct irq_action action;
 	struct swtimer_sw_tim timer_list[SWTIMER_TIMERS_MAX];
-	volatile int ticks;		/* global ticks counter */
+	int ticks;		/* global ticks counter */
 	int task_id;			/* scheduler task ID */
 };
 
@@ -58,7 +58,7 @@ static irqreturn_t swtimer_isr(int irq, void *data)
 	if (!timer_get_flag(obj->hw_tim.base, TIM_SR_UIF))
 		return IRQ_NONE;
 
-	obj->ticks = SWTIMER_HW_OVERFLOW;
+	WRITE_ONCE(obj->ticks, SWTIMER_HW_OVERFLOW);
 	sched_set_ready(obj->task_id);
 	timer_clear_flag(obj->hw_tim.base, TIM_SR_UIF);
 
@@ -77,9 +77,9 @@ static void swtimer_task(void *data)
 			obj->timer_list[i].cb(obj->timer_list[i].data);
 			obj->timer_list[i].remaining = obj->timer_list[i].period;
 		}
-		obj->timer_list[i].remaining -= obj->ticks;
+		obj->timer_list[i].remaining -= READ_ONCE(obj->ticks);
 	}
-	obj->ticks = 0;
+	WRITE_ONCE(obj->ticks, 0);
 }
 
 static int swtimer_find_empty_slot(struct swtimer *obj)
@@ -125,7 +125,7 @@ static void swtimer_hw_init(struct swtimer *obj)
  */
 void swtimer_reset(void)
 {
-	swtimer.ticks = 0; /* Set global ticks counter to 0 */
+	WRITE_ONCE(swtimer.ticks, 0); /* Set global ticks counter to 0 */
 }
 
 /**

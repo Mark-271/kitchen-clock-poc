@@ -132,7 +132,7 @@ static void logic_init_drivers(void)
 	}
 }
 
-static char* logic_measure_temper(void *data)
+static char *logic_measure_temper(void *data)
 {
 	struct ds18b20 *obj = (struct ds18b20 *)(data);
 	char buf[BUF_LEN];
@@ -164,6 +164,7 @@ static void logic_handle_time(void)
 {
 	swtimer_tim_start(id);
 }
+
 static void logic_handle_timer(void *data)
 {
 	int err;
@@ -241,7 +242,7 @@ static void logic_handle_btn(int button, bool pressed)
 {
 	wh1602_clear_display(&wh);
 
-	if ((button == BUTTON_1) && pressed) {
+	if (button == BUTTON_1 && pressed) {
 		logic_handle_stage(STAGE_TIME);
 	} else if ((button == BUTTON_1) && !pressed) {
 		swtimer_tim_stop(id);

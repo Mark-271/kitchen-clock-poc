@@ -119,7 +119,7 @@ static irqreturn_t exti1_handler(int irq, void *data)
 	UNUSED(irq);
 
 	kdb_handle_interrupt(obj);
-	exti_reset_request(obj->gpio.irq[0]);
+	exti_reset_request(obj->gpio.read[0]);
 
 	return IRQ_HANDLED;
 }
@@ -131,7 +131,7 @@ static irqreturn_t exti2_handler(int irq, void *data)
 	UNUSED(irq);
 
 	kdb_handle_interrupt(obj);
-	exti_reset_request(obj->gpio.irq[1]);
+	exti_reset_request(obj->gpio.read[1]);
 
 	return IRQ_HANDLED;
 }

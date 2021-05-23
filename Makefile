@@ -77,6 +77,7 @@ CFLAGS		+= $(ARCH_FLAGS)
 CFLAGS		+= -Wextra -Wshadow -Wimplicit-function-declaration
 CFLAGS		+= -Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes
 CFLAGS		+= -fno-common -ffunction-sections -fdata-sections
+CFLAGS		+= -fstack-usage
 
 # C preprocessor common flags
 
@@ -128,7 +129,7 @@ $(LDS_GEN): $(LDS)
 
 clean: styleclean
 	@printf "  CLEAN\n"
-	$(Q)$(RM) $(APP).elf $(APP).bin $(OBJS) $(OBJS:%.o=%.d)
+	$(Q)$(RM) $(APP).elf $(APP).bin $(OBJS) $(OBJS:%.o=%.d) $(OBJS:%.o=%.su)
 	$(Q)$(RM) $(LDS_GEN)
 
 distclean: clean

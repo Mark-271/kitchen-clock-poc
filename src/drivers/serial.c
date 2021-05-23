@@ -7,6 +7,8 @@
  * because of _write() "syscall" implementation.
  */
 
+#ifdef CONFIG_SERIAL_CONSOLE
+
 #include <drivers/serial.h>
 #include <libopencm3/stm32/usart.h>
 #include <stdio.h>
@@ -61,3 +63,5 @@ int _write(int fd, char *ptr, int len)
 
 	return i;
 }
+
+#endif /* CONFIG_SERIAL_CONSOLE */

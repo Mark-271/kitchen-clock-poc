@@ -66,7 +66,7 @@ static void logic_init_drivers(void)
 
 	struct serial_params serial = {
 		.uart = SERIAL_USART,
-		.baud = 115200,
+		.baud = CONFIG_SERIAL_SPEED,
 		.bits = 8,
 		.stopbits = USART_STOPBITS_1,
 		.parity = USART_PARITY_NONE,

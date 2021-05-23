@@ -1,6 +1,7 @@
 #include <logic.h>
 #include <board.h>
 #include <core/irq.h>
+#include <core/log.h>
 #include <core/sched.h>
 #include <core/swtimer.h>
 #include <drivers/ds18b20.h>
@@ -103,31 +104,31 @@ static void logic_init_drivers(void)
 
 	err = systick_init();
 	if (err) {
-		printf("Can't initialize systick: %d\n", err);
+		pr_emerg("Error: Can't initialize systick: %d\n", err);
 		hang();
 	}
 
 	err = kbd_init(&kbd, &kbd_gpio, logic_handle_btn);
 	if (err) {
-		printf("Can't initialize kbd: %d\n", err);
+		pr_emerg("Error: Can't initialize kbd: %d\n", err);
 		hang();
 	}
 
 	err = ds18b20_init(&ts);
 	if (err) {
-		printf("Can't initialize ds18b20: %d\n", err);
+		pr_err("Error: Can't initialize ds18b20: %d\n", err);
 		ds18b20_presence_flag = false;
 	}
 
 	err = wh1602_init(&wh, &wh_gpio);
 	if (err) {
-		printf("Can't initialize wh1602: %d\n", err);
+		pr_emerg("Error: Can't initialize wh1602: %d\n", err);
 		hang();
 	}
 
 	err = ds3231_init(&rtc, &device, EPOCH_YEAR);
 	if (err) {
-		printf("Can't initialize RTC device DS3231: %d\n", err);
+		pr_emerg("Error: Can't initialize RTC device DS3231: %d\n", err);
 		hang();
 	}
 }
@@ -174,7 +175,7 @@ static void logic_handle_timer(void *data)
 
 	err = ds3231_read_time(obj, &tm);
 	if (err) {
-		printf("Error: Can't read time from ds3231\n");
+		pr_emerg("Error: Can't read time from ds3231\n");
 		hang();
 	}
 
@@ -202,7 +203,7 @@ static void logic_handle_init(void)
 
 	id = swtimer_tim_register(logic_handle_timer, &rtc, TIME_PERIOD);
 	if (id < 0) {
-		printf("Error: Can't register timer\n");
+		pr_emerg("Error: Can't register timer\n");
 		hang();
 	}
 	swtimer_tim_stop(id);
@@ -230,7 +231,7 @@ static void logic_handle_stage(enum logic_stage stage)
 
 	transition_func = logic_stage_handler[stage];
 	if (!transition_func) {
-		printf("Error: Transition function doesn't exist for"
+		pr_emerg("Error: Transition function doesn't exist for"
 		       "stage %d\n", stage);
 		hang();
 	}

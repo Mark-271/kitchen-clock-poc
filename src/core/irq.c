@@ -14,6 +14,7 @@
  */
 
 #include <core/irq.h>
+#include <core/log.h>
 #include <libopencm3/stm32/flash.h>
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/cm3/scb.h>
@@ -40,7 +41,7 @@ struct irq_desc {
 static void irq_handle_bad(unsigned int irq, struct irq_desc *desc)
 {
 	UNUSED(desc);
-	printf("unexpected IRQ trap at vector %d\n", irq);
+	pr_crit("Error: Unexpected IRQ trap at vector %d\n", irq);
 }
 
 struct irq_desc irq_desc[NVIC_IRQ_COUNT] = {
@@ -63,7 +64,7 @@ static void irq_handle(unsigned int irq, struct irq_desc *desc)
 	}
 
 	if (retval == IRQ_NONE)
-		printf("IRQ %d: nobody cared\n", irq);
+		pr_err("Error: IRQ %d: nobody cared\n", irq);
 }
 
 /* Low-level IRQ handler; it's set to all IRQs in vector table */

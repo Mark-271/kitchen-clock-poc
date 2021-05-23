@@ -1,8 +1,9 @@
 #include <drivers/ds3231.h>
 #include <drivers/i2c.h>
+#include <core/log.h>
+#include <core/sched.h>
 #include <tools/bcd.h>
 #include <tools/common.h>
-#include <core/sched.h>
 #include <tools/tools.h>
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/stm32/exti.h>
@@ -103,7 +104,7 @@ static void ds3231_task(void *data)
 
 	ret = i2c_write_buf_poll(obj->device.addr, DS3231_SR, buf, 1);
 	if (ret != 0) {
-		printf("Error %d: Can't write data\n", ret);
+		pr_err("Error: Can't write data; err = %d\n", ret);
 		return;
 	}
 

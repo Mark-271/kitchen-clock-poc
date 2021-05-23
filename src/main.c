@@ -1,5 +1,6 @@
 #include <board.h>
 #include <core/irq.h>
+#include <core/log.h>
 #include <core/sched.h>
 #include <core/swtimer.h>
 #include <logic.h>
@@ -26,7 +27,7 @@ static void init_core(void)
 
 	err = swtimer_init(&hw_tim);
 	if (err) {
-		printf("Can't initialize swtimer\n");
+		pr_emerg("Error: Can't initialize swtimer\n");
 		hang();
 	}
 }

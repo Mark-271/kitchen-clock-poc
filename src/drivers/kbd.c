@@ -1,5 +1,6 @@
 #include <drivers/kbd.h>
 #include <core/irq.h>
+#include <core/log.h>
 #include <core/swtimer.h>
 #include <tools/common.h>
 #include <libopencm3/cm3/nvic.h>
@@ -109,7 +110,7 @@ static void kbd_handle_btn(void *data)
 	}
 
 	if (ret == -1)
-		printf("Warning: No button is pressed\n");
+		pr_warn("Warning: No button is pressed\n");
 }
 
 static irqreturn_t exti1_handler(int irq, void *data)

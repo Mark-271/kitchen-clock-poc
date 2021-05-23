@@ -4,6 +4,8 @@
 /* Serial console */
 #define CONFIG_SERIAL_CONSOLE
 #define CONFIG_SERIAL_SPEED		115200
+/* Messages with level less than this will be printed to the console; 1-8 */
+#define CONFIG_LOGLEVEL			4
 
 /* Vector table size (=sizeof(vector_table) */
 #define CONFIG_VTOR_SIZE		0x150

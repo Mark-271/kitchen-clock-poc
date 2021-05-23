@@ -13,7 +13,6 @@ struct serial_params {
 	uint32_t flow_control;
 };
 
-int _write(int fd, char *ptr, int len);
 int serial_init(struct serial_params *params);
 void serial_exit(void);
 

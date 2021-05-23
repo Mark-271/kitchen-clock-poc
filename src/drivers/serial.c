@@ -14,6 +14,9 @@
 
 static uint32_t serial_usart; /* singleton object */
 
+/* Forward declaration, to make GCC happy */
+int _write(int fd, char *ptr, int len);
+
 int serial_init(struct serial_params *params)
 {
 	serial_usart = params->uart;
@@ -35,6 +38,7 @@ void serial_exit(void)
 	serial_usart = 0;
 }
 
+/* write() syscall implementation for newlib */
 int _write(int fd, char *ptr, int len)
 {
 	int i = 0;

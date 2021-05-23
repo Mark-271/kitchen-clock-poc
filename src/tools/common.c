@@ -1,16 +1,14 @@
 #include <tools/common.h>
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/stm32/gpio.h>
-#include <stdio.h>
 
 /**
  * Error handling routine.
  *
- * Prints error message and hang in endless loop.
+ * Hang in endless loop.
  */
 void __attribute__((__noreturn__)) hang(void)
 {
-	puts("Error: Reboot your board");
 	for (;;)
 		;
 }

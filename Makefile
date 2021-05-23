@@ -106,7 +106,7 @@ ifeq ($(filter npq%,$(firstword $(MAKEFLAGS))),)
 .SECONDARY:
 endif
 
-all: elf
+all: bin
 elf: $(APP).elf
 bin: $(APP).bin
 

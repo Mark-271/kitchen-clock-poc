@@ -10,14 +10,16 @@
 #ifdef CONFIG_SERIAL_CONSOLE
 
 #include <drivers/serial.h>
+#include <tools/common.h>
 #include <libopencm3/stm32/usart.h>
 #include <stdio.h>
 #include <errno.h>
 
 static uint32_t serial_usart; /* singleton object */
 
-/* Forward declaration, to make GCC happy */
+/* Forward declaration of "syscalls", to make GCC happy */
 int _write(int fd, char *ptr, int len);
+void *_sbrk(intptr_t increment);
 
 int serial_init(struct serial_params *params)
 {
@@ -63,5 +65,20 @@ int _write(int fd, char *ptr, int len)
 
 	return i;
 }
+
+#ifdef CONFIG_SERIAL_SBRK_TRAP
+/**
+ * sbrk() syscall implementation for newlib when serial console is disabled.
+ *
+ * Nobody should call _sbrk() (e.g. via printf()) when serial console is
+ * disabled. Let's hang if somebody does, so we can catch that rascal!
+ */
+void *_sbrk(intptr_t increment)
+{
+	UNUSED(increment);
+	hang();
+	return (void *)-1;
+}
+#endif /* CONFIG_SERIAL_SBRK_TRAP */
 
 #endif /* CONFIG_SERIAL_CONSOLE */

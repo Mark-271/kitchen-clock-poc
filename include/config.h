@@ -4,6 +4,8 @@
 /* Serial console */
 #define CONFIG_SERIAL_CONSOLE
 #define CONFIG_SERIAL_SPEED		115200
+/* Catch sbrk() syscall when CONFIG_SERIAL_CONSOLE is disabled */
+/* #define CONFIG_SERIAL_SBRK_TRAP */
 /* Messages with level less than this will be printed to the console; 1-8 */
 #define CONFIG_LOGLEVEL			4
 

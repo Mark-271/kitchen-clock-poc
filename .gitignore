@@ -1,7 +1,9 @@
+*-gen.ld
+*.bin
+*.d
+*.elf
+*.o
+*.su
 cscope*
 tags
-*.d
-*.o
-*.elf
-*.bin
-*-gen.ld
+*.stylecheck

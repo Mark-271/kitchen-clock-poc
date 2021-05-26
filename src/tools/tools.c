@@ -1,6 +1,12 @@
 #include <tools/tools.h>
 #include <string.h>
 
+static inline void int2_to_str(char *s, int n)
+{
+	s[0] = n / 10 + '0';
+	s[1] = n % 10 + '0';
+}
+
 static int yisleap(int year)
 {
 	return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
@@ -58,4 +64,19 @@ void inplace_reverse(char *str)
 		}
 #undef XOR_SWAP
 	}
+}
+
+/**
+ * Convert time data to string.
+ *
+ * @param tm Contains time values, i.e., hours, minutes and  seconds
+ * @param s Buffer to store string of the form "HH:MM:SS"
+ */
+void time2str(struct tm *tm, char *s)
+{
+	int2_to_str(s, tm->tm_hour);
+	int2_to_str(s + 3, tm->tm_min);
+	int2_to_str(s + 6, tm->tm_sec);
+	s[2] = s[5] = ':';
+	s[8] = '\0';
 }

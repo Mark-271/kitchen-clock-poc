@@ -281,23 +281,6 @@ int ds3231_read_alarm(struct ds3231 *obj)
 }
 
 /**
- * Convert time data to string.
- *
- * @param time Contains time/date values
- * @param buf Buffer to store string
- * @param len Max number of charecters in the string
- * @return Pointer to string
- */
-char *ds3231_time2str(const struct rtc_time *time, char buf[], int len)
-{
-	struct tm *tm = (struct tm *)(time);
-
-	strftime(buf, len, "%T", tm);
-
-	return buf;
-}
-
-/**
  * Initialize real-time clock device.
  *
  * @param obj DS3231 object

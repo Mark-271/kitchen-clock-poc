@@ -11,6 +11,7 @@
 #include <drivers/systick.h>
 #include <drivers/wh1602.h>
 #include <tools/common.h>
+#include <tools/tools.h>
 #include <libopencm3/stm32/gpio.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -170,8 +171,8 @@ static void logic_handle_timer(void *data)
 {
 	int err;
 	char buf[BUF_LEN];
-	char *time;
 	struct ds3231 *obj = (struct ds3231 *)(data);
+	struct tm *t;
 
 	err = ds3231_read_time(obj, &tm);
 	if (err) {
@@ -179,10 +180,12 @@ static void logic_handle_timer(void *data)
 		hang();
 	}
 
-	time = ds3231_time2str(&tm, buf, BUF_LEN);
+	t = (struct tm *)(&tm);
+
+	time2str(t, buf);
 	wh1602_clear_display(&wh);
 	wh1602_set_line(&wh, LINE_1);
-	wh1602_print_str(&wh, time);
+	wh1602_print_str(&wh, buf);
 }
 
 static void logic_handle_menu(void)

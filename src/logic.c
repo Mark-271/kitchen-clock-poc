@@ -23,7 +23,9 @@
 #define GET_TEMP_DELAY		5000 /* msec */
 #define BUF_LEN			25
 #define TIME_PERIOD		1000 /* msec */
+
 typedef void (*logic_handle_stage_func_t)(void);
+
 static void logic_handle_btn(int btn, bool pressed);
 
 /* Keep 0 as undefined state */

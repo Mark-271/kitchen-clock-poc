@@ -243,7 +243,7 @@ static void logic_handle_stage(enum logic_stage stage)
 	transition_func = logic_stage_handler[stage];
 	if (!transition_func) {
 		pr_emerg("Error: Transition function doesn't exist for"
-		       "stage %d\n", stage);
+			 "stage %d\n", stage);
 		hang();
 	}
 

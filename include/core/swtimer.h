@@ -19,13 +19,24 @@ struct swtimer_hw_tim {
 	uint32_t psc;			/* prescaler val, for 5 msec overflow */
 };
 
+/* Software timer parameters */
+struct swtimer_sw_tim {
+	swtimer_callback_t cb;	/* function to call when this timer overflows */
+	void *data;		/* user private data passed to cb */
+	int period;		/* timer overflow period, msec */
+	int remaining;		/* remaining time till overflow, msec */
+	bool active;		/* if true, callback will be executed */
+	int id;			/* timer ID */
+	struct swtimer_sw_tim *next;
+};
+
 /* Global swtimer fwk API */
 int swtimer_init(const struct swtimer_hw_tim *hw_tim);
 void swtimer_exit(void);
 void swtimer_reset(void);
 
 /* SW timers API */
-int swtimer_tim_register(swtimer_callback_t cb, void *data, int period);
+int swtimer_tim_register(struct swtimer_sw_tim *tim);
 void swtimer_tim_del(int id);
 void swtimer_tim_start(int id);
 void swtimer_tim_stop(int id);

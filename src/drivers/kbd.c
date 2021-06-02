@@ -18,6 +18,8 @@
 /* Set number of irqs */
 #define KBD_IRQS		2
 
+static struct swtimer_sw_tim swtim;
+
 static void kbd_exti_init(struct kbd *obj)
 {
 	size_t i;
@@ -53,7 +55,7 @@ static void kbd_enable_exti(struct kbd *obj)
 static void kdb_handle_interrupt(struct kbd *obj)
 {
 	if (!obj->scan_pending) {
-		swtimer_tim_start(obj->timer_id);
+		swtimer_tim_start(swtim.id);
 		kbd_disable_exti(obj);
 		obj->scan_pending = true;
 	}
@@ -71,7 +73,7 @@ static void kbd_handle_btn(void *data)
 	int ret = -1;
 	bool pressed_now[KEYS];
 
-	swtimer_tim_stop(obj->timer_id);
+	swtimer_tim_stop(swtim.id);
 
 	/* Find out the state of each button */
 	for (i = 0; i < KBD_SCAN_LINES; ++i) {
@@ -192,11 +194,13 @@ int kbd_init(struct kbd *obj, const struct kbd_gpio *gpio, kbd_btn_event_t cb)
 
 	kbd_exti_init(obj);
 
-	obj->timer_id = swtimer_tim_register(kbd_handle_btn, obj,
-					     KBD_TIM_PERIOD);
-	if (obj->timer_id < 0)
-		return -1;
-	swtimer_tim_stop(obj->timer_id); /* timer should be triggered by exti */
+	/* Register software timer */
+	swtim.cb = kbd_handle_btn;
+	swtim.data = obj;
+	swtim.period = KBD_TIM_PERIOD;
+
+	swtimer_tim_register(&swtim);
+	swtimer_tim_stop(swtim.id); /* timer should be triggered by exti */
 
 	/* Register interrupt handlers */
 	for (i = 0; i < KBD_IRQS; i++) {

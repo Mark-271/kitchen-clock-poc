@@ -22,7 +22,7 @@
 #define EPOCH_YEAR		2021 /* years */
 #define GET_TEMP_DELAY		5000 /* msec */
 #define BUF_LEN			25
-#define TIME_PERIOD		1000 /* msec */
+#define TIM_PERIOD		1000 /* msec */
 
 typedef void (*logic_handle_stage_func_t)(void);
 
@@ -47,7 +47,6 @@ enum button {
 };
 
 static bool ds18b20_presence_flag = true;
-static int id;
 
 static struct kbd kbd;
 static struct rtc_time tm;
@@ -57,6 +56,7 @@ static struct ds18b20 ts = {
 	.port = DS18B20_GPIO_PORT,
 	.pin = DS18B20_GPIO_PIN,
 };
+static struct swtimer_sw_tim swtim;		/* software timer object */
 
 static const char * const menu[MENU_NUM] = {
 	"1-Time ",
@@ -166,7 +166,7 @@ static void logic_handle_temper(void)
 
 static void logic_handle_time(void)
 {
-	swtimer_tim_start(id);
+	swtimer_tim_start(swtim.id);
 }
 
 static void logic_handle_timer(void *data)
@@ -204,14 +204,20 @@ static void logic_handle_menu(void)
 
 static void logic_handle_init(void)
 {
+	int ret;
+
+	swtim.cb = logic_handle_timer;
+	swtim.data = &rtc;
+	swtim.period = TIM_PERIOD;
+
 	logic_init_drivers();
 
-	id = swtimer_tim_register(logic_handle_timer, &rtc, TIME_PERIOD);
-	if (id < 0) {
+	ret = swtimer_tim_register(&swtim);
+	if (ret < 0) {
 		pr_emerg("Error: Can't register timer\n");
 		hang();
 	}
-	swtimer_tim_stop(id);
+	swtimer_tim_stop(swtim.id);
 
 	logic_handle_menu();
 }
@@ -251,7 +257,7 @@ static void logic_handle_btn(int button, bool pressed)
 	if (button == BUTTON_1 && pressed) {
 		logic_handle_stage(STAGE_TIME);
 	} else if ((button == BUTTON_1) && !pressed) {
-		swtimer_tim_stop(id);
+		swtimer_tim_stop(swtim.id);
 		logic_handle_stage(STAGE_MENU);
 	} else if ((button == BUTTON_2) && pressed) {
 		logic_handle_stage(STAGE_TEMP);

@@ -20,22 +20,14 @@
 #define SWTIMER_TIMERS_MAX	10
 #define SWTIMER_TASK		"swtimer"
 
-/* Software timer parameters */
-struct swtimer_sw_tim {
-	swtimer_callback_t cb;	/* function to call when this timer overflows */
-	void *data;		/* user private data passed to cb */
-	int period;		/* timer overflow period, msec */
-	int remaining;		/* remaining time till overflow, msec */
-	bool active;		/* if true, callback will be executed */
-};
-
 /* Driver struct (swtimer framework) */
 struct swtimer {
 	struct swtimer_hw_tim hw_tim;
 	struct irq_action action;
-	struct swtimer_sw_tim timer_list[SWTIMER_TIMERS_MAX];
-	int ticks;		/* global ticks counter */
+	int ticks;			/* global ticks counter */
 	int task_id;			/* scheduler task ID */
+	int slot;			/* current timer ID */
+	struct swtimer_sw_tim *timer;	/* list of timers */
 };
 
 /* Singleton driver object */
@@ -67,31 +59,20 @@ static irqreturn_t swtimer_isr(int irq, void *data)
 
 static void swtimer_task(void *data)
 {
-	size_t i;
-	struct swtimer *obj = (struct swtimer *)data;
+	struct swtimer_sw_tim *tim;
 
-	for (i = 0; i < SWTIMER_TIMERS_MAX; i++) {
-		if (!obj->timer_list[i].active)
+	UNUSED(data);
+
+	for (tim = swtimer.timer; tim; tim = tim->next) {
+		if (!tim->active)
 			continue;
-		if (obj->timer_list[i].remaining <= 0) {
-			obj->timer_list[i].cb(obj->timer_list[i].data);
-			obj->timer_list[i].remaining = obj->timer_list[i].period;
+		if (tim->remaining <= 0) {
+			tim->cb(tim->data);
+			tim->remaining = tim->period;
 		}
-		obj->timer_list[i].remaining -= READ_ONCE(obj->ticks);
+		tim->remaining -= READ_ONCE(swtimer.ticks);
 	}
-	WRITE_ONCE(obj->ticks, 0);
-}
-
-static int swtimer_find_empty_slot(struct swtimer *obj)
-{
-	size_t i;
-
-	for (i = 0; i < SWTIMER_TIMERS_MAX; ++i) {
-		if (!obj->timer_list[i].cb)
-			return i;
-	}
-
-	return -1;
+	WRITE_ONCE(swtimer.ticks, 0);
 }
 
 static void swtimer_hw_init(struct swtimer *obj)
@@ -114,6 +95,17 @@ static void swtimer_hw_init(struct swtimer *obj)
 	timer_enable_counter(obj->hw_tim.base);
 }
 
+static struct swtimer_sw_tim *swtimer_find_tim(struct swtimer_sw_tim *t, int i)
+{
+	if (t == NULL)
+		return NULL;
+
+	if (t->id == i)
+		return t;
+
+	return swtimer_find_tim(t->next, i);
+}
+
 /* -------------------------------------------------------------------------- */
 
 /**
@@ -133,28 +125,34 @@ void swtimer_reset(void)
  *
  * @param cb Timer callback; will be executed when timer is expired
  * @param period Timer period, msec; minimal period (and granularity): 5 msec
- * @return Timer ID (handle) starting from 1, or negative value on error
+ * @return Timer ID (handle) starting from 1
  *
  * @note This function can be used before swtimer_init()
  */
-int swtimer_tim_register(swtimer_callback_t cb, void *data, int period)
+int swtimer_tim_register(struct swtimer_sw_tim *tim)
 {
-	int slot;
+	struct swtimer_sw_tim *t;
 
-	cm3_assert(cb != NULL);
-	cm3_assert(period >= SWTIMER_HW_OVERFLOW);
+	cm3_assert(tim->cb != NULL);
+	cm3_assert(tim->period >= SWTIMER_HW_OVERFLOW);
 
-	slot = swtimer_find_empty_slot(&swtimer);
-	if (slot < 0)
-		return -1;
+	tim->id = swtimer.slot + 1;
+	tim->remaining = tim->period;
+	tim->active = true;
+	tim->next = NULL;
 
-	swtimer.timer_list[slot].cb = cb;
-	swtimer.timer_list[slot].data = data;
-	swtimer.timer_list[slot].period = period;
-	swtimer.timer_list[slot].remaining = period;
-	swtimer.timer_list[slot].active = true;
+	if (swtimer.timer) {
+		t = swtimer.timer;
+		while (t->next)
+			t = t->next;
+		t->next = tim;
+	} else {
+		swtimer.timer = tim;
+	}
 
-	return slot + 1;
+	WRITE_ONCE(swtimer.slot, swtimer.slot + 1);
+
+	return swtimer.slot;
 }
 
 /**
@@ -164,10 +162,24 @@ int swtimer_tim_register(swtimer_callback_t cb, void *data, int period)
  */
 void swtimer_tim_del(int id)
 {
-	int slot = id - 1;
+	struct swtimer_sw_tim *tim;
 
-	cm3_assert(slot >= 0 && slot < SWTIMER_TIMERS_MAX);
-	memset(&swtimer.timer_list[slot], 0, sizeof(struct swtimer_sw_tim));
+	tim = swtimer_find_tim(swtimer.timer, id);
+	if (tim == NULL)
+		return;
+
+	if (swtimer.timer == tim) {
+		swtimer.timer = NULL;
+	} else {
+		struct swtimer_sw_tim *t;
+
+		for (t = swtimer.timer; t; t = t->next) {
+			if (t->next == tim) {
+				t->next = t->next->next;
+				tim->next = NULL;
+			}
+		}
+	}
 }
 
 /**
@@ -177,10 +189,13 @@ void swtimer_tim_del(int id)
  */
 void swtimer_tim_start(int id)
 {
-	int slot = id - 1;
+	struct swtimer_sw_tim *tim;
 
-	cm3_assert(slot >= 0 && slot < SWTIMER_TIMERS_MAX);
-	swtimer.timer_list[slot].active = true;
+	tim = swtimer_find_tim(swtimer.timer, id);
+	if (tim == NULL)
+		return;
+
+	tim->active = true;
 }
 
 /**
@@ -190,10 +205,13 @@ void swtimer_tim_start(int id)
  */
 void swtimer_tim_stop(int id)
 {
-	int slot = id - 1;
+	struct swtimer_sw_tim *tim;
 
-	cm3_assert(slot >= 0 && slot < SWTIMER_TIMERS_MAX);
-	swtimer.timer_list[slot].active = false;
+	tim = swtimer_find_tim(swtimer.timer, id);
+	if (tim == NULL)
+		return;
+
+	tim->active = false;
 }
 
 /**
@@ -203,10 +221,13 @@ void swtimer_tim_stop(int id)
  */
 void swtimer_tim_reset(int id)
 {
-	int slot = id - 1;
+	struct swtimer_sw_tim *tim;
 
-	cm3_assert(slot >= 0 && slot < SWTIMER_TIMERS_MAX);
-	swtimer.timer_list[slot].remaining = swtimer.timer_list[slot].period;
+	tim = swtimer_find_tim(swtimer.timer, id);
+	if (tim == NULL)
+		return;
+
+	tim->remaining = tim->period;
 }
 
 /**
@@ -217,10 +238,13 @@ void swtimer_tim_reset(int id)
  */
 void swtimer_tim_set_period(int id, int period)
 {
-	int slot = id - 1;
+	struct swtimer_sw_tim *tim;
 
-	cm3_assert(slot >= 0 && slot < SWTIMER_TIMERS_MAX);
-	swtimer.timer_list[slot].period = period;
+	tim = swtimer_find_tim(swtimer.timer, id);
+	if (tim == NULL)
+		return;
+
+	tim->period = period;
 }
 
 /**
@@ -231,10 +255,13 @@ void swtimer_tim_set_period(int id, int period)
  */
 int swtimer_tim_get_remaining(int id)
 {
-	int slot = id - 1;
+	struct swtimer_sw_tim *tim;
 
-	cm3_assert(slot >= 0 && slot < SWTIMER_TIMERS_MAX);
-	return swtimer.timer_list[slot].remaining;
+	tim = swtimer_find_tim(swtimer.timer, id);
+	if (tim == NULL)
+		return -1;
+
+	return tim->remaining;
 }
 
 /**

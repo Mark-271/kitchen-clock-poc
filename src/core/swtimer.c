@@ -17,7 +17,6 @@
 #include <stddef.h>
 #include <string.h>
 
-#define SWTIMER_TIMERS_MAX	10
 #define SWTIMER_TASK		"swtimer"
 
 /* Driver struct (swtimer framework) */
@@ -26,7 +25,7 @@ struct swtimer {
 	struct irq_action action;
 	int ticks;			/* global ticks counter */
 	int task_id;			/* scheduler task ID */
-	int slot;			/* current timer ID */
+	int max_slot;			/* max timer slot */
 	struct swtimer_sw_tim *timer;	/* list of timers */
 };
 
@@ -136,7 +135,7 @@ int swtimer_tim_register(struct swtimer_sw_tim *tim)
 	cm3_assert(tim->cb != NULL);
 	cm3_assert(tim->period >= SWTIMER_HW_OVERFLOW);
 
-	tim->id = swtimer.slot + 1;
+	tim->id = swtimer.max_slot + 1;
 	tim->remaining = tim->period;
 	tim->active = true;
 	tim->next = NULL;
@@ -150,9 +149,7 @@ int swtimer_tim_register(struct swtimer_sw_tim *tim)
 		swtimer.timer = tim;
 	}
 
-	WRITE_ONCE(swtimer.slot, swtimer.slot + 1);
-
-	return swtimer.slot;
+	return swtimer.max_slot++;
 }
 
 /**

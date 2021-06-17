@@ -62,6 +62,11 @@
 #define DS3231_EXTI_TRIGGER	EXTI_TRIGGER_FALLING
 #define DS3231_EXTI_IRQ		NVIC_EXTI15_10_IRQ
 
+/* Buzzer */
+#define BUZZ_GPIO_RCC		RCC_GPIOC
+#define BUZZ_GPIO_PORT		GPIOC
+#define BUZZ_GPIO_PIN		GPIO12
+
 int board_init(void);
 
 #endif /* BOARD_H */

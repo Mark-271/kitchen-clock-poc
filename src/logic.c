@@ -4,6 +4,7 @@
 #include <core/log.h>
 #include <core/sched.h>
 #include <core/swtimer.h>
+#include <drivers/buzzer.h>
 #include <drivers/ds18b20.h>
 #include <drivers/ds3231.h>
 #include <drivers/kbd.h>
@@ -134,6 +135,8 @@ static void logic_init_drivers(void)
 		pr_emerg("Error: Can't initialize RTC device DS3231: %d\n", err);
 		hang();
 	}
+
+	buzz_init(&buzz, BUZZ_GPIO_PORT, BUZZ_GPIO_PIN);
 }
 
 static char *logic_measure_temper(void *data)

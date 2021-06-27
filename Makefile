@@ -57,6 +57,7 @@ OBJS		+=				\
 		   src/core/irq.o		\
 		   src/core/sched.o		\
 		   src/core/swtimer.o		\
+		   src/drivers/buzzer.o		\
 		   src/drivers/ds18b20.o	\
 		   src/drivers/ds3231.o		\
 		   src/drivers/i2c.o		\

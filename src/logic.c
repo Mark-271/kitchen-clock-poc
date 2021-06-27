@@ -8,6 +8,7 @@
 #include <drivers/ds18b20.h>
 #include <drivers/ds3231.h>
 #include <drivers/kbd.h>
+#include <drivers/melody.h>
 #include <drivers/serial.h>
 #include <drivers/systick.h>
 #include <drivers/wh1602.h>

@@ -62,6 +62,7 @@ OBJS		+=				\
 		   src/drivers/ds3231.o		\
 		   src/drivers/i2c.o		\
 		   src/drivers/kbd.o		\
+		   src/drivers/melody.o		\
 		   src/drivers/one_wire.o	\
 		   src/drivers/serial.o		\
 		   src/drivers/systick.o	\

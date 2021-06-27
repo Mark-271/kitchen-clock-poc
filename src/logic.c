@@ -54,11 +54,12 @@ static struct kbd kbd;
 static struct rtc_time tm;
 static struct ds3231 rtc;
 static struct wh1602 wh;
+static struct buzz buzz;
+static struct swtimer_sw_tim swtim;		/* software timer object */
 static struct ds18b20 ts = {
 	.port = DS18B20_GPIO_PORT,
 	.pin = DS18B20_GPIO_PIN,
 };
-static struct swtimer_sw_tim swtim;		/* software timer object */
 
 static const char * const menu[MENU_NUM] = {
 	"1-Time ",

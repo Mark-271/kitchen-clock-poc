@@ -6,5 +6,6 @@
 void inplace_reverse(char *str);
 int get_yday(int mon, int day, int year);
 void time2str(struct tm *tm, char *s);
+void date2str(struct tm *tm, char *s);
 
 #endif /* TOOLS_TOOLS_H */

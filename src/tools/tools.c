@@ -1,6 +1,8 @@
 #include <tools/tools.h>
 #include <string.h>
 
+#define TM_START_YEAR		1900
+
 static inline void int2_to_str(char *s, int n)
 {
 	s[0] = n / 10 + '0';
@@ -79,4 +81,33 @@ void time2str(struct tm *tm, char *s)
 	int2_to_str(s + 6, tm->tm_sec);
 	s[2] = s[5] = ':';
 	s[8] = '\0';
+}
+
+/**
+ * Convert date to string.
+ *
+ * @param tm Contains date values, i.e., day, month, year, week day
+ * @param s Buffer to store string of the form "WDAY DD/MM/YY"
+ */
+void date2str(struct tm *tm, char *s)
+{
+	/* This is the chunk of monkey code */
+	const int year = (tm->tm_year + TM_START_YEAR) % 100;
+	static const char *wdays[7] = {
+		"SUN",
+		"MON",
+		"TUE",
+		"WED",
+		"THU",
+		"FRI",
+		"SAT"
+	};
+
+	strcpy(s, wdays[tm->tm_wday]);
+	int2_to_str(s + 4, tm->tm_mday);
+	int2_to_str(s + 7, tm->tm_mon + 1);
+	int2_to_str(s + 10, year);
+	s[3] = ' ';
+	s[6] = s[9] = '/';
+	s[12] = '\0';
 }

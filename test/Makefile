@@ -10,6 +10,9 @@ bcd:
 rtc:
 	@gcc -Wall -O2 test_rtc_conv.c -o test
 
+conv_date:
+	@gcc -Wall -O2 test_date2s.c -o test
+
 clean:
 	@-rm -f test
 

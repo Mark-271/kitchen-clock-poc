@@ -20,36 +20,77 @@
 #include <stdio.h>
 #include <string.h>
 
-#define MENU_NUM		2
-#define EPOCH_YEAR		2021 /* years */
-#define GET_TEMP_DELAY		5000 /* msec */
+#define MENU_NUM		3
+#define EPOCH_YEAR		2021	/* years */
+#define GET_TEMP_DELAY		5000	/* msec */
 #define BUF_LEN			25
-#define TIM_PERIOD		1000 /* msec */
+#define TIM_PERIOD		5000	/* msec */
+#define TEMPER_DISPLAY_ADDR	0x06
 
 typedef void (*logic_handle_stage_func_t)(void);
-
-static void logic_handle_btn(int btn, bool pressed);
 
 /* Keep 0 as undefined state */
 enum logic_stage {
 	STAGE_UNDEFINED,
 	STAGE_INIT,
-	STAGE_MENU,
-	STAGE_TIME,
-	STAGE_TEMP,
-	STAGE_EXIT,
-	STAGE_NUM,
+	STAGE_MAIN_SCREEN,
+	STAGE_MAIN_MENU,
+	STAGE_TIME_SET_HH,
+	STAGE_TIME_INCR_HH,
+	STAGE_TIME_SET_MM,
+	STAGE_TIME_INCR_MM,
+	STAGE_ALARM,
+	STAGE_ALARM_TOGGLE,
+	STAGE_ALARM_INCR_HH,
+	STAGE_ALARM_INCR_MM,
+	STAGE_DATE_SET_WDAY,
+	STAGE_DATE_INCR_WDAY,
+	STAGE_DATE_DECR_WDAY,
+	STAGE_DATE_SET_MONTH,
+	STAGE_DATE_INCR_MONTH,
+	STAGE_DATE_DECR_MONTH,
+	STAGE_DATE_SET_MDAY,
+	STAGE_DATE_INCR_MDAY,
+	STAGE_DATE_DECR_MDAY,
+	STAGE_DATE_SET_YY,
+	STAGE_DATE_INCR_YY,
+	STAGE_DATE_DECR_YY,
+	/* --- */
+	STAGE_NUM
 };
 
-enum button {
-	BUTTON_1,
-	BUTTON_2,
-	BUTTON_3,
-	BUTTON_4,
+enum logic_event {
+	EVENT_START,
+	EVENT_LEFT,	/* left button */
+	EVENT_RIGHT,	/* right button */
+	EVENT_UP,	/* up button */
+	EVENT_DOWN,	/* down button */
+	/* --- */
+	EVENT_NUM
+};
+
+struct logic {
+	enum logic_stage stage; /* current state of FSM */
+};
+
+static void logic_handle_event(enum logic_event event);
+static void logic_handle_btn(int btn, bool pressed);
+
+static uint8_t menu_addr[MENU_NUM] = {
+	0x00,
+	0x0a,
+	0x40,
+};
+
+static const char * const menu_msg[MENU_NUM] = {
+	"U-Alarm",
+	"L-Back",
+	"D-Time settings",
 };
 
 static bool ds18b20_presence_flag = true;
 
+static struct logic logic;
 static struct kbd kbd;
 static struct rtc_time tm;
 static struct ds3231 rtc;
@@ -61,9 +102,129 @@ static struct ds18b20 ts = {
 	.pin = DS18B20_GPIO_PIN,
 };
 
-static const char * const menu[MENU_NUM] = {
-	"1-Time ",
-	"2-Temp",
+/**
+ * Transition lookup table for Moore FSM
+ */
+static const enum logic_stage logic_transitions[STAGE_NUM][EVENT_NUM] = {
+	{ /* STAGE_UNDEFINED */
+		STAGE_INIT,		/* EVENT_START */
+		0,			/* EVENT_LEFT */
+		0,			/* EVENT_RIGHT */
+		0,			/* EVENT_UP */
+		0,			/* EVENT_DOWN */
+	},
+	{ /* STAGE_INIT */
+		STAGE_MAIN_SCREEN,	/* EVENT_START */
+		0,			/* EVENT_LEFT */
+		0,			/* EVENT_RIGHT */
+		0,			/* EVENT_UP */
+		0,			/* EVENT_DOWN */
+	},
+	{ /* STAGE_MAIN_SCREEN */
+		0,			/* EVENT_START */
+		STAGE_MAIN_MENU,	/* EVENT_LEFT */
+		STAGE_MAIN_MENU,	/* EVENT_RIGHT */
+		STAGE_MAIN_MENU,	/* EVENT_UP */
+		STAGE_MAIN_MENU,	/* EVENT_DOWN */
+	},
+	{ /* STAGE_MAIN_MENU */
+		0,			/* EVENT_START */
+		STAGE_MAIN_SCREEN,	/* EVENT_LEFT */
+		0,			/* EVENT_RIGHT */
+		STAGE_ALARM,		/* EVENT_UP */
+		STAGE_TIME_SET_HH	/* EVENT_DOWN */
+	},
+	{ /* STAGE_TIME_SET_HH */
+		0,			/* EVENT_START */
+		STAGE_MAIN_SCREEN,	/* EVENT_LEFT */
+		STAGE_TIME_SET_MM,	/* EVENT_RIGHT */
+		STAGE_TIME_INCR_HH,	/* EVENT_UP */
+		0,			/* EVENT_DOWN */
+	},
+	{ /* STAGE_TIME_INCR_HH */
+		STAGE_TIME_SET_HH,	/* EVENT_START */
+		0		,	/* EVENT_LEFT */
+		0		,	/* EVENT_RIGHT */
+		0		,	/* EVENT_UP */
+		0,			/* EVENT_DOWN */
+	},
+	{ /* STAGE_TIME_SET_MM */
+		0,			/* EVENT_START */
+		STAGE_MAIN_SCREEN,	/* EVENT_LEFT */
+		STAGE_TIME_SET_HH,	/* EVENT_RIGHT */
+		STAGE_TIME_INCR_MM,	/* EVENT_UP */
+		0,			/* EVENT_DOWN */
+	},
+	{ /* STAGE_TIME_INCR_MM */
+		STAGE_TIME_SET_MM,	/* EVENT_START */
+		0,			/* EVENT_LEFT */
+		0,			/* EVENT_RIGHT */
+		0,			/* EVENT_UP */
+		0,			/* EVENT_DOWN */
+	},
+	{ /* STAGE_ALARM */
+		0,			/* EVENT_START */
+		STAGE_MAIN_SCREEN,	/* EVENT_LEFT */
+		STAGE_ALARM_TOGGLE,	/* EVENT_RIGHT */
+		STAGE_ALARM_INCR_HH,	/* EVENT_UP */
+		STAGE_ALARM_INCR_MM,	/* EVENT_DOWN */
+	},
+	{ /* STAGE_ALARM_TOGGLE */
+		STAGE_ALARM,		/* EVENT_START */
+		0,			/* EVENT_LEFT */
+		0,			/* EVENT_RIGHT */
+		0,			/* EVENT_UP */
+		0,			/* EVENT_DOWN */
+	},
+	{ /* STAGE_ALARM_INCR_HH */
+		STAGE_ALARM,		/* EVENT_START */
+		0,			/* EVENT_LEFT */
+		0,			/* EVENT_RIGHT */
+		0,			/* EVENT_UP */
+		0,			/* EVENT_DOWN */
+	},
+	{ /* STAGE_ALARM_INCR_MM */
+		STAGE_ALARM,		/* EVENT_START */
+		0,			/* EVENT_LEFT */
+		0,			/* EVENT_RIGHT */
+		0,			/* EVENT_UP */
+		0,			/* EVENT_DOWN */
+	},
+	{ /* STAGE_TIME_SET_MM */
+		0,			/* EVENT_START */
+		STAGE_MAIN_SCREEN,	/* EVENT_LEFT */
+		STAGE_DATE_SET_WDAY,	/* EVENT_RIGHT */
+		STAGE_TIME_INCR_MM,	/* EVENT_UP */
+		0,			/* EVENT_DOWN */
+	},
+	{ /* STAGE_DATE_SET_WDAY */
+		0,			/* EVENT_START */
+		STAGE_MAIN_SCREEN,	/* EVENT_LEFT */
+		STAGE_DATE_SET_MONTH,	/* EVENT_RIGHT */
+		STAGE_DATE_INCR_WDAY,	/* EVENT_UP */
+		STAGE_DATE_DECR_WDAY,	/* EVENT_DOWN */
+	},
+	{ /* STAGE_DATE_SET_MONTH */
+		0,			/* EVENT_START */
+		STAGE_MAIN_SCREEN,	/* EVENT_LEFT */
+		STAGE_DATE_SET_MDAY,	/* EVENT_RIGHT */
+		STAGE_DATE_INCR_MONTH,	/* EVENT_UP */
+		STAGE_DATE_DECR_MONTH,	/* EVENT_DOWN */
+	},
+	{ /* STAGE_DATE_SET_MDAY */
+		0,			/* EVENT_START */
+		STAGE_MAIN_SCREEN,	/* EVENT_LEFT */
+		STAGE_DATE_SET_YY,	/* EVENT_RIGHT */
+		STAGE_DATE_INCR_MDAY,	/* EVENT_UP */
+		STAGE_DATE_DECR_MDAY,	/* EVENT_DOWN */
+	},
+	{ /* STAGE_DATE_SET_YY */
+		0,			/* EVENT_START */
+		STAGE_MAIN_SCREEN,	/* EVENT_LEFT */
+		STAGE_TIME_SET_HH,	/* EVENT_RIGHT */
+		STAGE_DATE_INCR_YY,	/* EVENT_UP */
+		STAGE_DATE_DECR_YY,	/* EVENT_DOWN */
+	},
 };
 
 /* Initialize peripheral drivers */
@@ -141,7 +302,7 @@ static void logic_init_drivers(void)
 	buzz_init(&buzz, BUZZ_GPIO_PORT, BUZZ_GPIO_PIN);
 }
 
-static char *logic_measure_temper(void *data)
+static char *logic_read_temper(void *data)
 {
 	struct ds18b20 *obj = (struct ds18b20 *)(data);
 	char buf[BUF_LEN];
@@ -154,64 +315,80 @@ static char *logic_measure_temper(void *data)
 	return ds18b20_temp2str(&obj->temp, buf);
 }
 
-static void logic_handle_temper(void)
+static void logic_print2main_screen(char *time, char *date, char *temp)
 {
-	char *temper;
+	wh1602_clear_display(&wh);
+
+	wh1602_set_line(&wh, LINE_1);
+	wh1602_print_str(&wh, time);
+
+	wh1602_set_line(&wh, LINE_2);
+	wh1602_print_str(&wh, date);
 
 	/* If ds18b20 is out of order, the program should skip it */
-	if (!ds18b20_presence_flag)
-		return;
+	if (ds18b20_presence_flag) {
+		wh1602_set_address(&wh, TEMPER_DISPLAY_ADDR);
+		wh1602_print_str(&wh, temp);
+		wh1602_write_char(&wh, 0xdf); /* print degree symbol */
+	}
 
-	temper = logic_measure_temper(&ts);
-
-	wh1602_clear_display(&wh);
-	wh1602_set_line(&wh, LINE_1);
-	wh1602_print_str(&wh, temper);
+	if (rtc.alarm.status) {
+		wh1602_set_address(&wh, 0x14); /* alarm indicator place */
+		wh1602_print_str(&wh, "al");
+	}
 }
 
-static void logic_handle_time(void)
+/* Callback to register inside swtimer */
+static void logic_show_main_screen(void *data)
 {
-	swtimer_tim_start(swtim.id);
-}
-
-static void logic_handle_timer(void *data)
-{
+	char *temper;
+	char date[BUF_LEN];
+	char time[BUF_LEN];
 	int err;
-	char buf[BUF_LEN];
-	struct ds3231 *obj = (struct ds3231 *)(data);
 	struct tm *t;
 
-	err = ds3231_read_time(obj, &tm);
+	UNUSED(data);
+
+	err = ds3231_read_time(&rtc, &tm);
 	if (err) {
-		pr_emerg("Error: Can't read time from ds3231\n");
+		pr_emerg("Error: Can't read time from ds3231: %d\n", err);
 		hang();
 	}
 
 	t = (struct tm *)(&tm);
 
-	time2str(t, buf);
-	wh1602_clear_display(&wh);
-	wh1602_set_line(&wh, LINE_1);
-	wh1602_print_str(&wh, buf);
+	date2str(t, date);
+	time2str(t, time);
+	temper = logic_read_temper(&ts);
+
+	if (logic.stage == STAGE_MAIN_SCREEN)
+		logic_print2lcd(time, date, temper);
 }
 
-static void logic_handle_menu(void)
+static void logic_handle_stage_main_screen(void)
+{
+	wh1602_control_display(&wh, LCD_ON, CURSOR_OFF, CURSOR_BLINK_OFF);
+	swtimer_tim_start(swtim.id);
+}
+
+static void logic_handle_stage_main_menu(void)
 {
 	size_t i;
 
-	wh1602_control_display(&wh, LCD_ON, CURSOR_OFF, CURSOR_BLINK_OFF);
+	swtimer_tim_stop(swtim.id);
 	wh1602_clear_display(&wh);
-	wh1602_set_line(&wh, LINE_1);
 
-	for (i = 0; i < MENU_NUM; i++)
-		wh1602_print_str(&wh, menu[i]);
+	for (i = 0; i < MENU_NUM; i++) {
+		wh1602_set_address(&wh, menu_addr[i]);
+		wh1602_print_str(&wh, menu_msg[i]);
+	}
 }
 
-static void logic_handle_init(void)
+static void logic_handle_stage_init(void)
 {
 	int ret;
 
-	swtim.cb = logic_handle_timer;
+	swtim.cb = logic_show_main_screen;
 	swtim.data = &rtc;
 	swtim.period = TIM_PERIOD;
 
@@ -219,59 +396,223 @@ static void logic_handle_init(void)
 
 	ret = swtimer_tim_register(&swtim);
 	if (ret < 0) {
-		pr_emerg("Error: Can't register timer\n");
+		pr_emerg("Error: Can't register timer: %d\n", ret);
 		hang();
 	}
-	swtimer_tim_stop(swtim.id);
 
-	logic_handle_menu();
+	wh1602_control_display(&wh, LCD_ON, CURSOR_OFF, CURSOR_BLINK_OFF);
+	logic.stage = STAGE_MAIN_SCREEN;
 }
 
-static void logic_handle_exit(void)
+static void logic_handle_stage_alarm(void)
 {
-	logic_handle_menu();
+	int err;
+	char alarm_time[BUF_LEN];
+	char *flag;
+	struct tm *t;
+
+	err = ds3231_read_alarm(&rtc);
+	if (err) {
+		pr_emerg("Error: unable to get alarm data %d\n", err);
+		hang();
+	}
+
+	t = (struct tm *)(&rtc.alarm.time);
+	time2str(t, alarm_time);
+
+	flag = (rtc.alarm.status == true) ? "Alarm ON" : "Alarm OFF";
+
+	wh1602_clear_display(&wh);
+	wh1602_set_line(&wh, LINE_1);
+	wh1602_print_str(&wh, alarm_time);
+	wh1602_set_line(&wh, LINE_2);
+	wh1602_print_str(&wh, flag);
+}
+
+static void logic_handle_stage_alarm_toggle(void)
+{
+	int err;
+
+	if (rtc.alarm.status == false)
+		err = ds3231_enable_alarm(&rtc);
+	else
+		err = ds3231_disable_alarm(&rtc);
+
+	if (err) {
+		pr_emerg("Error: can't control alarm: %d\n", err);
+		hang();
+	}
+
+	logic_handle_event(EVENT_START);
+}
+
+static void logic_handle_stage_alarm_incr_hh(void)
+{
+	int err;
+
+	rtc.alarm.time.tm_hour = (rtc.alarm.time.tm_hour + 1) % 24;
+	rtc.alarm.time.tm_sec = 0;
+
+	err = ds3231_set_alarm(&rtc);
+	if (err) {
+		pr_emerg("Error: unable to set alarm: %d\n", err);
+		hang();
+	}
+
+	logic_handle_event(EVENT_START);
+}
+
+static void logic_handle_stage_alarm_incr_mm(void)
+{
+	int err;
+
+	rtc.alarm.time.tm_min = (rtc.alarm.time.tm_min + 1) % 60;
+	rtc.alarm.time.tm_sec = 0;
+
+	err = ds3231_set_alarm(&rtc);
+	if (err) {
+		pr_emerg("Error: unable to set alarm: %d\n", err);
+		hang();
+	}
+
+	logic_handle_event(EVENT_START);
+}
+
+static void logic_handle_stage_time_set_hh(void)
+{
+	struct tm *t;
+	int err;
+	char time[BUF_LEN];
+
+	err = ds3231_read_time(&rtc, &tm);
+	if (err) {
+		pr_emerg("Error: Can't read time from ds3231\n");
+		hang();
+	}
+
+	t = (struct tm *)(&tm);
+
+	time2str(t, time);
+
+	wh1602_control_display(&wh, LCD_ON, CURSOR_ON, CURSOR_BLINK_ON);
+	wh1602_clear_display(&wh);
+	wh1602_set_line(&wh, LINE_1);
+	wh1602_print_str(&wh, time);
+	wh1602_set_address(&wh, 0x01);
+}
+
+static void logic_handle_stage_time_incr_hh(void)
+{
+	int err;
+
+	tm.tm_hour = (tm.tm_hour + 1) % 24;
+
+	err = ds3231_set_time(&rtc, &tm);
+	if (err) {
+		pr_emerg("Error: Can't set hours to ds32312\n");
+		hang();
+	}
+
+	logic_handle_event(EVENT_START);
+}
+
+static void logic_handle_stage_time_set_mm(void)
+{
+	struct tm *t;
+	int err;
+	char time[BUF_LEN];
+
+	err = ds3231_read_time(&rtc, &tm);
+	if (err) {
+		pr_emerg("Error: Can't read time from ds3231\n");
+		hang();
+	}
+
+	t = (struct tm *)(&tm);
+
+	time2str(t, time);
+
+	wh1602_control_display(&wh, LCD_ON, CURSOR_ON, CURSOR_BLINK_ON);
+	wh1602_clear_display(&wh);
+	wh1602_set_line(&wh, LINE_1);
+	wh1602_print_str(&wh, time);
+	wh1602_set_address(&wh, 0x04);
+}
+
+static void logic_handle_stage_time_incr_mm(void)
+{
+	int err;
+
+	tm.tm_min = (tm.tm_min + 1) % 60;
+
+	err = ds3231_set_time(&rtc, &tm);
+	if (err) {
+		pr_emerg("Error: Can't set hours to ds32312\n");
+		hang();
+	}
+
+	logic_handle_event(EVENT_START);
 }
 
 logic_handle_stage_func_t logic_stage_handler[STAGE_NUM] = {
-	NULL,
-	logic_handle_init,
-	logic_handle_menu,
-	logic_handle_time,
-	logic_handle_temper,
-	logic_handle_exit,
+	NULL,					/* STAGE_UNDEFINED */
+	logic_handle_stage_init,		/* STAGE_INIT */
+	logic_handle_stage_main_screen,		/* STAGE_MAIN_SCREEN */
+	logic_handle_stage_main_menu,		/* STAGE_MAIN_MENU */
+	logic_handle_stage_time_set_hh,		/* STAGE_TIME_SET_HH */
+	logic_handle_stage_time_incr_hh,	/* STAGE_TIME_INCR_HH */
+	logic_handle_stage_time_set_mm,		/* STAGE_TIME_SET_MM */
+	logic_handle_stage_time_incr_mm,	/* STAGE_TIME_INCR_MM */
+	logic_handle_stage_alarm,		/* STAGE_ALARM */
+	logic_handle_stage_alarm_toggle,	/* STAGE_ALARM_TOGGLE */
+	logic_handle_stage_alarm_incr_hh,	/* STAGE_ALARM_INCR_HH */
+	logic_handle_stage_alarm_incr_mm,	/* STAGE_ALARM_INCR_MM */
 };
 
-static void logic_handle_stage(enum logic_stage stage)
+/**
+ * Process the transition for specified event.
+ *
+ * Run the function corresponding to current transition and set new state as
+ * a current state.
+ *
+ * Complexity: O(1).
+ *
+ * @param event Event that user chose
+ */
+static void logic_handle_event(enum logic_event event)
 {
+	enum logic_stage stage = logic.stage;	/* current stage */
+	enum logic_stage new_stage;
 	logic_handle_stage_func_t transition_func;
 
-	transition_func = logic_stage_handler[stage];
-	if (!transition_func) {
-		pr_emerg("Error: Transition function doesn't exist for"
-			 "stage %d\n", stage);
+	if (event > EVENT_DOWN || stage > STAGE_DATE_DECR_YY) {
+		pr_emerg("Error: Wrong transition: stage = %d, "
+			 "event = %d/n", stage, event);
 		hang();
 	}
 
+	new_stage = logic_transitions[stage][event];
+
+	transition_func = logic_stage_handler[new_stage];
+	if (!transition_func) {
+		pr_emerg("Error: Transition function doesn't exist for "
+				"stage %d\n", new_stage);
+		hang();
+	}
+
+	logic.stage = new_stage;
 	transition_func();
 }
 
 static void logic_handle_btn(int button, bool pressed)
 {
-	wh1602_clear_display(&wh);
+	enum logic_event btn_event = button + 1;
 
-	if (button == BUTTON_1 && pressed) {
-		logic_handle_stage(STAGE_TIME);
-	} else if ((button == BUTTON_1) && !pressed) {
-		swtimer_tim_stop(swtim.id);
-		logic_handle_stage(STAGE_MENU);
-	} else if ((button == BUTTON_2) && pressed) {
-		logic_handle_stage(STAGE_TEMP);
-	} else if (!pressed) {
-		logic_handle_stage(STAGE_MENU);
-	}
+	if (pressed)
+		logic_handle_event(btn_event);
 }
 
 void logic_start(void)
 {
-	logic_handle_stage(STAGE_INIT);
+	logic_handle_event(EVENT_START);
 }

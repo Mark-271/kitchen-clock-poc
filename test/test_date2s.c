@@ -27,7 +27,7 @@ static struct test_data test_data[] = {
 			.tm_mday = 1, .tm_mon = 0, .tm_year = 121,
 			.tm_wday = 0, .tm_yday = 142, .tm_isdst = 0
 		},
-		.date = "SUN 01/01/21",
+		.date = "SUN 01JAN2021",
 	},
 	{
 		.tm = {
@@ -36,7 +36,7 @@ static struct test_data test_data[] = {
 			.tm_mday = 31, .tm_mon = 11, .tm_year = 121,
 			.tm_wday = 6, .tm_yday = 364, .tm_isdst = 0
 		},
-		.date = "SAT 31/12/21",
+		.date = "SAT 31DEC2021",
 	},
 	{
 		.tm = {
@@ -44,11 +44,19 @@ static struct test_data test_data[] = {
 			.tm_mday = 9, .tm_mon = 3, .tm_year = 121,
 			.tm_wday = 5, .tm_yday = 98, .tm_isdst = 0
 		},
-		.date = "FRI 09/04/21",
+		.date = "FRI 09APR2021",
 	},
 };
 
 /* ------------------------------------------------------------------------- */
+
+static inline void int4_to_str(char *s, int n)
+{
+	s[0] = n / 1000 + '0';
+	s[1] = (n / 100) % 10 + '0';
+	s[2] = (n / 10) % 10 + '0';
+	s[3] = n % 10 + '0';
+}
 
 static inline void int2_to_str(char *s, int n)
 {
@@ -60,12 +68,11 @@ static inline void int2_to_str(char *s, int n)
  * Convert date to string.
  *
  * @param tm Contains date values, i.e., day, month, year, week day
- * @param s Buffer to store string of the form "WDAY DD/MM/YY"
+ * @param s Buffer to store string of the form, e.g. "MON 19JUL2021"
  */
-static void date2str(struct tm *tm, char *buf)
+void date2str(struct tm *tm, char *s)
 {
-	/* This is the chunk of monkey code */
-	const int year = (tm->tm_year + TM_START_YEAR) % 100;
+	const int year = (tm->tm_year + TM_START_YEAR);
 	static const char *wdays[7] = {
 		"SUN",
 		"MON",
@@ -75,15 +82,17 @@ static void date2str(struct tm *tm, char *buf)
 		"FRI",
 		"SAT"
 	};
+	static const char *months[12] = {
+		"JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+		"JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
+	};
 
-	strcpy(buf, wdays[tm->tm_wday]);
-
-	int2_to_str(buf + 4, tm->tm_mday);
-	int2_to_str(buf + 7, tm->tm_mon + 1);
-	int2_to_str(buf + 10, year);
-	buf[3] = ' ';
-	buf[6] = buf[9] = '/';
-	buf[12] = '\0';
+	strcpy(s, wdays[tm->tm_wday]);
+	int2_to_str(s + 4, tm->tm_mday);
+	s[3] = ' ';
+	strcpy(s + 6, months[tm->tm_mon]);
+	int4_to_str(s + 9, year);
+	s[13] = '\0';
 }
 
 /* -------------------------------------------------------------------------- */
@@ -91,7 +100,7 @@ static void date2str(struct tm *tm, char *buf)
 static bool test_date2str(void)
 {
 	size_t i;
-	char buf[13];
+	char buf[25];
 
 	printf("%s\n", __func__);
 

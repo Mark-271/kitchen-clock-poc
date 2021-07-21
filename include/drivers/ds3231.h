@@ -41,6 +41,7 @@ struct ds3231_device {
 
 struct ds3231_alarm {
 	int task_id;
+	bool status;
 	struct irq_action action;
 	struct rtc_time time;
 	ds3231_callback_t cb;

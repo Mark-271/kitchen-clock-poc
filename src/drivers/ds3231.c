@@ -192,6 +192,8 @@ int ds3231_enable_alarm(struct ds3231 *obj)
 	if (err)
 		return err;
 
+	obj->alarm.status = true;
+
 	return 0;
 }
 
@@ -204,6 +206,8 @@ int ds3231_disable_alarm(struct ds3231 *obj)
 	err = i2c_write_buf_poll(obj->device.addr, DS3231_CR, buf, 2);
 	if (err)
 		return err;
+
+	obj->alarm.status = false;
 
 	return 0;
 }

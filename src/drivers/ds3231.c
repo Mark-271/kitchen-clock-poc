@@ -308,6 +308,7 @@ int ds3231_init(struct ds3231 *obj, const struct ds3231_device *dev,
 	ret = gpio2irq(obj->device.pin);
 	if (ret < 0)
 		return -1;
+
 	obj->device.irq = ret;
 
 	i2c_init(obj->device.i2c_base);

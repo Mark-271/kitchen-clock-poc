@@ -21,11 +21,13 @@
 #include <string.h>
 
 #define MENU_NUM		3
+#define ALARM_SYMBOL_POS	0x0f
+#define ALARM_INDICATOR		0x2a
 #define EPOCH_YEAR		2021	/* years */
 #define GET_TEMP_DELAY		5000	/* msec */
 #define BUF_LEN			25
 #define TIM_PERIOD		5000	/* msec */
-#define TEMPER_DISPLAY_ADDR	0x06
+#define TEMPER_DISPLAY_ADDR	0x07
 
 typedef void (*logic_handle_stage_func_t)(void);
 
@@ -315,7 +317,7 @@ static char *logic_read_temper(void *data)
 	return ds18b20_temp2str(&obj->temp, buf);
 }
 
-static void logic_print2main_screen(char *time, char *date, char *temp)
+static void logic_print2lcd(char *time, char *date, char *temp)
 {
 	wh1602_clear_display(&wh);
 
@@ -328,13 +330,13 @@ static void logic_print2main_screen(char *time, char *date, char *temp)
 	/* If ds18b20 is out of order, the program should skip it */
 	if (ds18b20_presence_flag) {
 		wh1602_set_address(&wh, TEMPER_DISPLAY_ADDR);
+		wh1602_write_char(&wh, 't');
 		wh1602_print_str(&wh, temp);
-		wh1602_write_char(&wh, 0xdf); /* print degree symbol */
 	}
 
 	if (rtc.alarm.status) {
-		wh1602_set_address(&wh, 0x14); /* alarm indicator place */
-		wh1602_print_str(&wh, "al");
+		wh1602_set_address(&wh, ALARM_SYMBOL_POS);
+		wh1602_write_char(&wh, ALARM_INDICATOR);
 	}
 }
 

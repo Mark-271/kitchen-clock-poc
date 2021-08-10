@@ -19,11 +19,10 @@
 #define DS3231_DAY		0x03	/* DS3231Day offset register */
 #define DS3231_BUF_LEN		7	/* Number of data registers */
 #define DS3231_TASK		"ds3231"
-#define DS3231_A1F		BIT(0)	/* DS3231 Alarm 1 flag */
-#define DS3231_A1IE		BIT(0)	/* DS3231 Alarm 1 interrupt bit */
-#define DS3231_INTCN		BIT(2)	/* Controls INT/SCW signal */
 #define DS3231_ALARM1		0x0b	/* DS3231 Alarm 1 offset register */
-#define DS3231_ALARM1_EN	(DS3231_A1IE | DS3231_INTCN)
+#define DS3231_ALARM1_EN	0x1d	/* Enable Alarm 1 */
+#define DS3231_ALARM1_DIS	0x1c	/* Disable Alarm 1 */
+#define DS3231_A1F_CLEAR	0x88	/* DS3231 Alarm 1 flag disabled */
 #define DS3231_ALARM_MASK	BIT(7) /* DS3231 alarm mask bit */
 #define ALARM1_BUF_LEN		4
 #define TM_START_YEAR		1900
@@ -98,7 +97,7 @@ static irqreturn_t ds3231_exti_isr(int irq, void *data)
 static void ds3231_task(void *data)
 {
 	int ret;
-	uint8_t buf[] = {~DS3231_A1F};
+	uint8_t buf[] = {DS3231_A1F_CLEAR};
 
 	struct ds3231 *obj = (struct ds3231 *)(data);
 
@@ -211,7 +210,7 @@ int ds3231_enable_alarm(struct ds3231 *obj)
 int ds3231_disable_alarm(struct ds3231 *obj)
 {
 	int err;
-	uint8_t buf[] = {~DS3231_ALARM1_EN, ~DS3231_A1F};
+	uint8_t buf[] = {DS3231_ALARM1_DIS, DS3231_A1F_CLEAR};
 
 	err = i2c_write_buf_poll(obj->device.addr, DS3231_CR, buf, 2);
 	if (err)
@@ -243,7 +242,7 @@ int ds3231_set_alarm(struct ds3231 *obj)
 		return -1;
 
 	/* Clear A1F flag */
-	buf[0] = ~DS3231_A1F;
+	buf[0] = DS3231_A1F_CLEAR;
 	err = i2c_write_buf_poll(obj->device.addr, DS3231_CR, buf, 1);
 	if (err)
 		return err;

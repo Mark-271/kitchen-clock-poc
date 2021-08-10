@@ -26,6 +26,7 @@ static void kbd_exti_init(struct kbd *obj)
 
 	for (i = 0; i < KBD_READ_LINES; i++) {
 		nvic_enable_irq(obj->gpio.irq[i]);
+		nvic_set_priority(obj->gpio.irq[i], 0);
 		exti_select_source(obj->gpio.read[i], obj->gpio.port);
 		exti_set_trigger(obj->gpio.read[i], obj->gpio.trigger);
 		exti_enable_request(obj->gpio.read[i]);

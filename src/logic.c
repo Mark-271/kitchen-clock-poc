@@ -145,9 +145,9 @@ static const enum logic_stage logic_transitions[STAGE_NUM][EVENT_NUM] = {
 	},
 	{ /* STAGE_TIME_INCR_HH */
 		STAGE_TIME_SET_HH,	/* EVENT_START */
-		0		,	/* EVENT_LEFT */
-		0		,	/* EVENT_RIGHT */
-		0		,	/* EVENT_UP */
+		0,			/* EVENT_LEFT */
+		0,			/* EVENT_RIGHT */
+		0,			/* EVENT_UP */
 		0,			/* EVENT_DOWN */
 	},
 	{ /* STAGE_TIME_SET_MM */

@@ -23,7 +23,7 @@
 #define DS3231_ALARM1_EN	0x1d	/* Enable Alarm 1 */
 #define DS3231_ALARM1_DIS	0x1c	/* Disable Alarm 1 */
 #define DS3231_A1F_CLEAR	0x88	/* DS3231 Alarm 1 flag disabled */
-#define DS3231_ALARM_MASK	BIT(7) /* DS3231 alarm mask bit */
+#define DS3231_ALARM_MASK	0x80	/* DS3231 Alarm 1 mask */
 #define ALARM1_BUF_LEN		4
 #define TM_START_YEAR		1900
 #define MIN_TM_YEAR		0
@@ -241,12 +241,6 @@ int ds3231_set_alarm(struct ds3231 *obj)
 	if (!res)
 		return -1;
 
-	/* Clear A1F flag */
-	buf[0] = DS3231_A1F_CLEAR;
-	err = i2c_write_buf_poll(obj->device.addr, DS3231_CR, buf, 1);
-	if (err)
-		return err;
-
 	buf[0] = obj->regs.ss;
 	buf[1] = obj->regs.mm;
 	buf[2] = obj->regs.hh;
@@ -254,10 +248,6 @@ int ds3231_set_alarm(struct ds3231 *obj)
 
 	err = i2c_write_buf_poll(obj->device.addr, DS3231_ALARM1,
 				 buf, ALARM1_BUF_LEN);
-	if (err)
-		return err;
-
-	err = ds3231_enable_alarm(obj);
 	if (err)
 		return err;
 

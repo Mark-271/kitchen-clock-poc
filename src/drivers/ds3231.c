@@ -19,7 +19,7 @@
 #define DS3231_DAY		0x03	/* DS3231Day offset register */
 #define DS3231_BUF_LEN		7	/* Number of data registers */
 #define DS3231_TASK		"ds3231"
-#define DS3231_ALARM1		0x0b	/* DS3231 Alarm 1 offset register */
+#define DS3231_ALARM1		0x07	/* DS3231 Alarm 1 offset register */
 #define DS3231_ALARM1_EN	0x1d	/* Enable Alarm 1 */
 #define DS3231_ALARM1_DIS	0x1c	/* Disable Alarm 1 */
 #define DS3231_A1F_CLEAR	0x88	/* DS3231 Alarm 1 flag disabled */

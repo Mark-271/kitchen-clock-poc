@@ -45,6 +45,7 @@ enum logic_stage {
 	STAGE_ALARM_TOGGLE,
 	STAGE_ALARM_INCR_HH,
 	STAGE_ALARM_INCR_MM,
+	STAGE_ALARM_SOUND,
 	STAGE_DATE_SET_WDAY,
 	STAGE_DATE_INCR_WDAY,
 	STAGE_DATE_DECR_WDAY,
@@ -77,6 +78,7 @@ struct logic {
 
 static void logic_handle_event(enum logic_event event);
 static void logic_handle_btn(int btn, bool pressed);
+static void logic_alarm_cb(void);
 
 static uint8_t menu_addr[MENU_NUM] = {
 	0x00,
@@ -134,7 +136,7 @@ static const enum logic_stage logic_transitions[STAGE_NUM][EVENT_NUM] = {
 		STAGE_MAIN_SCREEN,	/* EVENT_LEFT */
 		0,			/* EVENT_RIGHT */
 		STAGE_ALARM,		/* EVENT_UP */
-		STAGE_TIME_SET_HH	/* EVENT_DOWN */
+		STAGE_TIME_SET_HH,	/* EVENT_DOWN */
 	},
 	{ /* STAGE_TIME_SET_HH */
 		0,			/* EVENT_START */
@@ -192,12 +194,12 @@ static const enum logic_stage logic_transitions[STAGE_NUM][EVENT_NUM] = {
 		0,			/* EVENT_UP */
 		0,			/* EVENT_DOWN */
 	},
-	{ /* STAGE_TIME_SET_MM */
+	{ /* STAGE_ALARM_PLAY_SOUND */
 		0,			/* EVENT_START */
 		STAGE_MAIN_SCREEN,	/* EVENT_LEFT */
-		STAGE_DATE_SET_WDAY,	/* EVENT_RIGHT */
-		STAGE_TIME_INCR_MM,	/* EVENT_UP */
-		0,			/* EVENT_DOWN */
+		STAGE_MAIN_SCREEN,	/* EVENT_RIGHT */
+		STAGE_MAIN_SCREEN,	/* EVENT_UP */
+		STAGE_MAIN_SCREEN,	/* EVENT_DOWN */
 	},
 	{ /* STAGE_DATE_SET_WDAY */
 		0,			/* EVENT_START */
@@ -295,7 +297,7 @@ static void logic_init_drivers(void)
 		hang();
 	}
 
-	err = ds3231_init(&rtc, &device, EPOCH_YEAR);
+	err = ds3231_init(&rtc, &device, EPOCH_YEAR, logic_alarm_cb);
 	if (err) {
 		pr_emerg("Error: Can't initialize RTC device DS3231: %d\n", err);
 		hang();
@@ -556,6 +558,11 @@ static void logic_handle_stage_time_incr_mm(void)
 	logic_handle_event(EVENT_START);
 }
 
+static void logic_handle_stage_alarm_sound(void)
+{
+	melody_stop(&buzz);
+}
+
 logic_handle_stage_func_t logic_stage_handler[STAGE_NUM] = {
 	NULL,					/* STAGE_UNDEFINED */
 	logic_handle_stage_init,		/* STAGE_INIT */
@@ -569,6 +576,7 @@ logic_handle_stage_func_t logic_stage_handler[STAGE_NUM] = {
 	logic_handle_stage_alarm_toggle,	/* STAGE_ALARM_TOGGLE */
 	logic_handle_stage_alarm_incr_hh,	/* STAGE_ALARM_INCR_HH */
 	logic_handle_stage_alarm_incr_mm,	/* STAGE_ALARM_INCR_MM */
+	logic_handle_stage_alarm_sound,		/* STAGE_ALARM_SOUND */
 };
 
 /**
@@ -612,6 +620,12 @@ static void logic_handle_btn(int button, bool pressed)
 
 	if (pressed)
 		logic_handle_event(btn_event);
+}
+
+static void logic_alarm_cb(void)
+{
+	logic.stage = STAGE_ALARM_SOUND;
+	melody_play(&buzz);
 }
 
 void logic_start(void)

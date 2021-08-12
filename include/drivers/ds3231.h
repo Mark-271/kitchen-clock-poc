@@ -5,7 +5,7 @@
 #include <libopencm3/stm32/exti.h>
 #include <stdint.h>
 
-typedef void (*ds3231_callback_t)(void);
+typedef void (*ds3231_alarm_callback_t)(void);
 
 struct rtc_time {
 	int tm_sec;	/* seconds after the minute	0-59	*/
@@ -44,7 +44,7 @@ struct ds3231_alarm {
 	bool status;
 	struct irq_action action;
 	struct rtc_time time;
-	ds3231_callback_t cb;
+	ds3231_alarm_callback_t cb;
 };
 
 /* Driver structure */
@@ -57,7 +57,7 @@ struct ds3231 {
 
 /* RTC API */
 int ds3231_init(struct ds3231 *obj, const struct ds3231_device *dev,
-		int epoch_year);
+		int epoch_year, ds3231_alarm_callback_t cb);
 void ds3231_exit(struct ds3231 *obj, const struct ds3231_device *dev);
 int ds3231_read_time(struct ds3231 *obj, struct rtc_time *tm);
 int ds3231_set_time(struct ds3231 *obj, struct rtc_time *tm);

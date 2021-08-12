@@ -289,10 +289,11 @@ int ds3231_read_alarm(struct ds3231 *obj)
  * @param obj DS3231 object
  * @param dev DS3231 device hardware parameters
  * @param epoch_year Min year value which DS3231 can be set up with; >= 1900
+ * @param cb Callback to call when alarm triggers
  * @return 0 on success or negative value on error
  */
 int ds3231_init(struct ds3231 *obj, const struct ds3231_device *dev,
-		int epoch_year)
+		int epoch_year, ds3231_alarm_callback_t cb)
 {
 	int ret;
 
@@ -303,6 +304,8 @@ int ds3231_init(struct ds3231 *obj, const struct ds3231_device *dev,
 	obj->alarm.action.irq = obj->device.irq;
 	obj->alarm.action.name = DS3231_TASK;
 	obj->alarm.action.data = obj;
+
+	obj->alarm.cb = cb;
 
 	ret = gpio2irq(obj->device.pin);
 	if (ret < 0)

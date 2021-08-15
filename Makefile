@@ -134,7 +134,7 @@ clean: styleclean
 	$(Q)$(RM) $(APP).elf $(APP).bin $(OBJS) $(OBJS:%.o=%.d) $(OBJS:%.o=%.su)
 	$(Q)$(RM) $(LDS_GEN)
 
-distclean: clean
+distclean: clean doxy_clean
 	@printf "  DISTCLEAN\n"
 	$(Q)$(RM) cscope* tags
 

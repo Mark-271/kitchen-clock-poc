@@ -122,7 +122,7 @@ void wh1602_return_home(struct wh1602 *obj)
  * @param obj Structure whose fields should be filled by the caller
  * @param id Cursor moving control bit. DDRAM address is increased by 1
  * @param sh When set and DDRAM write operation, shift of display
- * 	     is performed according to @ref id value
+ * 	     is performed according to id value
  */
 void wh1602_set_entry_mode(struct wh1602 *obj, int id, int sh)
 {
@@ -162,7 +162,7 @@ void wh1602_set_function(struct wh1602 *obj, int dl, int n, int f)
 /**
  * WH1602B initalization function.
  *
- * @param[out] wh Structure whose fields should be filled by the caller
+ * @param[out] obj WH1602B object
  * @param[in] gpio GPIO info where LCD is connected
  * @return 0 if success or -1 in the case of failure
  */

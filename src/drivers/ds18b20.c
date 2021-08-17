@@ -80,11 +80,11 @@ struct ds18b20_temp ds18b20_read_temp(struct ds18b20 *obj)
 }
 
 /**
- * Convert temperature data to null-terminated string.
+ * Convert temperature data into null-terminated string.
  *
  * @param obj Contains parsed temperature register from DS18B20
  * @param str Array to store string literal
- * @return Pointer to @ref str
+ * @return Pointer to composed string
  */
 char *ds18b20_temp2str(struct ds18b20_temp *obj, char str[])
 {

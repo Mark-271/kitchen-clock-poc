@@ -49,7 +49,7 @@ int get_yday(int mon, int day, int year)
  *  This works because of three basic properties of XOR:
  *  x ^ 0 = x, x ^ x = 0 and x ^ y = y ^ x for all values x and y
  *
- *  @param input should be an array, whose contents are initialized to
+ *  @param str should be an array, whose contents are initialized to
  *  the given string constant.
  */
 void inplace_reverse(char *str)

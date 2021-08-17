@@ -111,7 +111,7 @@ void ow_write_byte(struct ow *obj, uint8_t byte)
 /**
  * Read byte of data.
  *
- * @param ow Structure to store corresponding GPIOs
+ * @param obj Structure to store corresponding GPIOs
  * @return Byte read from scratchpad
  */
 int8_t ow_read_byte(struct ow *obj)

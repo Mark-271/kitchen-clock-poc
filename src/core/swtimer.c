@@ -122,8 +122,7 @@ void swtimer_reset(void)
 /**
  * Register software timer and start it immediately.
  *
- * @param cb Timer callback; will be executed when timer is expired
- * @param period Timer period, msec; minimal period (and granularity): 5 msec
+ * @param tim Linked list containing software timers
  * @return Timer ID (handle) starting from 1
  *
  * @note This function can be used before swtimer_init()

@@ -47,8 +47,13 @@ static uint16_t ow_read_bit(struct ow *obj)
  */
 int ow_init(struct ow *obj)
 {
+	/*
+	 * Handle possible case when pin is "0" after startup. Otherwise we
+	 * might find ourselves in the middle of the reset pulse.
+	 */
 	gpio_set(obj->port, obj->pin);
-	udelay(CONFIG_GPIO_STAB_DELAY);
+	udelay(OW_RESET_TIME);
+
 	/* If device holds bus in low level -- return error */
 	if (!(gpio_get(obj->port, obj->pin)))
 		return -1;

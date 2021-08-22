@@ -55,6 +55,7 @@ CSTD		?= -std=gnu89
 OBJS		+=				\
 		   src/board.o			\
 		   src/core/irq.o		\
+		   src/core/reset.o		\
 		   src/core/sched.o		\
 		   src/core/swtimer.o		\
 		   src/drivers/buzzer.o		\

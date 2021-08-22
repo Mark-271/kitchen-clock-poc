@@ -3,6 +3,7 @@
 #include <core/log.h>
 #include <core/sched.h>
 #include <core/swtimer.h>
+#include <drivers/serial.h>
 #include <logic.h>
 #include <tools/common.h>
 #include <stdbool.h>
@@ -20,9 +21,19 @@ static void init_core(void)
 		.arr = SWTIMER_TIM_ARR_VAL,
 		.psc = SWTIMER_TIM_PSC_VAL,
 	};
+	struct serial_params serial = {
+		.uart = SERIAL_USART,
+		.baud = CONFIG_SERIAL_SPEED,
+		.bits = 8,
+		.stopbits = USART_STOPBITS_1,
+		.parity = USART_PARITY_NONE,
+		.mode = USART_MODE_TX_RX,
+		.flow_control = USART_FLOWCONTROL_NONE
+	};
 
 	irq_init();
 	board_init();
+	serial_init(&serial);
 	sched_init();
 
 	err = swtimer_init(&hw_tim);

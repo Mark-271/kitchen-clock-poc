@@ -9,7 +9,6 @@
 #include <drivers/ds3231.h>
 #include <drivers/kbd.h>
 #include <drivers/melody.h>
-#include <drivers/serial.h>
 #include <drivers/systick.h>
 #include <drivers/wh1602.h>
 #include <tools/common.h>
@@ -236,15 +235,6 @@ static void logic_init_drivers(void)
 {
 	int err;
 
-	struct serial_params serial = {
-		.uart = SERIAL_USART,
-		.baud = CONFIG_SERIAL_SPEED,
-		.bits = 8,
-		.stopbits = USART_STOPBITS_1,
-		.parity = USART_PARITY_NONE,
-		.mode = USART_MODE_TX_RX,
-		.flow_control = USART_FLOWCONTROL_NONE
-	};
 	struct wh1602_gpio wh_gpio = {
 		.port = WH1602_GPIO_PORT,
 		.rs = WH1602_RS_PIN,
@@ -270,8 +260,6 @@ static void logic_init_drivers(void)
 		.i2c_base = DS3231_I2C_BASE,
 		.addr = DS3231_DEVICE_ADDR,
 	};
-
-	serial_init(&serial);
 
 	err = systick_init();
 	if (err) {

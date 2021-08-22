@@ -8,12 +8,18 @@ enum pull_mode {
 	PULL_DOWN
 };
 
+enum gpio_level {
+	GPIO_LOW = 0,
+	GPIO_HIGH = 1,
+};
+
 struct pin_mode {
 	uint32_t port;
 	uint16_t pins;
 	uint8_t mode;
 	uint8_t conf;
-	enum pull_mode pull;
+	enum pull_mode pull;	/* Don't use .pull and .init together */
+	enum gpio_level init;	/* Don't use .pull and .init together */
 };
 
 static struct pin_mode pins[] = {
@@ -114,7 +120,10 @@ static void board_pinmux_init(void)
 	for (i = 0; i < ARRAY_SIZE(pins); ++i) {
 		gpio_set_mode(pins[i].port, pins[i].mode, pins[i].conf,
 			      pins[i].pins);
-		board_config_pull(&pins[i]);
+		if (pins[i].pull != PULL_NO)
+			board_config_pull(&pins[i]);
+		if (pins[i].init == GPIO_HIGH)
+			gpio_set(pins[i].port, pins[i].pins);
 	}
 }
 

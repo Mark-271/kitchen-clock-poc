@@ -3,7 +3,7 @@
 #include <libopencm3/stm32/gpio.h>
 #include <stddef.h>
 
-/* 1-wire specific delay timings */
+/* 1-wire specific delay timings (all units are usec) */
 #define OW_PRESENCE_WAIT_TIME		70
 #define OW_READ_INIT_TIME		5
 #define OW_READ_PAUSE			50

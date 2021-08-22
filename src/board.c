@@ -34,6 +34,7 @@ static struct pin_mode pins[] = {
 		.pins = DS18B20_GPIO_PIN,
 		.mode = GPIO_MODE_OUTPUT_2_MHZ,
 		.conf = GPIO_CNF_OUTPUT_OPENDRAIN,
+		.init = GPIO_HIGH, /* to avoid unwanted reset pulse */
 	},
 	{
 		.port = WH1602_GPIO_PORT,

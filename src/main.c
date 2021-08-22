@@ -1,6 +1,7 @@
 #include <board.h>
 #include <core/irq.h>
 #include <core/log.h>
+#include <core/reset.h>
 #include <core/sched.h>
 #include <core/swtimer.h>
 #include <drivers/serial.h>
@@ -34,6 +35,7 @@ static void init_core(void)
 	irq_init();
 	board_init();
 	serial_init(&serial);
+	pr_info("Reboot reason: %s\n", reset_cause_name(reset_cause()));
 	sched_init();
 
 	err = swtimer_init(&hw_tim);

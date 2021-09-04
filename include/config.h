@@ -15,4 +15,10 @@
 /* GPIO level transient time, usec */
 #define CONFIG_GPIO_STAB_DELAY		10
 
+/* ---- Watchdog timer ---- */
+/* Enable watchdog timer */
+#define CONFIG_WDT
+/* Watchdog timer period, msec */
+#define CONFIG_WDT_PERIOD		1000
+
 #endif /* CONFIG_H */

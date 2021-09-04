@@ -4,6 +4,7 @@
 #include <core/reset.h>
 #include <core/sched.h>
 #include <core/swtimer.h>
+#include <core/wdt.h>
 #include <drivers/serial.h>
 #include <logic.h>
 #include <tools/common.h>
@@ -33,6 +34,13 @@ static void init_core(void)
 	};
 
 	irq_init();
+
+	err = wdt_init();
+	if (err) {
+		pr_err("Can't initialize watchdog timer: %d\n", err);
+		hang();
+	}
+
 	board_init();
 	serial_init(&serial);
 	pr_info("Reboot reason: %s\n", reset_cause_name(reset_cause()));

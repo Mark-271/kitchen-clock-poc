@@ -11,6 +11,7 @@
 #include <core/swtimer.h>
 #include <core/irq.h>
 #include <core/sched.h>
+#include <core/wdt.h>
 #include <tools/common.h>
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/stm32/timer.h>
@@ -25,6 +26,7 @@ struct swtimer {
 	struct irq_action action;
 	int ticks;			/* global ticks counter */
 	int task_id;			/* scheduler task ID */
+	int wdt_tid;			/* watchdog timer task ID */
 	int max_slot;			/* max timer slot */
 	struct swtimer_sw_tim *timer;	/* list of timers */
 };
@@ -72,6 +74,8 @@ static void swtimer_task(void *data)
 		tim->remaining -= READ_ONCE(swtimer.ticks);
 	}
 	WRITE_ONCE(swtimer.ticks, 0);
+
+	wdt_task_report(swtimer.wdt_tid);
 }
 
 static void swtimer_hw_init(struct swtimer *obj)
@@ -291,6 +295,10 @@ int swtimer_init(const struct swtimer_hw_tim *hw_tim)
 	if (ret < 0)
 		return -2;
 
+	swtimer.wdt_tid = wdt_task_add(SWTIMER_TASK);
+	if (swtimer.wdt_tid < 0)
+		return -3;
+
 	return 0;
 }
 
@@ -302,6 +310,7 @@ void swtimer_exit(void)
 	timer_disable_counter(swtimer.hw_tim.base);
 	timer_disable_irq(swtimer.hw_tim.base, TIM_DIER_UIE);
 	nvic_disable_irq(swtimer.hw_tim.irq);
+	wdt_task_del(swtimer.wdt_tid);
 	sched_del_task(swtimer.task_id);
 	irq_free(&swtimer.action);
 	UNUSED(swtimer);

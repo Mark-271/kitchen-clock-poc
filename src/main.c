@@ -12,6 +12,12 @@
 #include <stdint.h>
 #include <stdio.h>
 
+static void init_reset(void)
+{
+	pr_info("Reboot reason: %s\n", reset_cause_name(reset_cause()));
+	reset_clear();
+}
+
 static void init_core(void)
 {
 	int err;
@@ -43,7 +49,7 @@ static void init_core(void)
 
 	board_init();
 	serial_init(&serial);
-	pr_info("Reboot reason: %s\n", reset_cause_name(reset_cause()));
+	init_reset();
 	sched_init();
 
 	err = swtimer_init(&hw_tim);

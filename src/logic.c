@@ -92,6 +92,7 @@ static const char * const menu_msg[MENU_NUM] = {
 };
 
 static bool ds18b20_presence_flag;
+static bool ds3231_presence_flag;
 
 static struct logic logic;
 static struct kbd kbd;
@@ -285,10 +286,9 @@ static void logic_init_drivers(void)
 	}
 
 	err = ds3231_init(&rtc, &device, EPOCH_YEAR, logic_alarm_cb);
-	if (err) {
-		pr_emerg("Error: Can't initialize RTC device DS3231: %d\n", err);
-		hang();
-	}
+	if (err)
+		pr_warn("Warning: Can't initialize ds3231: %d\n", err);
+	ds3231_presence_flag = !err;
 
 	buzz_init(&buzz, BUZZ_GPIO_PORT, BUZZ_GPIO_PIN);
 }
@@ -340,16 +340,21 @@ static void logic_show_main_screen(void *data)
 
 	UNUSED(data);
 
-	err = ds3231_read_time(&rtc, &tm);
-	if (err) {
-		pr_emerg("Error: Can't read time from ds3231: %d\n", err);
-		hang();
+	if (ds3231_presence_flag) {
+		err = ds3231_read_time(&rtc, &tm);
+		if (err) {
+			pr_emerg("Error: Can't read time: %d\n", err);
+			hang();
+		}
+
+		t = (struct tm *)(&tm);
+		date2str(t, date);
+		time2str(t, time);
+	} else {
+		strcpy(date, "00 000 0000");
+		strcpy(time, "00:00");
 	}
 
-	t = (struct tm *)(&tm);
-
-	date2str(t, date);
-	time2str(t, time);
 	temper = logic_read_temper(&ts);
 
 	if (logic.stage == STAGE_MAIN_SCREEN)
@@ -401,6 +406,12 @@ static void logic_handle_stage_alarm(void)
 	char alarm_time[BUF_LEN];
 	char *flag;
 	struct tm *t;
+
+	/* HACK: Brute kicking user back to main menu to disallow RTC ops */
+	if (!ds3231_presence_flag) {
+		logic.stage = STAGE_MAIN_MENU;
+		return;
+	}
 
 	err = ds3231_read_alarm(&rtc);
 	if (err) {
@@ -474,6 +485,11 @@ static void logic_handle_stage_time_set_hh(void)
 	struct tm *t;
 	int err;
 	char time[BUF_LEN];
+
+	if (!ds3231_presence_flag) {
+		logic.stage = STAGE_MAIN_MENU;
+		return;
+	}
 
 	err = ds3231_read_time(&rtc, &tm);
 	if (err) {

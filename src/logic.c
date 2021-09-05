@@ -316,12 +316,9 @@ static void logic_print2lcd(char *time, char *date, char *temp)
 	wh1602_set_line(&wh, LINE_2);
 	wh1602_print_str(&wh, date);
 
-	/* If ds18b20 is out of order, the program should skip it */
-	if (ds18b20_presence_flag) {
-		wh1602_set_address(&wh, TEMPER_DISPLAY_ADDR);
-		wh1602_write_char(&wh, 't');
-		wh1602_print_str(&wh, temp);
-	}
+	wh1602_set_address(&wh, TEMPER_DISPLAY_ADDR);
+	wh1602_write_char(&wh, 't');
+	wh1602_print_str(&wh, temp);
 
 	if (rtc.alarm.status) {
 		wh1602_set_address(&wh, ALARM_SYMBOL_POS);
@@ -332,7 +329,7 @@ static void logic_print2lcd(char *time, char *date, char *temp)
 /* Callback to register inside swtimer */
 static void logic_show_main_screen(void *data)
 {
-	char *temper;
+	char temper[BUF_LEN];
 	char date[BUF_LEN];
 	char time[BUF_LEN];
 	int err;
@@ -355,7 +352,10 @@ static void logic_show_main_screen(void *data)
 		strcpy(time, "00:00");
 	}
 
-	temper = logic_read_temper(&ts);
+	if (ds18b20_presence_flag)
+		strcpy(temper, logic_read_temper(&ts));
+	else
+		strcpy(temper, "xx");
 
 	if (logic.stage == STAGE_MAIN_SCREEN)
 		logic_print2lcd(time, date, temper);

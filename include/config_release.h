@@ -25,4 +25,8 @@
 /* Watchdog timer period, msec */
 #define CONFIG_WDT_PERIOD		1000
 
+/* ---- "Scheduler" ---- */
+/* Enable CPU sleeping when no tasks are awaiting execution */
+#define CONFIG_SCHED_IDLE
+
 #endif /* CONFIG_RELEASE_H */

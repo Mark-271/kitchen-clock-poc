@@ -75,6 +75,40 @@ static int sched_find_next(void)
 	return -1;
 }
 
+#ifdef CONFIG_SCHED_IDLE
+/**
+ * "Idle" task function.
+ *
+ * This function must be called with interrupts disabled. Best way is to disable
+ * interrupts before checking if all tasks are blocked (waiting for new data
+ * from some interrupt). This way one can avoid a race condition when new data
+ * arrived after the check but before WFI, and we go to sleep when some task
+ * is actually not blocked.
+ *
+ * WFI instruction will wake up the CPU on interrupt, even if interrupts are
+ * disabled. If there is some pending interrupt when calling WFI, it won't go to
+ * sleep, performing NOP instead.
+ */
+static __always_inline void sched_idle(void)
+{
+	/*
+	 * DSB: follow AN321 guidelines for WFI
+	 * ISB: without this "if (!sched_ready)" can finish after WFI, which
+	 *      leads to complete system stuck when no new IRQ happen
+	 * WFI: CPU sleep; improves power management
+	 * ISB: just mimic what FreeRTOS does
+	 */
+	__asm__("dsb");
+	__asm__("isb");
+	__asm__("wfi");
+	__asm__("isb");
+}
+#else
+static inline void sched_idle(void)
+{
+}
+#endif
+
 /**
  * Run next task from scheduler list.
  *
@@ -87,6 +121,7 @@ static int sched_run_next(void)
 
 	enter_critical(irq_flags);
 	if (!READ_ONCE(sched_ready)) {
+		sched_idle();
 		exit_critical(irq_flags);
 		return -1;
 	}

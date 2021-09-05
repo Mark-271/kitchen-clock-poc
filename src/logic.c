@@ -275,7 +275,7 @@ static void logic_init_drivers(void)
 
 	err = ds18b20_init(&ts);
 	if (err) {
-		pr_err("Error: Can't initialize ds18b20: %d\n", err);
+		pr_warn("Warning: Can't initialize ds18b20: %d\n", err);
 		ds18b20_presence_flag = false;
 	}
 

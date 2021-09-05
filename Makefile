@@ -17,8 +17,10 @@ BUILD		?= debug
 ifeq ($(BUILD),release)
   CFLAGS	+= -DNDEBUG
   LDFLAGS	+= -s
+  CONFIG_FILE	= include/config_release.h
 else ifeq ($(BUILD),debug)
   CFLAGS	+= $(DEBUG)
+  CONFIG_FILE	= include/config_debug.h
 else
   $(error Incorrect BUILD variable)
 endif
@@ -29,7 +31,6 @@ INCLUDE_DIR	= $(OPENCM3_DIR)/include
 SCRIPT_DIR	= scripts
 LDS		= ld/kitchen.ld
 LDS_GEN		= ld/kitchen-gen.ld
-CONFIG_FILE	= include/config.h
 
 LIBNAME		= opencm3_stm32f1
 DEFS		+= -DSTM32F1

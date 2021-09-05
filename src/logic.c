@@ -91,7 +91,7 @@ static const char * const menu_msg[MENU_NUM] = {
 	"D-Time settings",
 };
 
-static bool ds18b20_presence_flag = true;
+static bool ds18b20_presence_flag;
 
 static struct logic logic;
 static struct kbd kbd;
@@ -274,10 +274,9 @@ static void logic_init_drivers(void)
 	}
 
 	err = ds18b20_init(&ts);
-	if (err) {
+	if (err)
 		pr_warn("Warning: Can't initialize ds18b20: %d\n", err);
-		ds18b20_presence_flag = false;
-	}
+	ds18b20_presence_flag = !err;
 
 	err = wh1602_init(&wh, &wh_gpio);
 	if (err) {

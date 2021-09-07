@@ -9,7 +9,7 @@
 #define AHB_TICKS_PER_USEC	(rcc_ahb_frequency / 1e6)
 #define USEC_PER_MSEC		1e3
 
-static volatile uint32_t ticks;
+static uint32_t ticks;
 
 /**
  * Systick handler.
@@ -23,7 +23,7 @@ static volatile uint32_t ticks;
  */
 void sys_tick_handler(void)
 {
-	ticks++;
+	WRITE_ONCE(ticks, ticks + 1);
 }
 
 /*
@@ -39,7 +39,7 @@ uint32_t systick_get_time_us(void)
 	uint32_t us;
 
 	us = (SYSTICK_RELOAD_VAL - systick_get_value()) / AHB_TICKS_PER_USEC;
-	us += ticks * USEC_PER_MSEC;
+	us += READ_ONCE(ticks) * USEC_PER_MSEC;
 
 	return us;
 }

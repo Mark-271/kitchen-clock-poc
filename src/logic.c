@@ -612,9 +612,9 @@ static void logic_handle_event(enum logic_event event)
 
 	transition_func = logic_stage_handler[new_stage];
 	if (!transition_func) {
-		pr_emerg("Error: Transition function doesn't exist for "
-				"stage %d\n", new_stage);
-		hang();
+		pr_warn("Warning: Transition function doesn't exist for "
+				"stage %d, event %d\n", stage, event);
+		return;
 	}
 
 	logic.stage = new_stage;

@@ -97,11 +97,11 @@ static irqreturn_t ds3231_exti_isr(int irq, void *data)
 static void ds3231_task(void *data)
 {
 	int ret;
-	uint8_t buf[] = {DS3231_A1F_CLEAR};
+	uint8_t buf = DS3231_A1F_CLEAR;
 
 	struct ds3231 *obj = (struct ds3231 *)(data);
 
-	ret = i2c_write_buf_poll(obj->device.addr, DS3231_SR, buf, 1);
+	ret = i2c_write_buf_poll(obj->device.addr, DS3231_SR, &buf, 1);
 	if (ret != 0) {
 		pr_err("Error: Can't write data; err = %d\n", ret);
 		return;
@@ -195,9 +195,9 @@ int ds3231_set_time(struct ds3231 *obj, struct rtc_time *tm)
 int ds3231_enable_alarm(struct ds3231 *obj)
 {
 	int err;
-	uint8_t buf[] = {DS3231_ALARM1_EN};
+	uint8_t buf = DS3231_ALARM1_EN;
 
-	err = i2c_write_buf_poll(obj->device.addr, DS3231_CR, buf, 1);
+	err = i2c_write_buf_poll(obj->device.addr, DS3231_CR, &buf, 1);
 	if (err)
 		return err;
 

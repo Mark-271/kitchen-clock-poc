@@ -77,6 +77,15 @@ enum logic_event {
 
 struct logic {
 	enum logic_stage stage; /* current state of FSM */
+	bool ds18b20_presence_flag;
+	bool ds3231_presence_flag;
+	struct buzz buzz;
+	struct ds18b20 ts;
+	struct ds3231 rtc;
+	struct kbd kbd;
+	struct rtc_time tm;
+	struct swtimer_sw_tim swtim;		/* software timer object */
+	struct wh1602 wh;
 };
 
 static void logic_handle_event(enum logic_event event);
@@ -95,20 +104,8 @@ static const char * const menu_msg[MENU_NUM] = {
 	"D-Time settings",
 };
 
-static bool ds18b20_presence_flag;
-static bool ds3231_presence_flag;
 
 static struct logic logic;
-static struct kbd kbd;
-static struct rtc_time tm;
-static struct ds3231 rtc;
-static struct wh1602 wh;
-static struct buzz buzz;
-static struct swtimer_sw_tim swtim;		/* software timer object */
-static struct ds18b20 ts = {
-	.port = DS18B20_GPIO_PORT,
-	.pin = DS18B20_GPIO_PIN,
-};
 
 /**
  * Transition lookup table for Moore FSM
@@ -240,6 +237,9 @@ static void logic_init_drivers(void)
 {
 	int err;
 
+	logic.ts.port = DS18B20_GPIO_PORT;
+	logic.ts.pin = DS18B20_GPIO_PIN;
+
 	struct wh1602_gpio wh_gpio = {
 		.port = WH1602_GPIO_PORT,
 		.rs = WH1602_RS_PIN,
@@ -272,29 +272,29 @@ static void logic_init_drivers(void)
 		hang();
 	}
 
-	err = kbd_init(&kbd, &kbd_gpio, logic_handle_btn);
+	err = kbd_init(&logic.kbd, &kbd_gpio, logic_handle_btn);
 	if (err) {
 		pr_emerg("Error: Can't initialize kbd: %d\n", err);
 		hang();
 	}
 
-	err = ds18b20_init(&ts);
+	err = ds18b20_init(&logic.ts);
 	if (err)
 		pr_warn("Warning: Can't initialize ds18b20: %d\n", err);
-	ds18b20_presence_flag = !err;
+	logic.ds18b20_presence_flag = !err;
 
-	err = wh1602_init(&wh, &wh_gpio);
+	err = wh1602_init(&logic.wh, &wh_gpio);
 	if (err) {
 		pr_emerg("Error: Can't initialize wh1602: %d\n", err);
 		hang();
 	}
 
-	err = ds3231_init(&rtc, &device, EPOCH_YEAR, logic_alarm_cb);
+	err = ds3231_init(&logic.rtc, &device, EPOCH_YEAR, logic_alarm_cb);
 	if (err)
 		pr_warn("Warning: Can't initialize ds3231: %d\n", err);
-	ds3231_presence_flag = !err;
+	logic.ds3231_presence_flag = !err;
 
-	buzz_init(&buzz, BUZZ_GPIO_PORT, BUZZ_GPIO_PIN);
+	buzz_init(&logic.buzz, BUZZ_GPIO_PORT, BUZZ_GPIO_PIN);
 }
 
 static char *logic_read_temper(void *data)
@@ -302,7 +302,7 @@ static char *logic_read_temper(void *data)
 	struct ds18b20 *obj = (struct ds18b20 *)(data);
 	char buf[BUF_LEN];
 
-	obj->temp = ds18b20_read_temp(&ts);
+	obj->temp = ds18b20_read_temp(&logic.ts);
 
 	while (obj->temp.frac > 9)
 		obj->temp.frac /= 10;
@@ -312,21 +312,21 @@ static char *logic_read_temper(void *data)
 
 static void logic_print2lcd(char *time, char *date, char *temp)
 {
-	wh1602_clear_display(&wh);
+	wh1602_clear_display(&logic.wh);
 
-	wh1602_set_line(&wh, LINE_1);
-	wh1602_print_str(&wh, time);
+	wh1602_set_line(&logic.wh, LINE_1);
+	wh1602_print_str(&logic.wh, time);
 
-	wh1602_set_line(&wh, LINE_2);
-	wh1602_print_str(&wh, date);
+	wh1602_set_line(&logic.wh, LINE_2);
+	wh1602_print_str(&logic.wh, date);
 
-	wh1602_set_address(&wh, TEMPER_DISPLAY_ADDR);
-	wh1602_write_char(&wh, 't');
-	wh1602_print_str(&wh, temp);
+	wh1602_set_address(&logic.wh, TEMPER_DISPLAY_ADDR);
+	wh1602_write_char(&logic.wh, 't');
+	wh1602_print_str(&logic.wh, temp);
 
-	if (rtc.alarm.status) {
-		wh1602_set_address(&wh, ALARM_SYMBOL_POS);
-		wh1602_write_char(&wh, ALARM_INDICATOR);
+	if (logic.rtc.alarm.status) {
+		wh1602_set_address(&logic.wh, ALARM_SYMBOL_POS);
+		wh1602_write_char(&logic.wh, ALARM_INDICATOR);
 	}
 }
 
@@ -341,14 +341,14 @@ static void logic_show_main_screen(void *data)
 
 	UNUSED(data);
 
-	if (ds3231_presence_flag) {
-		err = ds3231_read_time(&rtc, &tm);
+	if (logic.ds3231_presence_flag) {
+		err = ds3231_read_time(&logic.rtc, &logic.tm);
 		if (err) {
 			pr_emerg("Error: Can't read time: %d\n", err);
 			hang();
 		}
 
-		t = (struct tm *)(&tm);
+		t = (struct tm *)(&logic.tm);
 		date2str(t, date);
 		time2str(t, time);
 	} else {
@@ -356,8 +356,8 @@ static void logic_show_main_screen(void *data)
 		strcpy(time, "00:00");
 	}
 
-	if (ds18b20_presence_flag)
-		strcpy(temper, logic_read_temper(&ts));
+	if (logic.ds18b20_presence_flag)
+		strcpy(temper, logic_read_temper(&logic.ts));
 	else
 		strcpy(temper, "xx");
 
@@ -367,20 +367,20 @@ static void logic_show_main_screen(void *data)
 
 static void logic_handle_stage_main_screen(void)
 {
-	wh1602_control_display(&wh, LCD_ON, CURSOR_OFF, CURSOR_BLINK_OFF);
-	swtimer_tim_start(swtim.id);
+	wh1602_control_display(&logic.wh, LCD_ON, CURSOR_OFF, CURSOR_BLINK_OFF);
+	swtimer_tim_start(logic.swtim.id);
 }
 
 static void logic_handle_stage_main_menu(void)
 {
 	size_t i;
 
-	swtimer_tim_stop(swtim.id);
-	wh1602_clear_display(&wh);
+	swtimer_tim_stop(logic.swtim.id);
+	wh1602_clear_display(&logic.wh);
 
 	for (i = 0; i < MENU_NUM; i++) {
-		wh1602_set_address(&wh, menu_addr[i]);
-		wh1602_print_str(&wh, menu_msg[i]);
+		wh1602_set_address(&logic.wh, menu_addr[i]);
+		wh1602_print_str(&logic.wh, menu_msg[i]);
 	}
 }
 
@@ -388,19 +388,19 @@ static void logic_handle_stage_init(void)
 {
 	int ret;
 
-	swtim.cb = logic_show_main_screen;
-	swtim.data = &rtc;
-	swtim.period = TIM_PERIOD;
+	logic.swtim.cb = logic_show_main_screen;
+	logic.swtim.data = &logic.rtc;
+	logic.swtim.period = TIM_PERIOD;
 
 	logic_init_drivers();
 
-	ret = swtimer_tim_register(&swtim);
+	ret = swtimer_tim_register(&logic.swtim);
 	if (ret < 0) {
 		pr_emerg("Error: Can't register timer: %d\n", ret);
 		hang();
 	}
 
-	wh1602_control_display(&wh, LCD_ON, CURSOR_OFF, CURSOR_BLINK_OFF);
+	wh1602_control_display(&logic.wh, LCD_ON, CURSOR_OFF, CURSOR_BLINK_OFF);
 	logic.stage = STAGE_MAIN_SCREEN;
 }
 
@@ -412,37 +412,37 @@ static void logic_handle_stage_alarm(void)
 	struct tm *t;
 
 	/* HACK: Brute kicking user back to main menu to disallow RTC ops */
-	if (!ds3231_presence_flag) {
+	if (!logic.ds3231_presence_flag) {
 		logic.stage = STAGE_MAIN_MENU;
 		return;
 	}
 
-	err = ds3231_read_alarm(&rtc);
+	err = ds3231_read_alarm(&logic.rtc);
 	if (err) {
 		pr_emerg("Error: unable to get alarm data %d\n", err);
 		hang();
 	}
 
-	t = (struct tm *)(&rtc.alarm.time);
+	t = (struct tm *)(&logic.rtc.alarm.time);
 	time2str(t, alarm_time);
 
-	flag = (rtc.alarm.status == true) ? "Alarm ON" : "Alarm OFF";
+	flag = (logic.rtc.alarm.status == true) ? "Alarm ON" : "Alarm OFF";
 
-	wh1602_clear_display(&wh);
-	wh1602_set_line(&wh, LINE_1);
-	wh1602_print_str(&wh, alarm_time);
-	wh1602_set_line(&wh, LINE_2);
-	wh1602_print_str(&wh, flag);
+	wh1602_clear_display(&logic.wh);
+	wh1602_set_line(&logic.wh, LINE_1);
+	wh1602_print_str(&logic.wh, alarm_time);
+	wh1602_set_line(&logic.wh, LINE_2);
+	wh1602_print_str(&logic.wh, flag);
 }
 
 static void logic_handle_stage_alarm_toggle(void)
 {
 	int err;
 
-	if (rtc.alarm.status == false)
-		err = ds3231_enable_alarm(&rtc);
+	if (logic.rtc.alarm.status == false)
+		err = ds3231_enable_alarm(&logic.rtc);
 	else
-		err = ds3231_disable_alarm(&rtc);
+		err = ds3231_disable_alarm(&logic.rtc);
 
 	if (err) {
 		pr_emerg("Error: can't control alarm: %d\n", err);
@@ -456,10 +456,10 @@ static void logic_handle_stage_alarm_incr_hh(void)
 {
 	int err;
 
-	rtc.alarm.time.tm_hour = (rtc.alarm.time.tm_hour + 1) % 24;
-	rtc.alarm.time.tm_sec = 0;
+	logic.rtc.alarm.time.tm_hour = (logic.rtc.alarm.time.tm_hour + 1) % 24;
+	logic.rtc.alarm.time.tm_sec = 0;
 
-	err = ds3231_set_alarm(&rtc);
+	err = ds3231_set_alarm(&logic.rtc);
 	if (err) {
 		pr_emerg("Error: unable to set alarm: %d\n", err);
 		hang();
@@ -472,10 +472,11 @@ static void logic_handle_stage_alarm_incr_mm(void)
 {
 	int err;
 
-	rtc.alarm.time.tm_min = (rtc.alarm.time.tm_min + 1) % 60;
-	rtc.alarm.time.tm_sec = 0;
+	logic.rtc.alarm.time.tm_min = (logic.rtc.alarm.time.tm_min + 1) % 60;
+	logic.rtc.alarm.time.tm_sec = 0;
 
-	err = ds3231_set_alarm(&rtc);
+	err = ds3231_set_alarm(&logic.rtc);
+
 	if (err) {
 		pr_emerg("Error: unable to set alarm: %d\n", err);
 		hang();
@@ -490,35 +491,35 @@ static void logic_handle_stage_time_set_hh(void)
 	int err;
 	char time[BUF_LEN];
 
-	if (!ds3231_presence_flag) {
+	if (!logic.ds3231_presence_flag) {
 		logic.stage = STAGE_MAIN_MENU;
 		return;
 	}
 
-	err = ds3231_read_time(&rtc, &tm);
+	err = ds3231_read_time(&logic.rtc, &logic.tm);
 	if (err) {
 		pr_emerg("Error: Can't read time from ds3231\n");
 		hang();
 	}
 
-	t = (struct tm *)(&tm);
+	t = (struct tm *)(&logic.tm);
 
 	time2str(t, time);
 
-	wh1602_control_display(&wh, LCD_ON, CURSOR_ON, CURSOR_BLINK_ON);
-	wh1602_clear_display(&wh);
-	wh1602_set_line(&wh, LINE_1);
-	wh1602_print_str(&wh, time);
-	wh1602_set_address(&wh, 0x01);
+	wh1602_control_display(&logic.wh, LCD_ON, CURSOR_ON, CURSOR_BLINK_ON);
+	wh1602_clear_display(&logic.wh);
+	wh1602_set_line(&logic.wh, LINE_1);
+	wh1602_print_str(&logic.wh, time);
+	wh1602_set_address(&logic.wh, 0x01);
 }
 
 static void logic_handle_stage_time_incr_hh(void)
 {
 	int err;
 
-	tm.tm_hour = (tm.tm_hour + 1) % 24;
+	logic.tm.tm_hour = (logic.tm.tm_hour + 1) % 24;
 
-	err = ds3231_set_time(&rtc, &tm);
+	err = ds3231_set_time(&logic.rtc, &logic.tm);
 	if (err) {
 		pr_emerg("Error: Can't set hours to ds32312\n");
 		hang();
@@ -533,30 +534,30 @@ static void logic_handle_stage_time_set_mm(void)
 	int err;
 	char time[BUF_LEN];
 
-	err = ds3231_read_time(&rtc, &tm);
+	err = ds3231_read_time(&logic.rtc, &logic.tm);
 	if (err) {
 		pr_emerg("Error: Can't read time from ds3231\n");
 		hang();
 	}
 
-	t = (struct tm *)(&tm);
+	t = (struct tm *)(&logic.tm);
 
 	time2str(t, time);
 
-	wh1602_control_display(&wh, LCD_ON, CURSOR_ON, CURSOR_BLINK_ON);
-	wh1602_clear_display(&wh);
-	wh1602_set_line(&wh, LINE_1);
-	wh1602_print_str(&wh, time);
-	wh1602_set_address(&wh, 0x04);
+	wh1602_control_display(&logic.wh, LCD_ON, CURSOR_ON, CURSOR_BLINK_ON);
+	wh1602_clear_display(&logic.wh);
+	wh1602_set_line(&logic.wh, LINE_1);
+	wh1602_print_str(&logic.wh, time);
+	wh1602_set_address(&logic.wh, 0x04);
 }
 
 static void logic_handle_stage_time_incr_mm(void)
 {
 	int err;
 
-	tm.tm_min = (tm.tm_min + 1) % 60;
+	logic.tm.tm_min = (logic.tm.tm_min + 1) % 60;
 
-	err = ds3231_set_time(&rtc, &tm);
+	err = ds3231_set_time(&logic.rtc, &logic.tm);
 	if (err) {
 		pr_emerg("Error: Can't set hours to ds32312\n");
 		hang();
@@ -567,7 +568,7 @@ static void logic_handle_stage_time_incr_mm(void)
 
 static void logic_handle_stage_alarm_sound(void)
 {
-	melody_stop(&buzz);
+	melody_stop(&logic.buzz);
 }
 
 logic_handle_stage_func_t logic_stage_handler[STAGE_NUM] = {
@@ -632,7 +633,7 @@ static void logic_handle_btn(int button, bool pressed)
 static void logic_alarm_cb(void)
 {
 	logic.stage = STAGE_ALARM_SOUND;
-	melody_play(&buzz);
+	melody_play(&logic.buzz);
 }
 
 void logic_start(void)

@@ -25,7 +25,6 @@
 #define DS3231_A1F_CLEAR	0x88	/* DS3231 Alarm 1 flag disabled */
 #define DS3231_ALARM_MASK	0x80	/* DS3231 Alarm 1 mask */
 #define ALARM1_BUF_LEN		4
-#define TM_START_YEAR		1900
 #define MIN_TM_YEAR		0
 #define MIN_REGS_YEAR		0
 #define MAX_REGS_YEAR		99

@@ -5,6 +5,8 @@
 #include <libopencm3/stm32/exti.h>
 #include <stdint.h>
 
+#define TM_START_YEAR		1900
+
 typedef void (*ds3231_alarm_callback_t)(void);
 
 struct rtc_time {

@@ -8,6 +8,8 @@
 #define SYSTICK_RELOAD_VAL	(rcc_ahb_frequency / SYSTICK_FREQ)
 #define AHB_TICKS_PER_USEC	(rcc_ahb_frequency / 1e6)
 #define USEC_PER_MSEC		1e3
+#define NSEC_PER_USEC		1e3
+#define NSEC_PER_MSEC		1e6
 
 
 static uint32_t ticks;
@@ -43,6 +45,26 @@ uint32_t systick_get_time_us(void)
 	us += READ_ONCE(ticks) * USEC_PER_MSEC;
 
 	return us;
+}
+
+uint32_t systick_get_time_ns(void)
+{
+	uint32_t ns;
+
+	ns = (SYSTICK_RELOAD_VAL - systick_get_value()) / AHB_TICKS_PER_USEC
+	     * NSEC_PER_USEC;
+	ns += READ_ONCE(ticks) * NSEC_PER_MSEC;
+
+	return ns;
+}
+
+/* Calculate timestamp difference in nanoseconds */
+uint32_t systick_calc_diff_ns(uint32_t t1, uint32_t t2)
+{
+	if (t1 > t2)
+		t2 += UINT32_MAX;
+
+	return t2 - t1;
 }
 
 /* Calculate timestamp difference in milliseconds */

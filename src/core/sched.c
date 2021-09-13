@@ -1,16 +1,115 @@
+#include <core/log.h>
 #include <core/sched.h>
+#include <core/systick.h>
+#include <core/swtimer.h>
 #include <string.h>
 
 struct task {
 	const char *name;		/* task name */
 	task_func_t func;		/* task function to run */
 	void *data;			/* user private data; passed to func */
+#ifdef CONFIG_SCHED_PROFILE
+	uint32_t sec;
+	uint32_t nsec;
+#endif /* CONFIG_SCHED_PROFILE */
 };
 
 /* Contains status of each task (1 - data is ready; 0 - blocked) */
 static uint32_t sched_ready;
 static struct task task_list[TASK_NR];
 static int current;			/* current pos in task_list[] */
+
+#ifdef CONFIG_SCHED_PROFILE
+# define SCHED_PROFILER_PERIOD		5000	/* msec */
+/* 0 - collect statistics for the whole boot; 1 - for SCHED_PROFILER_PERIOD */
+# define SCHED_PROFILER_ITERATIVE	0
+/* Total execution time, including scheduler routines (sec + nsec) */
+static uint32_t profiler_total_nsec;
+static uint32_t profiler_total_sec;
+static uint32_t idle_sec;
+static uint32_t idle_nsec;
+
+static struct swtimer_sw_tim swtim;
+#endif /* CONFIG_SCHED_PROFILE */
+
+#ifdef CONFIG_SCHED_PROFILE
+
+static __always_inline void sched_profile_print(const char *task, int perc)
+{
+	printk("%s : %d%%\n", task, perc);
+}
+
+static void sched_profile_timer_tick(void *data)
+{
+	uint64_t tasks_ns = 0;
+	uint64_t total_ns;
+	uint64_t sched_ns, idle_ns;
+	int sched_perc, idle_perc;
+	int i;
+
+	UNUSED(data);
+
+	for (i = 0; i < TASK_NR; ++i) {
+		tasks_ns += (uint64_t)task_list[i].sec * NSEC_PER_SEC;
+		tasks_ns += (uint64_t)task_list[i].nsec;
+	}
+
+	total_ns = (uint64_t)profiler_total_sec * NSEC_PER_SEC +
+		   profiler_total_nsec;
+	idle_ns = (uint64_t)idle_sec * NSEC_PER_SEC + idle_nsec;
+	idle_perc = (100ULL * idle_ns) / total_ns;
+	sched_ns = total_ns - (tasks_ns + idle_ns);
+	sched_perc = (100ULL * sched_ns) / total_ns;
+
+	printk("\nScheduler profiler:\n");
+	sched_profile_print("sched + IRQs", sched_perc);
+	sched_profile_print("idle", idle_perc);
+	for (i = 0; i < TASK_NR; ++i) {
+		uint64_t task_ns;
+		int task_perc;
+
+		if (!task_list[i].func)
+			continue;
+
+		task_ns = (uint64_t)task_list[i].sec * NSEC_PER_SEC +
+			  task_list[i].nsec;
+		task_perc = (100ULL * task_ns) / total_ns;
+#if SCHED_PROFILER_ITERATIVE == 1
+		task_list[i].sec = 0;
+		task_list[i].nsec = 0;
+#endif
+
+		sched_profile_print(task_list[i].name, task_perc);
+	}
+
+#if SCHED_PROFILER_ITERATIVE == 1
+	profiler_total_sec = 0;
+	profiler_total_nsec = 0;
+	idle_sec = 0;
+	idle_nsec = 0;
+#endif
+}
+
+static int sched_profile_init(void)
+{
+	int timer_id;
+
+	swtim.cb = sched_profile_timer_tick;
+	swtim.period = SCHED_PROFILER_PERIOD;
+	swtim.data = &swtim;
+
+	timer_id = swtimer_tim_register(&swtim);
+	if (timer_id < 0)
+		return timer_id;
+
+	return 0;
+}
+
+#else /* !CONFIG_SCHED_PROFILE */
+
+static inline int sched_profile_init(void) { return 0; }
+
+#endif /* CONFIG_SCHED_PROFILE */
 
 /**
  * Set "Blocked" state for specified task (waiting for new data).
@@ -91,6 +190,12 @@ static int sched_find_next(void)
  */
 static __always_inline void sched_idle(void)
 {
+#ifdef CONFIG_SCHED_PROFILE
+	uint32_t t1, t2;
+	uint32_t diff_ns;
+
+	t1 = systick_get_time_ns();
+#endif
 	/*
 	 * DSB: follow AN321 guidelines for WFI
 	 * ISB: without this "if (!sched_ready)" can finish after WFI, which
@@ -102,6 +207,16 @@ static __always_inline void sched_idle(void)
 	__asm__("isb");
 	__asm__("wfi");
 	__asm__("isb");
+
+#ifdef CONFIG_SCHED_PROFILE
+	t2 = systick_get_time_ns();
+	diff_ns = systick_calc_diff_ns(t1, t2);
+	idle_nsec += diff_ns;
+	while (idle_nsec > NSEC_PER_SEC) {
+		idle_nsec -= NSEC_PER_SEC;
+		idle_sec++;
+	}
+#endif
 }
 #else
 static inline void sched_idle(void)
@@ -118,6 +233,10 @@ static int sched_run_next(void)
 {
 	unsigned long irq_flags;
 	int next;
+#ifdef CONFIG_SCHED_PROFILE
+	uint32_t t1, t2;
+	uint32_t diff_ns;
+#endif
 
 	enter_critical(irq_flags);
 	if (!READ_ONCE(sched_ready)) {
@@ -132,12 +251,26 @@ static int sched_run_next(void)
 		return -1;
 	current = next;
 
+#ifdef CONFIG_SCHED_PROFILE
+	t1 = systick_get_time_ns();
+#endif
+
 	/*
 	 * Clear the task flag (put it in "Blocked" state) before running task
 	 * function, to avoid race conditions.
 	 */
 	sched_set_blocked(current);
 	task_list[current].func(task_list[current].data);
+
+#ifdef CONFIG_SCHED_PROFILE
+	t2 = systick_get_time_ns();
+	diff_ns = systick_calc_diff_ns(t2, t1);
+	task_list[current].nsec += diff_ns;
+	while (task_list[current].nsec > NSEC_PER_SEC) {
+		task_list[current].nsec -= NSEC_PER_SEC;
+		task_list[current].sec++;
+	}
+#endif
 
 	return current;
 }
@@ -149,7 +282,13 @@ static int sched_run_next(void)
  */
 int sched_init(void)
 {
-	return 0;
+	int res;
+
+	res = sched_profile_init();
+	if (res)
+		return res;
+
+	return res;
 }
 
 /**
@@ -161,8 +300,26 @@ int sched_init(void)
  */
 int sched_start(void)
 {
-	for (;;)
+	for (;;) {
+#ifdef CONFIG_SCHED_PROFILE
+		uint32_t t1, t2;
+		uint32_t diff_ns;
+
+		t1 = systick_get_time_ns();
+#endif
+
 		sched_run_next();
+
+#ifdef CONFIG_SCHED_PROFILE
+		t2 = systick_get_time_ns();
+		diff_ns = systick_calc_diff_ns(t2, t1);
+		profiler_total_nsec += diff_ns;
+		while (profiler_total_nsec > NSEC_PER_SEC) {
+			profiler_total_nsec -= NSEC_PER_SEC;
+			profiler_total_sec++;
+		}
+#endif
+	}
 }
 
 /**

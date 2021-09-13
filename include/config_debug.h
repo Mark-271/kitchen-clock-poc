@@ -28,5 +28,7 @@
 /* ---- "Scheduler" ---- */
 /* Enable CPU sleeping when no tasks are awaiting execution */
 #define CONFIG_SCHED_IDLE
+/* Enable profiler */
+#define CONFIG_SCHED_PROFILE
 
 #endif /* CONFIG_DEBUG_H */

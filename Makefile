@@ -59,6 +59,7 @@ OBJS		+=				\
 		   src/core/reset.o		\
 		   src/core/sched.o		\
 		   src/core/swtimer.o		\
+		   src/core/systick.o		\
 		   src/core/wdt.o		\
 		   src/drivers/buzzer.o		\
 		   src/drivers/ds18b20.o	\
@@ -68,7 +69,6 @@ OBJS		+=				\
 		   src/drivers/melody.o		\
 		   src/drivers/one_wire.o	\
 		   src/drivers/serial.o		\
-		   src/drivers/systick.o	\
 		   src/drivers/wh1602.o		\
 		   src/logic.o			\
 		   src/main.o			\

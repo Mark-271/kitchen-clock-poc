@@ -7,13 +7,13 @@
 #include <core/irq.h>
 #include <core/log.h>
 #include <core/sched.h>
+#include <core/systick.h>
 #include <core/swtimer.h>
 #include <drivers/buzzer.h>
 #include <drivers/ds18b20.h>
 #include <drivers/ds3231.h>
 #include <drivers/kbd.h>
 #include <drivers/melody.h>
-#include <drivers/systick.h>
 #include <drivers/wh1602.h>
 #include <tools/common.h>
 #include <tools/tools.h>

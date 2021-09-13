@@ -1,7 +1,7 @@
 #ifndef TOOLS_COMMON_H
 #define TOOLS_COMMON_H
 
-#include <drivers/systick.h>
+#include <core/systick.h>
 #include <libopencm3/cm3/assert.h>
 
 #define BIT(n)			(1 << (n))

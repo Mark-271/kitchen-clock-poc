@@ -73,10 +73,20 @@ enum logic_event {
 	EVENT_NUM
 };
 
+struct rtc_data {
+	char temper[BUF_LEN];
+	char date[BUF_LEN];
+	char time[BUF_LEN];
+	char ctemper[BUF_LEN];
+	char cdate[BUF_LEN];
+	char ctime[BUF_LEN];
+};
+
 struct logic {
 	enum logic_stage stage; /* current state of FSM */
 	bool ds18b20_presence_flag;
 	bool ds3231_presence_flag;
+	struct rtc_data data;
 	struct buzz buzz;
 	struct ds18b20 ts;
 	struct ds3231 rtc;
@@ -343,32 +353,48 @@ static char *logic_read_temper(void *data)
 	return ds18b20_temp2str(&obj->temp, buf);
 }
 
-static void logic_print2lcd(char *time, char *date, char *temp)
+static void logic_display_data(struct logic *obj)
 {
-	wh1602_clear_display(&logic.wh);
+	wh1602_clear_display(&obj->wh);
 
-	wh1602_set_line(&logic.wh, LINE_1);
-	wh1602_print_str(&logic.wh, time);
+	wh1602_set_line(&obj->wh, LINE_1);
+	wh1602_print_str(&obj->wh, obj->data.time);
 
-	wh1602_set_line(&logic.wh, LINE_2);
-	wh1602_print_str(&logic.wh, date);
+	wh1602_set_line(&obj->wh, LINE_2);
+	wh1602_print_str(&obj->wh, obj->data.date);
 
-	wh1602_set_address(&logic.wh, TEMPER_DISPLAY_ADDR);
-	wh1602_write_char(&logic.wh, 't');
-	wh1602_print_str(&logic.wh, temp);
+	wh1602_set_address(&obj->wh, TEMPER_DISPLAY_ADDR);
+	wh1602_write_char(&obj->wh, 't');
+	wh1602_print_str(&obj->wh, obj->data.temper);
 
-	if (logic.rtc.alarm.status) {
-		wh1602_set_address(&logic.wh, ALARM_SYMBOL_POS);
-		wh1602_write_char(&logic.wh, ALARM_INDICATOR);
+	if (obj->rtc.alarm.status) {
+		wh1602_set_address(&obj->wh, ALARM_SYMBOL_POS);
+		wh1602_write_char(&obj->wh, ALARM_INDICATOR);
 	}
 }
 
+static void logic_display_cdata(struct logic *obj)
+{
+	wh1602_clear_display(&obj->wh);
+
+	wh1602_set_line(&obj->wh, LINE_1);
+	wh1602_print_str(&obj->wh, obj->data.ctime);
+
+	wh1602_set_line(&obj->wh, LINE_2);
+	wh1602_print_str(&obj->wh, obj->data.cdate);
+
+	wh1602_set_address(&obj->wh, TEMPER_DISPLAY_ADDR);
+	wh1602_write_char(&obj->wh, 't');
+	wh1602_print_str(&obj->wh, obj->data.ctemper);
+
+	if (obj->rtc.alarm.status) {
+		wh1602_set_address(&obj->wh, ALARM_SYMBOL_POS);
+		wh1602_write_char(&obj->wh, ALARM_INDICATOR);
+	}
+}
 /* Callback to register inside swtimer */
 static void logic_show_main_screen(void *data)
 {
-	char temper[BUF_LEN];
-	char date[BUF_LEN];
-	char time[BUF_LEN];
 	int err;
 	struct tm *t;
 
@@ -382,26 +408,33 @@ static void logic_show_main_screen(void *data)
 		}
 
 		t = (struct tm *)(&logic.tm);
-		date2str(t, date);
-		time2str(t, time);
+		date2str(t, logic.data.date);
+		time2str(t, logic.data.time);
 	} else {
-		strcpy(date, "00 000 0000");
-		strcpy(time, "00:00");
+		strcpy(logic.data.date, "00 000 0000");
+		strcpy(logic.data.time, "00:00");
 	}
 
 	if (logic.ds18b20_presence_flag)
-		strcpy(temper, logic_read_temper(&logic.ts));
+		strcpy(logic.data.temper, logic_read_temper(&logic.ts));
 	else
-		strcpy(temper, "xx");
+		strcpy(logic.data.temper, "xx");
 
-	if (logic.stage == STAGE_MAIN_SCREEN)
-		logic_print2lcd(time, date, temper);
+	if (strcmp(logic.data.time, logic.data.ctime)) {
+		strcpy(logic.data.ctime, logic.data.time);
+		strcpy(logic.data.cdate, logic.data.date);
+		strcpy(logic.data.ctemper, logic.data.temper);
+		if (logic.stage == STAGE_MAIN_SCREEN) {
+			logic_display_data(&logic);
+		}
+	}
 }
 
 static void logic_handle_stage_main_screen(void)
 {
 	wh1602_control_display(&logic.wh, LCD_ON, CURSOR_OFF, CURSOR_BLINK_OFF);
 	swtimer_tim_start(logic.swtim.id);
+	logic_display_cdata(&logic);
 }
 
 static void logic_handle_stage_main_menu(void)

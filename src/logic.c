@@ -392,6 +392,7 @@ static void logic_display_cdata(struct logic *obj)
 		wh1602_write_char(&obj->wh, ALARM_INDICATOR);
 	}
 }
+
 /* Callback to register inside swtimer */
 static void logic_show_main_screen(void *data)
 {
@@ -420,21 +421,20 @@ static void logic_show_main_screen(void *data)
 	else
 		strcpy(logic.data.temper, "xx");
 
-	if (strcmp(logic.data.time, logic.data.ctime)) {
+	if (strcmp(logic.data.temper, logic.data.ctemper) ||
+	    strcmp(logic.data.time, logic.data.ctime)) {
+		logic_display_data(&logic);
 		strcpy(logic.data.ctime, logic.data.time);
 		strcpy(logic.data.cdate, logic.data.date);
 		strcpy(logic.data.ctemper, logic.data.temper);
-		if (logic.stage == STAGE_MAIN_SCREEN) {
-			logic_display_data(&logic);
-		}
 	}
 }
 
 static void logic_handle_stage_main_screen(void)
 {
 	wh1602_control_display(&logic.wh, LCD_ON, CURSOR_OFF, CURSOR_BLINK_OFF);
-	swtimer_tim_start(logic.swtim.id);
 	logic_display_cdata(&logic);
+	swtimer_tim_start(logic.swtim.id);
 }
 
 static void logic_handle_stage_main_menu(void)

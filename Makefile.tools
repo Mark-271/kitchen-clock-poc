@@ -27,4 +27,8 @@ doxy:
 doxy_clean:
 	$(Q)$(RM) -rf doc/doxy
 
-.PHONY: stylecheck styleclean doxy doxy_clean
+check_float: elf
+	@printf " CHECK_FLOAT\n"
+	$(Q)$(SCRIPT_DIR)/check-float.sh
+
+.PHONY: stylecheck styleclean doxy doxy_clean check_float

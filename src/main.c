@@ -4,6 +4,7 @@
 #include <core/reset.h>
 #include <core/sched.h>
 #include <core/swtimer.h>
+#include <core/systick.h>
 #include <core/wdt.h>
 #include <drivers/serial.h>
 #include <logic.h>
@@ -44,6 +45,12 @@ static void init_core(void)
 	err = wdt_init();
 	if (err) {
 		pr_err("Can't initialize watchdog timer: %d\n", err);
+		hang();
+	}
+
+	err = systick_init();
+	if (err) {
+		pr_err("Error: Can't initialize systick: %d\n", err);
 		hang();
 	}
 

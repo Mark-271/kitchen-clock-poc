@@ -7,7 +7,6 @@
 #include <core/irq.h>
 #include <core/log.h>
 #include <core/sched.h>
-#include <core/systick.h>
 #include <core/swtimer.h>
 #include <drivers/buzzer.h>
 #include <drivers/ds18b20.h>
@@ -308,12 +307,6 @@ static void logic_init_drivers(void)
 		.i2c_base = DS3231_I2C_BASE,
 		.addr = DS3231_DEVICE_ADDR,
 	};
-
-	err = systick_init();
-	if (err) {
-		pr_emerg("Error: Can't initialize systick: %d\n", err);
-		hang();
-	}
 
 	err = kbd_init(&logic.kbd, &kbd_gpio, logic_handle_btn);
 	if (err) {

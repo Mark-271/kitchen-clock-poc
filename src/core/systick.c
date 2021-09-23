@@ -4,13 +4,14 @@
 #include <libopencm3/cm3/systick.h>
 #include <libopencm3/stm32/rcc.h>
 
-#define SYSTICK_FREQ		1e3 /* overflows per second */
-#define SYSTICK_RELOAD_VAL	(rcc_ahb_frequency / SYSTICK_FREQ)
-#define AHB_TICKS_PER_USEC	(rcc_ahb_frequency / 1e6)
-#define USEC_PER_MSEC		1e3
-#define NSEC_PER_USEC		1e3
-#define NSEC_PER_MSEC		1e6
-
+#define SYSTICK_FREQ		1000 /* overflows per second */
+#define AHB_FREQUENCY		24000000UL
+#define SYSTICK_RELOAD_VAL	(AHB_FREQUENCY / SYSTICK_FREQ)
+#define AHB_TICKS_PER_USEC	(AHB_FREQUENCY / 1000000)
+#define USEC_PER_MSEC		1000
+#define NSEC_PER_USEC		1000
+#define NSEC_PER_MSEC		1000000
+#define MSEC_PER_SEC		1000
 
 static uint32_t ticks;
 
@@ -27,6 +28,50 @@ static uint32_t ticks;
 void sys_tick_handler(void)
 {
 	WRITE_ONCE(ticks, ticks + 1);
+}
+
+void systick_get_time(struct systick_time *t)
+{
+	uint32_t ms;
+	uint32_t ns;
+	unsigned long flags;
+
+	t->sec = 0;
+	t->nsec = 0;
+
+	enter_critical(flags);
+	ms = ticks;
+	t->nsec = (SYSTICK_RELOAD_VAL - systick_get_value()) /
+		   AHB_TICKS_PER_USEC * NSEC_PER_USEC;
+	exit_critical(flags);
+
+	while (ms > MSEC_PER_SEC) {
+		ms -= MSEC_PER_SEC;
+		t->sec++;
+	}
+
+	ns = ms * NSEC_PER_MSEC;
+	t->nsec += ns;
+
+	while (t->nsec > NSEC_PER_SEC) {
+		t->nsec -= NSEC_PER_SEC;
+		t->sec++;
+	}
+}
+
+uint64_t systick_calc_diff(const struct systick_time *t1,
+			   const struct systick_time *t2)
+{
+	uint64_t ts1;
+	uint64_t ts2;
+
+	ts1 = t1->sec * NSEC_PER_SEC + t1->nsec;
+	ts2 = t2->sec * NSEC_PER_SEC + t2->nsec;
+
+	if (ts1 > ts2)
+		ts2 += UINT64_MAX;
+
+	return ts2 - ts1;
 }
 
 /*
@@ -83,7 +128,7 @@ uint32_t systick_calc_diff_ms(uint32_t t1, uint32_t t2)
  */
 int systick_init(void)
 {
-	if (!systick_set_frequency(SYSTICK_FREQ, rcc_ahb_frequency))
+	if (!systick_set_frequency(SYSTICK_FREQ, AHB_FREQUENCY))
 		return -1;
 
 	systick_clear();

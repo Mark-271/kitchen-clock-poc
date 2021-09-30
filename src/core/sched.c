@@ -20,9 +20,9 @@ static struct task task_list[TASK_NR];
 static int current;			/* current pos in task_list[] */
 
 #ifdef CONFIG_SCHED_PROFILE
-# define SCHED_PROFILER_PERIOD		5000	/* msec */
+#define SCHED_PROFILER_PERIOD		5000	/* msec */
 /* 0 - collect statistics for the whole boot; 1 - for SCHED_PROFILER_PERIOD */
-# define SCHED_PROFILER_ITERATIVE	0
+#define SCHED_PROFILER_ITERATIVE	0
 /* Total execution time, including scheduler routines (sec + nsec) */
 static uint32_t profiler_total_nsec;
 static uint32_t profiler_total_sec;

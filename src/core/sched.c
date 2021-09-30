@@ -191,10 +191,10 @@ static int sched_find_next(void)
 static __always_inline void sched_idle(void)
 {
 #ifdef CONFIG_SCHED_PROFILE
-	uint32_t t1, t2;
-	uint32_t diff_ns;
+	struct systick_time t1, t2;
+	uint64_t diff_ns;
 
-	t1 = systick_get_time_ns();
+	systick_get_time(&t1);
 #endif
 	/*
 	 * DSB: follow AN321 guidelines for WFI
@@ -209,9 +209,9 @@ static __always_inline void sched_idle(void)
 	__asm__("isb");
 
 #ifdef CONFIG_SCHED_PROFILE
-	t2 = systick_get_time_ns();
-	diff_ns = systick_calc_diff_ns(t1, t2);
-	idle_nsec += diff_ns;
+	systick_get_time(&t2);
+	diff_ns = systick_calc_diff(&t2, &t2);
+	idle_nsec += (uint32_t)diff_ns; /* XXX: Check integer promotion */
 	while (idle_nsec > NSEC_PER_SEC) {
 		idle_nsec -= NSEC_PER_SEC;
 		idle_sec++;
@@ -234,8 +234,8 @@ static int sched_run_next(void)
 	unsigned long irq_flags;
 	int next;
 #ifdef CONFIG_SCHED_PROFILE
-	uint32_t t1, t2;
-	uint32_t diff_ns;
+	struct systick_time t1, t2;
+	uint64_t diff_ns;
 #endif
 
 	enter_critical(irq_flags);
@@ -252,7 +252,7 @@ static int sched_run_next(void)
 	current = next;
 
 #ifdef CONFIG_SCHED_PROFILE
-	t1 = systick_get_time_ns();
+	systick_get_time(&t1);
 #endif
 
 	/*
@@ -263,8 +263,8 @@ static int sched_run_next(void)
 	task_list[current].func(task_list[current].data);
 
 #ifdef CONFIG_SCHED_PROFILE
-	t2 = systick_get_time_ns();
-	diff_ns = systick_calc_diff_ns(t2, t1);
+	systick_get_time(&t2);
+	diff_ns = systick_calc_diff(&t1, &t2);
 	task_list[current].nsec += diff_ns;
 	while (task_list[current].nsec > NSEC_PER_SEC) {
 		task_list[current].nsec -= NSEC_PER_SEC;
@@ -302,17 +302,17 @@ int sched_start(void)
 {
 	for (;;) {
 #ifdef CONFIG_SCHED_PROFILE
-		uint32_t t1, t2;
-		uint32_t diff_ns;
+		struct systick_time t1, t2;
+		uint64_t diff_ns;
 
-		t1 = systick_get_time_ns();
+		systick_get_time(&t1);
 #endif
 
 		sched_run_next();
 
 #ifdef CONFIG_SCHED_PROFILE
-		t2 = systick_get_time_ns();
-		diff_ns = systick_calc_diff_ns(t2, t1);
+		systick_get_time(&t2);
+		diff_ns = systick_calc_diff(&t1, &t2);
 		profiler_total_nsec += diff_ns;
 		while (profiler_total_nsec > NSEC_PER_SEC) {
 			profiler_total_nsec -= NSEC_PER_SEC;

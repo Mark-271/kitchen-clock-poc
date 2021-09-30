@@ -75,14 +75,15 @@ do {									\
  */
 #define wait_event_timeout(cond, timeout)				\
 ({									\
-	uint32_t _t1;							\
+	struct systick_time _t1, _t2;					\
 	int _ret = 0;							\
 									\
-	_t1 = systick_get_time_ms();					\
+	systick_get_time(&_t1);						\
 									\
 	while (!(cond)) {						\
-		uint32_t _t2 = systick_get_time_ms();			\
-		uint32_t _elapsed = systick_calc_diff_ms(_t1, _t2);	\
+		systick_get_time(&_t2);					\
+		uint64_t _elapsed = systick_calc_diff(&_t1, &_t2);	\
+		_elapsed /= 1000000;					\
 									\
 		if (_elapsed > (timeout)) {				\
 			_ret = -1;					\

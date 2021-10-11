@@ -64,7 +64,7 @@ static bool ds3231_regs2time(struct ds3231 *obj, const struct ds3231_regs *regs,
 	tm->tm_min	= bcd2dec(regs->mm);
 	tm->tm_hour	= bcd2dec(regs->hh);
 	tm->tm_mday	= bcd2dec(regs->date);
-	tm->tm_mon	= bcd2dec(regs->month - 1);
+	tm->tm_mon	= bcd2dec(regs->month) - 1;
 	tm->tm_year	= tm_year;
 	tm->tm_wday	= regs->day - 1;
 	tm->tm_yday	= get_yday(tm->tm_mon, tm->tm_mday, tm->tm_year) - 1;

@@ -62,8 +62,8 @@ void melody_play(struct buzz *obj)
 	unsigned long flags;
 
 	for (i = 0; i < size; i++) {
-		duration = 1000  / tempo[i];
-		note_pause = duration * 1.30;
+		duration = 1000 / tempo[i];
+		note_pause = duration + duration / 3;
 		buzz_tune(obj, theme[i], duration);
 		enter_critical(flags);
 		mdelay(note_pause);

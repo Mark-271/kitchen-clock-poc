@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define NSEC_PER_SEC		1e9
+#define NSEC_PER_SEC		1000000000
 
 struct systick_time {
 	uint32_t sec;

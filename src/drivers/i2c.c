@@ -85,7 +85,7 @@ static void i2c_setup(uint32_t base)
 	/* Disable the I2C before changing any configuration */
 	i2c_peripheral_disable(base);
 	/* Configure I2C for 400 kHz */
-	i2c_set_speed(base, i2c_speed_fm_400k, rcc_apb1_frequency / 1e6);
+	i2c_set_speed(base, i2c_speed_fm_400k, rcc_apb1_frequency / 1000000);
 	/* Everything is configured, enable the peripheral */
 	i2c_peripheral_enable(base);
 }

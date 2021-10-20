@@ -34,7 +34,7 @@ static struct swtimer_sw_tim swtim;
 
 #ifdef CONFIG_SCHED_PROFILE
 
-static __always_inline void sched_profile_print(const char *task, int perc)
+static inline __attribute__((always_inline)) void sched_profile_print(const char *task, int perc)
 {
 	printk("%s : %d%%\n", task, perc);
 }
@@ -188,7 +188,7 @@ static int sched_find_next(void)
  * disabled. If there is some pending interrupt when calling WFI, it won't go to
  * sleep, performing NOP instead.
  */
-static __always_inline void sched_idle(void)
+static inline __attribute__((always_inline)) void sched_idle(void)
 {
 #ifdef CONFIG_SCHED_PROFILE
 	struct systick_time t1, t2;
@@ -203,10 +203,10 @@ static __always_inline void sched_idle(void)
 	 * WFI: CPU sleep; improves power management
 	 * ISB: just mimic what FreeRTOS does
 	 */
-	__asm__("dsb");
-	__asm__("isb");
-	__asm__("wfi");
-	__asm__("isb");
+	__asm__ ("dsb");
+	__asm__ ("isb");
+	__asm__ ("wfi");
+	__asm__ ("isb");
 
 #ifdef CONFIG_SCHED_PROFILE
 	systick_get_time(&t2);

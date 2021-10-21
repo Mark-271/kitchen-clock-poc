@@ -33,7 +33,8 @@ void sys_tick_handler(void)
 void systick_get_time(struct systick_time *t)
 {
 	uint32_t ms;
-	uint32_t ns;
+	uint32_t us;
+	uint64_t ns;
 	unsigned long flags;
 
 	t->sec = 0;
@@ -41,22 +42,18 @@ void systick_get_time(struct systick_time *t)
 
 	enter_critical(flags);
 	ms = ticks;
-	t->nsec = (SYSTICK_RELOAD_VAL - systick_get_value()) /
-		   AHB_TICKS_PER_USEC * NSEC_PER_USEC;
+	us = (SYSTICK_RELOAD_VAL - systick_get_value()) / AHB_TICKS_PER_USEC;
 	exit_critical(flags);
 
-	while (ms > MSEC_PER_SEC) {
-		ms -= MSEC_PER_SEC;
+	ns = (uint64_t)us * NSEC_PER_USEC;
+	ns += (uint64_t)ms * NSEC_PER_MSEC;
+
+	while (ns > NSEC_PER_SEC) {
+		ns -= NSEC_PER_SEC;
 		t->sec++;
 	}
 
-	ns = ms * NSEC_PER_MSEC;
-	t->nsec += ns;
-
-	while (t->nsec > NSEC_PER_SEC) {
-		t->nsec -= NSEC_PER_SEC;
-		t->sec++;
-	}
+	t->nsec = (uint32_t)ns;
 }
 
 uint64_t systick_calc_diff(const struct systick_time *t1,
@@ -65,8 +62,8 @@ uint64_t systick_calc_diff(const struct systick_time *t1,
 	uint64_t ts1;
 	uint64_t ts2;
 
-	ts1 = t1->sec * NSEC_PER_SEC + t1->nsec;
-	ts2 = t2->sec * NSEC_PER_SEC + t2->nsec;
+	ts1 = (uint64_t)t1->sec * NSEC_PER_SEC + t1->nsec;
+	ts2 = (uint64_t)t2->sec * NSEC_PER_SEC + t2->nsec;
 
 	if (ts1 > ts2)
 		ts2 += UINT64_MAX;

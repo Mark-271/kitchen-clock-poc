@@ -32,6 +32,7 @@
 #define DS3231_INTCN		BIT(2)	/* Interrupt control bit */
 #define DS3231_A1IE		BIT(0)	/* Alarm 1 interrupt enable bit */
 #define DS3231_A1F		BIT(0)	/* Alarm 1 flag */
+#define DS3231_A1M		BIT(7)	/* Alarm 1 mask bit */
 
 /* ------------------------------------------------------------------------- */
 
@@ -301,7 +302,7 @@ int ds3231_set_alarm(struct ds3231 *obj)
 	buf[0] = obj->regs.ss;
 	buf[1] = obj->regs.mm;
 	buf[2] = obj->regs.hh;
-	buf[3] = DS3231_ALARM_MASK;
+	buf[3] = obj->regs.date | DS3231_A1M;
 
 	err = i2c_write_buf_poll(obj->device.addr, DS3231_ALARM1,
 				 buf, ALARM1_BUF_LEN);

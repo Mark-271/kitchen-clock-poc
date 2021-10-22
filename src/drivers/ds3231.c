@@ -13,7 +13,7 @@
 #include <time.h>
 
 /* DS3231 registers */
-#define DS3231_CR		0x0e	/* DS3231 Config register */
+#define DS3231_CR		0x0e	/* DS3231 Control register */
 #define DS3231_SR		0x0f	/* DS3231 Status register */
 #define DS3231_SECONDS		0x00	/* DS3231 Register of seconds */
 #define DS3231_DAY		0x03	/* DS3231Day offset register */
@@ -29,6 +29,8 @@
 #define MIN_REGS_YEAR		0
 #define MAX_REGS_YEAR		99
 #define TM_MDAYS		30
+#define DS3231_INTCN		BIT(2)	/* Interrupt control bit */
+#define DS3231_A1IE		BIT(0)	/* Alarm 1 interrupt enable bit */
 
 /* ------------------------------------------------------------------------- */
 
@@ -188,6 +190,44 @@ int ds3231_set_time(struct ds3231 *obj, struct rtc_time *tm)
 				 DS3231_BUF_LEN);
 	if (ret != 0)
 		return ret;
+
+	return 0;
+}
+
+/**
+ * Turn on/off DS3231 Alarm 1.
+ *
+ * Interrupt control bit of DS3231 control register should be asserted.
+ *
+ * @param ob DS3231 device object
+ * @param alarm_enabled Flag showing whether to enable or stop the alarm
+ *
+ * @return 0 on success or megative value on error
+ */
+int ds3231_toggle_alarm(struct ds3231 *obj, bool alarm_enabled)
+{
+	int ret;
+	uint8_t buf;
+
+	ret = i2c_read_buf_poll(obj->device.addr, DS3231_CR, &buf, 1);
+	if (ret != 0)
+		return ret;
+
+	cm3_assert(buf & DS3231_INTCN); /* XXX */
+
+	if (alarm_enabled) {
+		obj->alarm.status = true;
+		buf |= DS3231_A1IE;
+	} else {
+		obj->alarm.status = false;
+		buf &= ~DS3231_A1IE;
+	}
+
+	ret = i2c_write_buf_poll(obj->device.addr, DS3231_CR, &buf, 1);
+	if (ret != 0) {
+		obj->alarm.status = false;
+		return ret;
+	}
 
 	return 0;
 }

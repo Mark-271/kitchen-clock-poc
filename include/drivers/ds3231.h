@@ -67,5 +67,6 @@ int ds3231_set_alarm(struct ds3231 *obj);
 int ds3231_read_alarm(struct ds3231 *obj);
 int ds3231_enable_alarm(struct ds3231 *obj);
 int ds3231_disable_alarm(struct ds3231 *obj);
+int ds3231_toggle_alarm(struct ds3231 *obj, bool alarm_enabled);
 
 #endif /* DRIVERS_DS3231_H */

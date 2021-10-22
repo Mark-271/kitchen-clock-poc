@@ -87,6 +87,7 @@ static irqreturn_t ds3231_exti_isr(int irq, void *data)
 
 	UNUSED(irq);
 
+	exti_disable_request(obj->device.pin);
 	nvic_disable_irq(obj->device.irq);
 	sched_set_ready(obj->alarm.task_id);
 
@@ -107,6 +108,7 @@ static void ds3231_task(void *data)
 	}
 
 	nvic_enable_irq(obj->device.irq);
+	exti_enable_request(obj->device.pin);
 	obj->alarm.cb();
 }
 

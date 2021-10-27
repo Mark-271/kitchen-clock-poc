@@ -36,40 +36,25 @@ typedef void (*logic_handle_stage_func_t)(void);
 
 /* Keep 0 as undefined state */
 enum logic_stage {
-	STAGE_UNDEFINED,
+	STAGE_UNDEFINED = 0,
 	STAGE_INIT,
 	STAGE_MAIN_SCREEN,
 	STAGE_MAIN_MENU,
-	STAGE_TIME_SET_HH,
-	STAGE_TIME_INCR_HH,
-	STAGE_TIME_SET_MM,
-	STAGE_TIME_INCR_MM,
-	STAGE_DATE_SET_WDAY,
-	STAGE_DATE_INCR_WDAY,
-	STAGE_DATE_SET_MONTH,
-	STAGE_DATE_INCR_MONTH,
-	STAGE_DATE_SET_MDAY,
-	STAGE_DATE_INCR_MDAY,
-	STAGE_DATE_SET_YY,
-	STAGE_DATE_INCR_YY,
-	STAGE_DATE_DECR_YY,
 	STAGE_ALARM,
-	STAGE_ALARM_TOGGLE,
-	STAGE_ALARM_INCR_HH,
-	STAGE_ALARM_INCR_MM,
-	STAGE_ALARM_SOUND,
-	/* --- */
-	STAGE_NUM
+	STAGE_ADJUSTMENT,
+	STAGE_SET_HH,
+	STAGE_SET_MM,
+	STAGE_SET_WDAY,
+	STAGE_SET_MON,
+	STAGE_SET_MDAY,
+	STAGE_SET_YEAR,
 };
 
 enum logic_event {
-	EVENT_START,
 	EVENT_LEFT,	/* left button */
 	EVENT_RIGHT,	/* right button */
 	EVENT_UP,	/* up button */
 	EVENT_DOWN,	/* down button */
-	/* --- */
-	EVENT_NUM
 };
 
 struct rtc_data {
@@ -95,7 +80,6 @@ struct logic {
 	struct wh1602 wh;
 };
 
-static void logic_handle_event(enum logic_event event);
 static void logic_handle_btn(int btn, bool pressed);
 static void logic_alarm_cb(void);
 
@@ -113,166 +97,6 @@ static const char * const menu_msg[MENU_NUM] = {
 
 
 static struct logic logic;
-
-/**
- * Transition lookup table for Moore FSM
- */
-static const enum logic_stage logic_transitions[STAGE_NUM][EVENT_NUM] = {
-	{ /* STAGE_UNDEFINED */
-		STAGE_INIT,		/* EVENT_START */
-		0,			/* EVENT_LEFT */
-		0,			/* EVENT_RIGHT */
-		0,			/* EVENT_UP */
-		0,			/* EVENT_DOWN */
-	},
-	{ /* STAGE_INIT */
-		STAGE_MAIN_SCREEN,	/* EVENT_START */
-		0,			/* EVENT_LEFT */
-		0,			/* EVENT_RIGHT */
-		0,			/* EVENT_UP */
-		0,			/* EVENT_DOWN */
-	},
-	{ /* STAGE_MAIN_SCREEN */
-		0,			/* EVENT_START */
-		STAGE_MAIN_MENU,	/* EVENT_LEFT */
-		STAGE_MAIN_MENU,	/* EVENT_RIGHT */
-		STAGE_MAIN_MENU,	/* EVENT_UP */
-		STAGE_MAIN_MENU,	/* EVENT_DOWN */
-	},
-	{ /* STAGE_MAIN_MENU */
-		0,			/* EVENT_START */
-		STAGE_MAIN_SCREEN,	/* EVENT_LEFT */
-		0,			/* EVENT_RIGHT */
-		STAGE_ALARM,		/* EVENT_UP */
-		STAGE_TIME_SET_HH,	/* EVENT_DOWN */
-	},
-	{ /* STAGE_TIME_SET_HH */
-		0,			/* EVENT_START */
-		STAGE_MAIN_SCREEN,	/* EVENT_LEFT */
-		STAGE_TIME_SET_MM,	/* EVENT_RIGHT */
-		STAGE_TIME_INCR_HH,	/* EVENT_UP */
-		0,			/* EVENT_DOWN */
-	},
-	{ /* STAGE_TIME_INCR_HH */
-		STAGE_TIME_SET_HH,	/* EVENT_START */
-		0,			/* EVENT_LEFT */
-		0,			/* EVENT_RIGHT */
-		0,			/* EVENT_UP */
-		0,			/* EVENT_DOWN */
-	},
-	{ /* STAGE_TIME_SET_MM */
-		0,			/* EVENT_START */
-		STAGE_MAIN_SCREEN,	/* EVENT_LEFT */
-		STAGE_DATE_SET_WDAY,	/* EVENT_RIGHT */
-		STAGE_TIME_INCR_MM,	/* EVENT_UP */
-		0,			/* EVENT_DOWN */
-	},
-	{ /* STAGE_TIME_INCR_MM */
-		STAGE_TIME_SET_MM,	/* EVENT_START */
-		0,			/* EVENT_LEFT */
-		0,			/* EVENT_RIGHT */
-		0,			/* EVENT_UP */
-		0,			/* EVENT_DOWN */
-	},
-	{ /* STAGE_DATE_SET_WDAY */
-		0,			/* EVENT_START */
-		STAGE_MAIN_SCREEN,	/* EVENT_LEFT */
-		STAGE_DATE_SET_MONTH,	/* EVENT_RIGHT */
-		STAGE_DATE_INCR_WDAY,	/* EVENT_UP */
-		0,			/* EVENT_DOWN */
-	},
-	{ /* STAGE_DATE_INCR_WDAY */
-		STAGE_DATE_SET_WDAY,	/* EVENT_START */
-		0,			/* EVENT_LEFT */
-		0,			/* EVENT_RIGHT */
-		0,			/* EVENT_UP */
-		0,			/* EVENT_DOWN */
-	},
-	{ /* STAGE_DATE_SET_MONTH */
-		0,			/* EVENT_START */
-		STAGE_MAIN_SCREEN,	/* EVENT_LEFT */
-		STAGE_DATE_SET_MDAY,	/* EVENT_RIGHT */
-		STAGE_DATE_INCR_MONTH,	/* EVENT_UP */
-		0,			/* EVENT_DOWN */
-	},
-	{ /* STAGE_DATE_INCR_MONTH */
-		STAGE_DATE_SET_MONTH,	/* EVENT_START */
-		0,			/* EVENT_LEFT */
-		0,			/* EVENT_RIGHT */
-		0,			/* EVENT_UP */
-		0,			/* EVENT_DOWN */
-	},
-	{ /* STAGE_DATE_SET_MDAY */
-		0,			/* EVENT_START */
-		STAGE_MAIN_SCREEN,	/* EVENT_LEFT */
-		STAGE_DATE_SET_YY,	/* EVENT_RIGHT */
-		STAGE_DATE_INCR_MDAY,	/* EVENT_UP */
-		0,			/* EVENT_DOWN */
-	},
-	{ /* STAGE_DATE_INCR_MDAY */
-		STAGE_DATE_SET_MDAY,	/* EVENT_START */
-		0,			/* EVENT_LEFT */
-		0,			/* EVENT_RIGHT */
-		0,			/* EVENT_UP */
-		0,			/* EVENT_DOWN */
-	},
-	{ /* STAGE_DATE_SET_YY */
-		0,			/* EVENT_START */
-		STAGE_MAIN_SCREEN,	/* EVENT_LEFT */
-		STAGE_TIME_SET_HH,	/* EVENT_RIGHT */
-		STAGE_DATE_INCR_YY,	/* EVENT_UP */
-		STAGE_DATE_DECR_YY,	/* EVENT_DOWN */
-	},
-	{ /* STAGE_DATE_INCR_YY */
-		STAGE_DATE_SET_YY,	/* EVENT_START */
-		0,			/* EVENT_LEFT */
-		0,			/* EVENT_RIGHT */
-		0,			/* EVENT_UP */
-		0,			/* EVENT_DOWN */
-	},
-	{ /* STAGE_DATE_DECR_YY */
-		STAGE_DATE_SET_YY,	/* EVENT_START */
-		0,			/* EVENT_LEFT */
-		0,			/* EVENT_RIGHT */
-		0,			/* EVENT_UP */
-		0,			/* EVENT_DOWN */
-	},
-	{ /* STAGE_ALARM */
-		0,			/* EVENT_START */
-		STAGE_MAIN_SCREEN,	/* EVENT_LEFT */
-		STAGE_ALARM_TOGGLE,	/* EVENT_RIGHT */
-		STAGE_ALARM_INCR_HH,	/* EVENT_UP */
-		STAGE_ALARM_INCR_MM,	/* EVENT_DOWN */
-	},
-	{ /* STAGE_ALARM_TOGGLE */
-		STAGE_ALARM,		/* EVENT_START */
-		0,			/* EVENT_LEFT */
-		0,			/* EVENT_RIGHT */
-		0,			/* EVENT_UP */
-		0,			/* EVENT_DOWN */
-	},
-	{ /* STAGE_ALARM_INCR_HH */
-		STAGE_ALARM,		/* EVENT_START */
-		0,			/* EVENT_LEFT */
-		0,			/* EVENT_RIGHT */
-		0,			/* EVENT_UP */
-		0,			/* EVENT_DOWN */
-	},
-	{ /* STAGE_ALARM_INCR_MM */
-		STAGE_ALARM,		/* EVENT_START */
-		0,			/* EVENT_LEFT */
-		0,			/* EVENT_RIGHT */
-		0,			/* EVENT_UP */
-		0,			/* EVENT_DOWN */
-	},
-	{ /* STAGE_ALARM_PLAY_SOUND */
-		0,			/* EVENT_START */
-		STAGE_MAIN_SCREEN,	/* EVENT_LEFT */
-		STAGE_MAIN_SCREEN,	/* EVENT_RIGHT */
-		STAGE_MAIN_SCREEN,	/* EVENT_UP */
-		STAGE_MAIN_SCREEN,	/* EVENT_DOWN */
-	},
-};
 
 /* Initialize peripheral drivers */
 static void logic_init_drivers(void)
@@ -406,7 +230,7 @@ static void logic_show_main_screen(void *data)
 		time2str(t, logic.data.time);
 	} else {
 		strcpy(logic.data.date, "00 000 0000");
-		strcpy(logic.data.time, "00:00");
+		strcpy(logic.data.time, "00 00");
 	}
 
 	if (logic.ds18b20_presence_flag)
@@ -426,8 +250,13 @@ static void logic_show_main_screen(void *data)
 static void logic_handle_stage_main_screen(void)
 {
 	wh1602_control_display(&logic.wh, LCD_ON, CURSOR_OFF, CURSOR_BLINK_OFF);
-	logic_display_cdata(&logic);
 	swtimer_tim_start(logic.swtim.id);
+
+	if (strcmp(logic.data.temper, logic.data.ctemper) ||
+	    strcmp(logic.data.time, logic.data.ctime))
+		logic_display_data(&logic);
+	else
+		logic_display_cdata(&logic);
 }
 
 static void logic_handle_stage_main_menu(void)
@@ -477,7 +306,6 @@ static void logic_handle_stage_init(void)
 
 static void logic_handle_stage_alarm(void)
 {
-	int err;
 	char alarm_time[BUF_LEN];
 	char *flag;
 	struct tm *t;
@@ -486,12 +314,6 @@ static void logic_handle_stage_alarm(void)
 	if (!logic.ds3231_presence_flag) {
 		logic.stage = STAGE_MAIN_MENU;
 		return;
-	}
-
-	err = ds3231_read_alarm(&logic.rtc);
-	if (err) {
-		pr_emerg("Error: unable to get alarm data %d\n", err);
-		hang();
 	}
 
 	t = (struct tm *)(&logic.rtc.alarm.time);
@@ -506,61 +328,65 @@ static void logic_handle_stage_alarm(void)
 	wh1602_print_str(&logic.wh, flag);
 }
 
-static void logic_handle_stage_alarm_toggle(void)
+static void logic_config_alarm(void)
 {
 	int err;
+	bool enabled = logic.rtc.alarm.status;
 
-	if (logic.rtc.alarm.status == false)
-		err = ds3231_enable_alarm(&logic.rtc);
-	else
-		err = ds3231_disable_alarm(&logic.rtc);
-
-	if (err) {
-		pr_emerg("Error: can't control alarm: %d\n", err);
-		hang();
+	if (enabled == false) {
+		err = ds3231_set_alarm(&logic.rtc);
+		if (err)
+			goto error;
 	}
 
-	logic_handle_event(EVENT_START);
+	err = ds3231_toggle_alarm(&logic.rtc, !enabled);
+	if (err)
+		goto error;
+
+	return;
+
+error:
+	pr_emerg("Error: Can't control alarm: %d\n", err);
+	hang();
 }
 
-static void logic_handle_stage_alarm_incr_hh(void)
+static void logic_incr_alarm_hh(void)
 {
-	int err;
+	struct rtc_time *t = &logic.rtc.alarm.time;
 
-	logic.rtc.alarm.time.tm_hour = (logic.rtc.alarm.time.tm_hour + 1) % 24;
-	logic.rtc.alarm.time.tm_sec = 0;
-
-	err = ds3231_set_alarm(&logic.rtc);
-	if (err) {
-		pr_emerg("Error: unable to set alarm: %d\n", err);
-		hang();
-	}
-
-	logic_handle_event(EVENT_START);
+	t->tm_hour = (t->tm_hour + 1) % 24;
+	t->tm_sec = 0;
 }
 
-static void logic_handle_stage_alarm_incr_mm(void)
+static void logic_incr_alarm_mm(void)
 {
-	int err;
+	struct rtc_time *t = &logic.rtc.alarm.time;
 
-	logic.rtc.alarm.time.tm_min = (logic.rtc.alarm.time.tm_min + 1) % 60;
-	logic.rtc.alarm.time.tm_sec = 0;
-
-	err = ds3231_set_alarm(&logic.rtc);
-
-	if (err) {
-		pr_emerg("Error: unable to set alarm: %d\n", err);
-		hang();
-	}
-
-	logic_handle_event(EVENT_START);
+	t->tm_min = (t->tm_min + 1) % 60;
+	t->tm_sec = 0;
 }
 
-static void logic_handle_stage_time_set_hh(void)
+static void logic_show_adjustment_screen(void)
 {
 	struct tm *t;
-	int err;
 	char time[BUF_LEN];
+	char date[BUF_LEN];
+
+	t = (struct tm *)(&logic.tm);
+
+	time2str(t, time);
+	date2str(t, date);
+
+	wh1602_clear_display(&logic.wh);
+	wh1602_set_line(&logic.wh, LINE_1);
+	wh1602_print_str(&logic.wh, time);
+	wh1602_set_line(&logic.wh, LINE_2);
+	wh1602_print_str(&logic.wh, date);
+}
+
+static void logic_handle_stage_adjustment(void)
+{
+	int err;
 
 	if (!logic.ds3231_presence_flag) {
 		logic.stage = STAGE_MAIN_MENU;
@@ -569,279 +395,237 @@ static void logic_handle_stage_time_set_hh(void)
 
 	err = ds3231_read_time(&logic.rtc, &logic.tm);
 	if (err) {
-		pr_emerg("Error: Can't read time data\n");
+		pr_emerg("Error: Can't read time: %d\n", err);
 		hang();
 	}
 
-	t = (struct tm *)(&logic.tm);
-
-	time2str(t, time);
-
+	logic_show_adjustment_screen();
 	wh1602_control_display(&logic.wh, LCD_ON, CURSOR_ON, CURSOR_BLINK_ON);
-	wh1602_clear_display(&logic.wh);
-	wh1602_set_line(&logic.wh, LINE_1);
-	wh1602_print_str(&logic.wh, time);
+	wh1602_set_address(&logic.wh, 0x0f);
+}
+
+static void logic_set_new_time(void)
+{
+	int err;
+	struct tm *t;
+
+	err = ds3231_set_time(&logic.rtc, &logic.tm);
+	if (err) {
+		pr_err("Error: Can't set time: %d\n", err);
+		hang();
+	}
+
+		t = (struct tm *)(&logic.tm);
+		date2str(t, logic.data.date);
+		time2str(t, logic.data.time);
+}
+
+static void logic_handle_stage_set_hh(void)
+{
+	logic.tm.tm_hour = (logic.tm.tm_hour + 1) % 24;
+
+	wh1602_control_display(&logic.wh, LCD_ON, CURSOR_ON, CURSOR_BLINK_OFF);
+	logic_show_adjustment_screen();
 	wh1602_set_address(&logic.wh, 0x01);
 }
 
-static void logic_handle_stage_time_incr_hh(void)
+static void logic_handle_stage_set_mm(void)
 {
-	int err;
+	logic.tm.tm_min = (logic.tm.tm_min + 1) % 60;
 
-	logic.tm.tm_hour = (logic.tm.tm_hour + 1) % 24;
-
-	err = ds3231_set_time(&logic.rtc, &logic.tm);
-	if (err) {
-		pr_emerg("Error: Can't set hours\n");
-		hang();
-	}
-
-	logic_handle_event(EVENT_START);
-}
-
-static void logic_handle_stage_time_set_mm(void)
-{
-	struct tm *t;
-	int err;
-	char time[BUF_LEN];
-
-	err = ds3231_read_time(&logic.rtc, &logic.tm);
-	if (err) {
-		pr_emerg("Error: Can't read time data\n");
-		hang();
-	}
-
-	t = (struct tm *)(&logic.tm);
-
-	time2str(t, time);
-
-	wh1602_control_display(&logic.wh, LCD_ON, CURSOR_ON, CURSOR_BLINK_ON);
-	wh1602_clear_display(&logic.wh);
-	wh1602_set_line(&logic.wh, LINE_1);
-	wh1602_print_str(&logic.wh, time);
+	wh1602_control_display(&logic.wh, LCD_ON, CURSOR_ON, CURSOR_BLINK_OFF);
+	logic_show_adjustment_screen();
 	wh1602_set_address(&logic.wh, 0x04);
 }
 
-static void logic_handle_stage_time_incr_mm(void)
+static void logic_handle_stage_set_wday(void)
 {
-	int err;
+	logic.tm.tm_wday = (logic.tm.tm_wday + 1) % 7;
 
-	logic.tm.tm_min = (logic.tm.tm_min + 1) % 60;
-
-	err = ds3231_set_time(&logic.rtc, &logic.tm);
-	if (err) {
-		pr_emerg("Error: Can't set minutes\n");
-		hang();
-	}
-
-	logic_handle_event(EVENT_START);
-}
-
-static void logic_display_date(void)
-{
-	struct tm *t;
-	int err;
-	char date[BUF_LEN];
-
-	err = ds3231_read_time(&logic.rtc, &logic.tm);
-	if (err) {
-		pr_emerg("Error: Unable to take time data from ds3231"
-			 "timekeeping registers\n");
-		hang();
-	}
-
-	t = (struct tm *)(&logic.tm);
-
-	date2str(t, date);
-
-	wh1602_control_display(&logic.wh, LCD_ON, CURSOR_ON, CURSOR_BLINK_ON);
-	wh1602_clear_display(&logic.wh);
-	wh1602_set_line(&logic.wh, LINE_2);
-	wh1602_print_str(&logic.wh, date);
-}
-
-static void logic_handle_stage_date_set_wday(void)
-{
-	logic_display_date();
+	wh1602_control_display(&logic.wh, LCD_ON, CURSOR_ON, CURSOR_BLINK_OFF);
+	logic_show_adjustment_screen();
 	wh1602_set_address(&logic.wh, 0x40);
 }
 
-static void logic_handle_stage_date_incr_wday(void)
+static void logic_handle_stage_set_mon(void)
 {
-	int err;
-
-	logic.tm.tm_wday = (logic.tm.tm_wday + 1) % 7;
-
-	err = ds3231_set_time(&logic.rtc, &logic.tm);
-	if (err) {
-		pr_emerg("Error: Unable to set day of the week\n");
-		hang();
-	}
-
-	logic_handle_event(EVENT_START);
-}
-
-static void logic_handle_stage_date_set_month(void)
-{
-	logic_display_date();
-	wh1602_set_address(&logic.wh, 0x46);
-}
-
-static void logic_handle_stage_date_incr_month(void)
-{
-	int err;
-
 	logic.tm.tm_mon = (logic.tm.tm_mon + 1) % 12;
-
-	err = ds3231_set_time(&logic.rtc, &logic.tm);
-	if (err) {
-		pr_emerg("Error: Unable to set month\n");
-		hang();
-	}
-
-	logic_handle_event(EVENT_START);
+	wh1602_control_display(&logic.wh, LCD_ON, CURSOR_ON, CURSOR_BLINK_OFF);
+	logic_show_adjustment_screen();
+	wh1602_set_address(&logic.wh, 0x47);
 }
 
-static void logic_handle_stage_date_set_mday(void)
+static void logic_handle_stage_set_mday(void)
 {
-	logic_display_date();
-	wh1602_set_address(&logic.wh, 0x44);
-}
-
-static void logic_handle_stage_date_incr_mday(void)
-{
-	int err;
-
 	logic.tm.tm_mday = (logic.tm.tm_mday + 1) % 32;
 	if (logic.tm.tm_mday == 0)
 		logic.tm.tm_mday++;
 
-	err = ds3231_set_time(&logic.rtc, &logic.tm);
-	if (err) {
-		pr_emerg("Error: Unable to set day of the week\n");
-		hang();
-	}
-
-	logic_handle_event(EVENT_START);
+	wh1602_control_display(&logic.wh, LCD_ON, CURSOR_ON, CURSOR_BLINK_OFF);
+	logic_show_adjustment_screen();
+	wh1602_set_address(&logic.wh, 0x44);
 }
 
-static void logic_handle_stage_date_set_yy(void)
+static void logic_handle_stage_set_year(void)
 {
-	logic_display_date();
-	wh1602_set_address(&logic.wh, 0x4a);
-}
-
-static void logic_handle_stage_date_incr_yy(void)
-{
-	int err;
-
 	logic.tm.tm_year++;
+	if (logic.tm.tm_year > TM_DEFAULT_YEAR + 10)
+		logic.tm.tm_year = TM_DEFAULT_YEAR;
 
-	err = ds3231_set_time(&logic.rtc, &logic.tm);
-	if (err) {
-		pr_emerg("Error: Unable to set year\n");
-		hang();
-	}
-
-	logic_handle_event(EVENT_START);
-}
-
-static void logic_handle_stage_date_decr_yy(void)
-{
-	int err;
-
-	if (logic.tm.tm_year > TM_DEFAULT_YEAR)
-		logic.tm.tm_year--;
-
-	err = ds3231_set_time(&logic.rtc, &logic.tm);
-	if (err) {
-		pr_emerg("Error: Unable to set year\n");
-		hang();
-	}
-
-	logic_handle_event(EVENT_START);
-}
-
-static void logic_handle_stage_alarm_sound(void)
-{
-	melody_stop(&logic.buzz);
-}
-
-logic_handle_stage_func_t logic_stage_handler[STAGE_NUM] = {
-	NULL,					/* STAGE_UNDEFINED */
-	logic_handle_stage_init,		/* STAGE_INIT */
-	logic_handle_stage_main_screen,		/* STAGE_MAIN_SCREEN */
-	logic_handle_stage_main_menu,		/* STAGE_MAIN_MENU */
-	logic_handle_stage_time_set_hh,		/* STAGE_TIME_SET_HH */
-	logic_handle_stage_time_incr_hh,	/* STAGE_TIME_INCR_HH */
-	logic_handle_stage_time_set_mm,		/* STAGE_TIME_SET_MM */
-	logic_handle_stage_time_incr_mm,	/* STAGE_TIME_INCR_MM */
-	logic_handle_stage_date_set_wday,	/* STAGE_DATE_SET_WDAY */
-	logic_handle_stage_date_incr_wday,	/* STAGE_DATE_INCR_WDAY */
-	logic_handle_stage_date_set_month,	/* STAGE_DATE_SET_MONTH */
-	logic_handle_stage_date_incr_month,	/* STAGE_DATE_INCR_MONTH */
-	logic_handle_stage_date_set_mday,	/* STAGE_DATE_SET_MDAY */
-	logic_handle_stage_date_incr_mday,	/* STAGE_DATE_INCR_MDAY */
-	logic_handle_stage_date_set_yy,		/* STAGE_DATE_SET_YY */
-	logic_handle_stage_date_incr_yy,	/* STAGE_DATE_INCR_YY */
-	logic_handle_stage_date_decr_yy,	/* STAGE_DATE_DECR_YY */
-	logic_handle_stage_alarm,		/* STAGE_ALARM */
-	logic_handle_stage_alarm_toggle,	/* STAGE_ALARM_TOGGLE */
-	logic_handle_stage_alarm_incr_hh,	/* STAGE_ALARM_INCR_HH */
-	logic_handle_stage_alarm_incr_mm,	/* STAGE_ALARM_INCR_MM */
-	logic_handle_stage_alarm_sound,		/* STAGE_ALARM_SOUND */
-};
-
-/**
- * Process the transition for specified event.
- *
- * Run the function corresponding to current transition and set new state as
- * a current state.
- *
- * Complexity: O(1).
- *
- * @param event Event that user chose
- */
-static void logic_handle_event(enum logic_event event)
-{
-	enum logic_stage stage = logic.stage;	/* current stage */
-	enum logic_stage new_stage;
-	logic_handle_stage_func_t transition_func;
-
-	if (event > EVENT_DOWN || stage > STAGE_DATE_DECR_YY) {
-		pr_emerg("Error: Wrong transition: stage = %d, "
-			 "event = %d/n", stage, event);
-		hang();
-	}
-
-	new_stage = logic_transitions[stage][event];
-
-	transition_func = logic_stage_handler[new_stage];
-	if (!transition_func) {
-		pr_warn("Warning: Transition function doesn't exist for "
-				"stage %d, event %d\n", stage, event);
-		return;
-	}
-
-	logic.stage = new_stage;
-	transition_func();
-}
-
-static void logic_handle_btn(int button, bool pressed)
-{
-	enum logic_event btn_event = button + 1;
-
-	if (pressed)
-		logic_handle_event(btn_event);
+	wh1602_control_display(&logic.wh, LCD_ON, CURSOR_ON, CURSOR_BLINK_OFF);
+	logic_show_adjustment_screen();
+	wh1602_set_address(&logic.wh, 0x4b);
 }
 
 static void logic_alarm_cb(void)
 {
-	logic.stage = STAGE_ALARM_SOUND;
-	melody_play(&logic.buzz);
+	return;
+}
+
+static void logic_handle_stage(enum logic_stage stage)
+{
+	switch (stage) {
+	case STAGE_UNDEFINED:
+		logic_handle_stage(STAGE_INIT);
+		break;
+	case STAGE_INIT:
+		logic_handle_stage_init();
+		break;
+	case STAGE_MAIN_SCREEN:
+		logic_handle_stage_main_screen();
+		break;
+	case STAGE_MAIN_MENU:
+		logic_handle_stage_main_menu();
+		break;
+	case STAGE_ALARM:
+		logic_handle_stage_alarm();
+		break;
+	case STAGE_ADJUSTMENT:
+		logic_handle_stage_adjustment();
+		break;
+	case STAGE_SET_HH:
+		logic_handle_stage_set_hh();
+		break;
+	case STAGE_SET_MM:
+		logic_handle_stage_set_mm();
+		break;
+	case STAGE_SET_WDAY:
+		logic_handle_stage_set_wday();
+		break;
+	case STAGE_SET_MON:
+		logic_handle_stage_set_mon();
+		break;
+	case STAGE_SET_MDAY:
+		logic_handle_stage_set_mday();
+		break;
+	case STAGE_SET_YEAR:
+		logic_handle_stage_set_year();
+		break;
+	default:
+		pr_warn("Stage doesn't exist\n");
+	}
+}
+
+static void logic_handle_key_press(enum logic_event event)
+{
+	enum logic_stage stage = logic.stage;	/* current stage */
+	enum logic_stage new_stage = STAGE_UNDEFINED;
+
+	switch (event) {
+	case EVENT_LEFT:
+		if (stage == STAGE_MAIN_SCREEN) {
+			logic_handle_stage(STAGE_MAIN_MENU);
+			new_stage = STAGE_MAIN_MENU;
+		} else if (stage == STAGE_MAIN_MENU ||
+			   stage == STAGE_ALARM) {
+			logic_handle_stage(STAGE_MAIN_SCREEN);
+			new_stage = STAGE_MAIN_SCREEN;
+		} else {
+			logic_set_new_time();
+			logic_handle_stage(STAGE_MAIN_SCREEN);
+			new_stage = STAGE_MAIN_SCREEN;
+		}
+		break;
+	case EVENT_RIGHT:
+		if (stage == STAGE_MAIN_SCREEN) {
+			logic_handle_stage(STAGE_MAIN_MENU);
+			new_stage = STAGE_MAIN_MENU;
+		} else if (stage == STAGE_ALARM) {
+			logic_config_alarm();
+			logic_handle_stage(STAGE_ALARM);
+			new_stage = STAGE_ALARM;
+		} else if (stage == STAGE_SET_HH) {
+			new_stage = STAGE_SET_MM;
+		} else if (stage == STAGE_SET_MM) {
+			new_stage = STAGE_SET_WDAY;
+		} else if (stage == STAGE_SET_WDAY) {
+			new_stage = STAGE_SET_MON;
+		} else if (stage == STAGE_SET_MON) {
+			new_stage = STAGE_SET_MDAY;
+		} else if (stage == STAGE_SET_MDAY) {
+			new_stage = STAGE_SET_YEAR;
+		} else if (stage == STAGE_SET_YEAR) {
+			new_stage = STAGE_SET_HH;
+		}
+		break;
+	case EVENT_UP:
+		if (stage == STAGE_MAIN_SCREEN) {
+			logic_handle_stage(STAGE_MAIN_MENU);
+			new_stage = STAGE_MAIN_MENU;
+		} else if (stage == STAGE_MAIN_MENU) {
+			logic_handle_stage(STAGE_ALARM);
+			new_stage = STAGE_ALARM;
+		} else if (stage == STAGE_ALARM) {
+			logic_incr_alarm_hh();
+			logic_handle_stage(STAGE_ALARM);
+			new_stage = STAGE_ALARM;
+		} else if (stage == STAGE_SET_HH) {
+			logic_handle_stage(STAGE_SET_HH);
+			new_stage = STAGE_SET_HH;
+		} else if (stage == STAGE_SET_MM) {
+			logic_handle_stage(STAGE_SET_MM);
+			new_stage = STAGE_SET_MM;
+		} else if (stage == STAGE_SET_WDAY) {
+			logic_handle_stage(STAGE_SET_WDAY);
+			new_stage = STAGE_SET_WDAY;
+		} else if (stage == STAGE_SET_MON) {
+			logic_handle_stage(STAGE_SET_MON);
+			new_stage = STAGE_SET_MON;
+		} else if (stage == STAGE_SET_MDAY) {
+			logic_handle_stage(STAGE_SET_MDAY);
+			new_stage = STAGE_SET_MDAY;
+		} else if (stage == STAGE_SET_YEAR) {
+			logic_handle_stage(STAGE_SET_YEAR);
+			new_stage = STAGE_SET_YEAR;
+		}
+		break;
+	case EVENT_DOWN:
+		if (stage == STAGE_MAIN_SCREEN) {
+			logic_handle_stage(STAGE_MAIN_MENU);
+			new_stage = STAGE_MAIN_MENU;
+		} else if (stage == STAGE_ALARM) {
+			logic_incr_alarm_mm();
+			logic_handle_stage(STAGE_ALARM);
+			new_stage = STAGE_ALARM;
+		} else if (stage == STAGE_MAIN_MENU) {
+			logic_handle_stage(STAGE_ADJUSTMENT);
+			new_stage = STAGE_SET_HH;
+		}
+		break;
+	}
+
+	logic.stage = new_stage;
+}
+
+static void logic_handle_btn(int button, bool pressed)
+{
+	enum logic_event event = button;
+
+	if (pressed)
+		logic_handle_key_press(event);
 }
 
 void logic_start(void)
 {
-	logic_handle_event(EVENT_START);
+	logic_handle_stage(STAGE_INIT);
 }

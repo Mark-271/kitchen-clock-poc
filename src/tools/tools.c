@@ -94,7 +94,7 @@ void time2str(struct tm *tm, char *s)
  * Convert date to string.
  *
  * @param tm Contains date values, i.e., day, month, year, week day
- * @param s Buffer to store string of the form, e.g. "MON 19JUL2021"
+ * @param s Buffer to store string of the form, e.g. "MON 19 JUL 2021"
  */
 void date2str(struct tm *tm, char *s)
 {
@@ -116,7 +116,9 @@ void date2str(struct tm *tm, char *s)
 	strcpy(s, wdays[tm->tm_wday]);
 	int2_to_str(s + 4, tm->tm_mday);
 	s[3] = ' ';
-	strcpy(s + 6, months[tm->tm_mon]);
-	int4_to_str(s + 9, year);
-	s[13] = '\0';
+	s[6] = ' ';
+	strcpy(s + 7, months[tm->tm_mon]);
+	int4_to_str(s + 11, year);
+	s[10] = ' ';
+	s[15] = '\0';
 }

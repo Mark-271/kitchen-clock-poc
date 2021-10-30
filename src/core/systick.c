@@ -7,10 +7,10 @@
 #define SYSTICK_FREQ		1000 /* overflows per second */
 #define AHB_FREQUENCY		24000000UL
 #define SYSTICK_RELOAD_VAL	(AHB_FREQUENCY / SYSTICK_FREQ)
-#define AHB_TICKS_PER_USEC	(AHB_FREQUENCY / 1000000)
+#define AHB_TICKS_PER_USEC	(AHB_FREQUENCY / 1000000UL)
 #define USEC_PER_MSEC		1000
 #define NSEC_PER_USEC		1000
-#define NSEC_PER_MSEC		1000000
+#define NSEC_PER_MSEC		1000000UL
 #define MSEC_PER_SEC		1000
 
 static uint32_t ticks;
@@ -34,7 +34,7 @@ void systick_get_time(struct systick_time *t)
 {
 	uint32_t ms;
 	uint32_t us;
-	uint64_t ns;
+	uint32_t ns;
 	unsigned long flags;
 
 	t->sec = 0;
@@ -45,15 +45,15 @@ void systick_get_time(struct systick_time *t)
 	us = (SYSTICK_RELOAD_VAL - systick_get_value()) / AHB_TICKS_PER_USEC;
 	exit_critical(flags);
 
-	ns = (uint64_t)us * NSEC_PER_USEC;
-	ns += (uint64_t)ms * NSEC_PER_MSEC;
+	ns = us * NSEC_PER_USEC;
 
-	while (ns > NSEC_PER_SEC) {
-		ns -= NSEC_PER_SEC;
+	while (ms > MSEC_PER_SEC) {
+		ms -= MSEC_PER_SEC;
 		t->sec++;
 	}
 
-	t->nsec = (uint32_t)ns;
+	ns += ms * NSEC_PER_MSEC;
+	t->nsec = ns;
 }
 
 uint64_t systick_calc_diff(const struct systick_time *t1,

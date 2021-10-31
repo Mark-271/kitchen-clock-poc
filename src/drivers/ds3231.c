@@ -226,7 +226,7 @@ int ds3231_toggle_alarm(struct ds3231 *obj, bool alarm_enabled)
 	int ret;
 	uint8_t buf;
 
-	ret = i2c_read_single_byte_pol(obj->device.addr, DS3231_SR, &buf);
+	ret = i2c_read_single_byte_pol(obj->device.addr, DS3231_CR, &buf);
 	if (ret != 0)
 		return ret;
 

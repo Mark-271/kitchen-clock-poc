@@ -331,6 +331,7 @@ int ds3231_read_alarm(struct ds3231 *obj)
 	if (ret != 0)
 		return ret;
 
+	obj->regs.ss = buf[0];
 	obj->regs.mm = buf[1];
 	obj->regs.hh = buf[2];
 

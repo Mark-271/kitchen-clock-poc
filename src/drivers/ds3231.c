@@ -219,7 +219,7 @@ int ds3231_set_time(struct ds3231 *obj, struct rtc_time *tm)
  * @param ob DS3231 device object
  * @param alarm_enabled Flag showing whether to enable or stop the alarm
  *
- * @return 0 on success or megative value on error
+ * @return 0 on success or negative value on error
  */
 int ds3231_toggle_alarm(struct ds3231 *obj, bool alarm_enabled)
 {

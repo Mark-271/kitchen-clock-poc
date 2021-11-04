@@ -291,6 +291,7 @@ static void logic_handle_stage_init(void)
 	if (logic.ds3231_presence_flag) {
 		/* Year count should start from beginning of the epoch */
 		logic.tm.tm_year = TM_DEFAULT_YEAR;
+		logic.rtc.alarm.time.tm_year = TM_DEFAULT_YEAR;
 
 		ret = ds3231_set_time(&logic.rtc, &logic.tm);
 		if (ret != 0) {

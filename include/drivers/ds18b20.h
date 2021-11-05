@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+
 #ifndef DRIVERS_DS18B20_H
 #define DRIVERS_DS18B20_H
 

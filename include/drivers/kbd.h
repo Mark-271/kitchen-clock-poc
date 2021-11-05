@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+
 #ifndef DRIVERS_KBD_H
 #define DRIVERS_KBD_H
 

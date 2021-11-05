@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #include <core/reset.h>
 #include <libopencm3/stm32/rcc.h>
 

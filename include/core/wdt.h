@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+
 #ifndef CORE_WDT_H
 #define CORE_WDT_H
 

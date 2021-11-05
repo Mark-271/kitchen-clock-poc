@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+
 #ifndef TOOLS_BCD_H
 #define TOOLS_BCD_H
 

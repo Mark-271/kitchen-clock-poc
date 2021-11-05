@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #include <drivers/one_wire.h>
 #include <tools/common.h>
 #include <libopencm3/stm32/gpio.h>

@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+
 #ifndef CONFIG_DEBUG_H
 #define CONFIG_DEBUG_H
 

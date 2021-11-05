@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+
 #ifndef TOOLS_COMMON_H
 #define TOOLS_COMMON_H
 

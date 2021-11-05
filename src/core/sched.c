@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #include <core/log.h>
 #include <core/sched.h>
 #include <core/systick.h>

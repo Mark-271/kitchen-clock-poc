@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #include <drivers/ds3231.h>
 #include <drivers/i2c.h>
 #include <core/log.h>

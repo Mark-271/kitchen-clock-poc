@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+
 #ifndef DRIVERS_ONE_WIRE_H
 #define DRIVERS_ONE_WIRE_H
 

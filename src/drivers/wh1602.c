@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #include <drivers/wh1602.h>
 #include <board.h>
 #include <tools/common.h>

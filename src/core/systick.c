@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #include <core/systick.h>
 #include <tools/common.h>
 #include <libopencm3/cm3/nvic.h>

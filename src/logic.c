@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* TODO: Simplify state machine (use switch, Luke!) */
 /* TODO: Put all global variables into main structure (logic) */
 /* TODO: Get rid of all global variables */

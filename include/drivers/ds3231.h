@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+
 #ifndef DRIVERS_DS3231_H
 #define DRIVERS_DS3231_H
 

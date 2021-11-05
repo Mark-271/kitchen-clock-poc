@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+
 #ifndef CORE_RESET_H
 #define CORE_RESET_H
 

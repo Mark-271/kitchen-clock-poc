@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+
 #ifndef DRIVERS_WH1602_H
 #define DRIVERS_WH1602_H
 

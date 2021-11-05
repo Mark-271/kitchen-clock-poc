@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #include <drivers/melody.h>
 #include <tools/common.h>
 #include <tools/pitches.h>

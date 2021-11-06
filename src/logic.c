@@ -14,9 +14,9 @@
 #include <drivers/ds18b20.h>
 #include <drivers/ds3231.h>
 #include <drivers/kbd.h>
-#include <drivers/melody.h>
 #include <drivers/wh1602.h>
 #include <tools/common.h>
+#include <tools/melody.h>
 #include <tools/tools.h>
 #include <libopencm3/stm32/gpio.h>
 #include <stdbool.h>

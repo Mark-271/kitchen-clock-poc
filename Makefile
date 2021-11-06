@@ -66,13 +66,13 @@ OBJS		+=				\
 		   src/drivers/ds3231.o		\
 		   src/drivers/i2c.o		\
 		   src/drivers/kbd.o		\
-		   src/drivers/melody.o		\
 		   src/drivers/one_wire.o	\
 		   src/drivers/serial.o		\
 		   src/drivers/wh1602.o		\
 		   src/logic.o			\
 		   src/main.o			\
 		   src/tools/common.o		\
+		   src/tools/melody.o		\
 		   src/tools/tools.o
 
 # C flags

@@ -5,7 +5,7 @@
 
 #include <drivers/buzzer.h>
 
-void melody_play(struct buzz *obj);
-void melody_stop(struct buzz *obj);
+void melody_play_tune(struct buzz *obj);
+void melody_stop_tune(struct buzz *obj);
 
 #endif /* TOOLS_MELODY_H */

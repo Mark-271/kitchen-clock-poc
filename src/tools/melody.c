@@ -2,52 +2,32 @@
 
 #include <tools/melody.h>
 #include <tools/common.h>
-#include <tools/pitches.h>
+#include <stddef.h>
 
-/* Mario Underworld melody */
+/* The note frequency given in Hz */
+#define A4		440
+#define A5		880
+#define B4		494
+#define B5		988
+#define C5		523
+#define D4		294
+#define D5		587
+
+/* Note duration in msec */
+#define BPM		120		/* Bits per minute */
+#define CROTCHET	(60000 / BPM)	/* Quarter note */
+#define QUAVER		(CROTCHET / 2)	/* Eighth note */
+#define MINIM		(CROTCHET * 2)	/* Half note */
+
+/* Simple melody */
 static uint16_t theme[] = {
-	NOTE_C4, NOTE_C5, NOTE_A3, NOTE_A4,
-	NOTE_AS3, NOTE_AS4, 0,
-	0,
-	NOTE_C4, NOTE_C5, NOTE_A3, NOTE_A4,
-	NOTE_AS3, NOTE_AS4, 0,
-	0,
-	NOTE_F3, NOTE_F4, NOTE_D3, NOTE_D4,
-	NOTE_DS3, NOTE_DS4, 0,
-	0,
-	NOTE_F3, NOTE_F4, NOTE_D3, NOTE_D4,
-	NOTE_DS3, NOTE_DS4, 0,
-	0, NOTE_DS4, NOTE_CS4, NOTE_D4,
-	NOTE_CS4, NOTE_DS4,
-	NOTE_DS4, NOTE_GS3,
-	NOTE_G3, NOTE_CS4,
-	NOTE_C4, NOTE_FS4,NOTE_F4, NOTE_E3, NOTE_AS4, NOTE_A4,
-	NOTE_GS4, NOTE_DS4, NOTE_B3,
-	NOTE_AS3, NOTE_A3, NOTE_GS3,
-	0, 0, 0
+	D4, A5, A4, B5, C5, B4, 0,
+	C5, D5, A4, D4,
 };
 
-/* Mario Underworld tempo */
 static int tempo[] = {
-	12, 12, 12, 12,
-	12, 12, 6,
-	3,
-	12, 12, 12, 12,
-	12, 12, 6,
-	3,
-	12, 12, 12, 12,
-	12, 12, 6,
-	3,
-	12, 12, 12, 12,
-	12, 12, 6,
-	6, 18, 18, 18,
-	6, 6,
-	6, 6,
-	6, 6,
-	18, 18, 18,18, 18, 18,
-	10, 10, 10,
-	10, 10, 10,
-	3, 3, 3
+	QUAVER, CROTCHET, QUAVER, QUAVER, QUAVER, QUAVER, QUAVER,
+	CROTCHET, QUAVER, QUAVER, MINIM,
 };
 
 /**
@@ -55,25 +35,23 @@ static int tempo[] = {
  *
  * @param obj Buzzer object
  */
-void melody_play(struct buzz *obj)
+void melody_play_tune(struct buzz *obj)
 {
-	int size = ARRAY_SIZE(theme);
-	int i;
-	uint16_t duration;
-	uint16_t note_pause;
+	unsigned size = ARRAY_SIZE(theme);
+	size_t i;
+	uint16_t pause;
 	unsigned long flags;
 
 	for (i = 0; i < size; i++) {
-		duration = 1000 / tempo[i];
-		note_pause = duration + duration / 3;
-		buzz_tune(obj, theme[i], duration);
+		pause = tempo[i] + tempo[i] / 3;
+		buzz_tune(obj, theme[i], tempo[i]);
 		enter_critical(flags);
-		mdelay(note_pause);
+		mdelay(pause);
 		exit_critical(flags);
 	}
 }
 
-void melody_stop(struct buzz *obj)
+void melody_stop_tune(struct buzz *obj)
 {
 	buzz_notune(obj);
 }

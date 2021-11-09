@@ -49,7 +49,7 @@ void systick_get_time(struct systick_time *t)
 
 	ns = us * NSEC_PER_USEC;
 
-	while (ms > MSEC_PER_SEC) {
+	while (ms >= MSEC_PER_SEC) {
 		ms -= MSEC_PER_SEC;
 		t->sec++;
 	}

@@ -61,16 +61,20 @@ void systick_get_time(struct systick_time *t)
 uint64_t systick_calc_diff(const struct systick_time *t1,
 			   const struct systick_time *t2)
 {
-	uint64_t ts1;
-	uint64_t ts2;
+	uint64_t label1;
+	uint64_t label2;
+	uint64_t temp;
 
-	ts1 = (uint64_t)t1->sec * NSEC_PER_SEC + t1->nsec;
-	ts2 = (uint64_t)t2->sec * NSEC_PER_SEC + t2->nsec;
+	if ((t1->sec > t2->sec) ||
+	   ((t1->sec == t2->sec) && (t1->nsec > t2->nsec)))
+		temp = (uint64_t)t2->sec + UINT32_MAX + 1;
+	else
+		temp = t2->sec;
 
-	if (ts1 > ts2)
-		ts2 += UINT64_MAX;
+	label1 = t1->sec * NSEC_PER_SEC + t1->nsec;
+	label2 = temp * NSEC_PER_SEC + t2->nsec;
 
-	return ts2 - ts1;
+	return label2 - label1;
 }
 
 /*

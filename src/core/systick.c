@@ -69,9 +69,9 @@ uint64_t systick_calc_diff(const struct systick_time *t1,
 	   ((t1->sec == t2->sec) && (t1->nsec > t2->nsec)))
 		temp = (uint64_t)t2->sec + UINT32_MAX + 1;
 	else
-		temp = t2->sec;
+		temp = (uint64_t)t2->sec;
 
-	label1 = t1->sec * NSEC_PER_SEC + t1->nsec;
+	label1 = (uint64_t)t1->sec * NSEC_PER_SEC + t1->nsec;
 	label2 = temp * NSEC_PER_SEC + t2->nsec;
 
 	return label2 - label1;

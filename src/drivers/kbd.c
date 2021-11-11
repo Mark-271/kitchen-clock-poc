@@ -146,12 +146,10 @@ static irqreturn_t exti2_handler(int irq, void *data)
 static struct irq_action a[KBD_IRQS] = {
 	{
 		.handler = exti1_handler,
-		.irq = NVIC_EXTI1_IRQ,
 		.name = "kbd_scan1",
 	},
 	{
 		.handler = exti2_handler,
-		.irq = NVIC_EXTI2_IRQ,
 		.name = "kbd_scan2",
 	}
 };
@@ -208,6 +206,7 @@ int kbd_init(struct kbd *obj, const struct kbd_gpio *gpio, kbd_btn_event_t cb)
 	/* Register interrupt handlers */
 	for (i = 0; i < KBD_IRQS; i++) {
 		a[i].data = (void *)obj;
+		a[i].irq = obj->gpio.irq[i];
 		ret = irq_request(&a[i]);
 		if (ret < 0)
 			return ret;

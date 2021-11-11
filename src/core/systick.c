@@ -56,13 +56,9 @@ void systick_get_time(struct systick_time *t)
 	exit_critical(flags);
 
 	ns = us * NSEC_PER_USEC;
+	ns += (ms % MSEC_PER_SEC) * NSEC_PER_MSEC;
 
-	while (ms >= MSEC_PER_SEC) {
-		ms -= MSEC_PER_SEC;
-		t->sec++;
-	}
-
-	ns += ms * NSEC_PER_MSEC;
+	t->sec = ms / MSEC_PER_SEC;
 	t->nsec = ns;
 }
 

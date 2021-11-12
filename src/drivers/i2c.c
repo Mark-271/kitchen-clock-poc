@@ -353,7 +353,7 @@ int i2c_write_buf_poll(uint8_t addr, uint8_t reg, const uint8_t *buf,
  * @param[out] data Variable to store data
  * @return 0 on success or negative value on error
  */
-int i2c_read_single_byte_pol(uint8_t addr, uint8_t reg, uint8_t *data)
+int i2c_read_single_byte_poll(uint8_t addr, uint8_t reg, uint8_t *data)
 {
 	int ret;
 

@@ -214,8 +214,8 @@ int ds3231_set_time(struct ds3231 *obj, struct rtc_time *tm)
  * Interrupt control bit of DS3231 control register should be asserted.
  *
  * @param ob DS3231 device object
- * @param alarm_enabled Flag showing whether to enable or stop the alarm
- *
+ * @param alarm_enabled Flag showing whether to set or reset the
+ * 			alarm 1 interrupt enable bit
  * @return 0 on success or negative value on error
  */
 int ds3231_toggle_alarm(struct ds3231 *obj, bool alarm_enabled)
@@ -227,7 +227,7 @@ int ds3231_toggle_alarm(struct ds3231 *obj, bool alarm_enabled)
 	if (ret != 0)
 		return ret;
 
-	cm3_assert(buf & DS3231_INTCN); /* XXX */
+	cm3_assert(buf & DS3231_INTCN);
 
 	if (alarm_enabled) {
 		obj->alarm.status = true;

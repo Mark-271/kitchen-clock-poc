@@ -14,27 +14,22 @@
 #include <string.h>
 #include <time.h>
 
-/* DS3231 registers */
 #define DS3231_CR		0x0e	/* DS3231 Control register */
 #define DS3231_SR		0x0f	/* DS3231 Status register */
-#define DS3231_SECONDS		0x00	/* DS3231 Register of seconds */
-#define DS3231_DAY		0x03	/* DS3231Day offset register */
-#define DS3231_BUF_LEN		7	/* Number of data registers */
-#define DS3231_TASK		"ds3231"
+#define DS3231_SECONDS		0x00	/* DS3231 Seconds register */
+#define DS3231_DAY		0x03	/* DS3231 Day offset register */
 #define DS3231_ALARM1		0x07	/* DS3231 Alarm 1 offset register */
-#define DS3231_ALARM1_EN	0x1d	/* Enable Alarm 1 */
-#define DS3231_ALARM1_DIS	0x1c	/* Disable Alarm 1 */
-#define DS3231_A1F_CLEAR	0x88	/* DS3231 Alarm 1 flag disabled */
-#define DS3231_ALARM_MASK	0x80	/* DS3231 Alarm 1 mask */
-#define ALARM1_BUF_LEN		4
-#define MIN_TM_YEAR		0
-#define MIN_REGS_YEAR		0
-#define MAX_REGS_YEAR		99
-#define TM_MDAYS		30
 #define DS3231_INTCN		BIT(2)	/* Interrupt control bit */
 #define DS3231_A1IE		BIT(0)	/* Alarm 1 interrupt enable bit */
 #define DS3231_A1F		BIT(0)	/* Alarm 1 flag */
 #define DS3231_A1M		BIT(7)	/* Alarm 1 mask bit */
+#define DS3231_BUF_LEN		7
+#define ALARM1_BUF_LEN		4
+#define DS3231_TASK		"ds3231"
+#define MIN_TM_YEAR		0
+#define MIN_REGS_YEAR		0
+#define MAX_REGS_YEAR		99
+#define TM_MDAYS		30
 
 /* ------------------------------------------------------------------------- */
 
@@ -242,36 +237,6 @@ int ds3231_toggle_alarm(struct ds3231 *obj, bool alarm_enabled)
 		obj->alarm.status = false;
 		return ret;
 	}
-
-	return 0;
-}
-
-/* Turn on alarm */
-int ds3231_enable_alarm(struct ds3231 *obj)
-{
-	int err;
-	uint8_t buf = DS3231_ALARM1_EN;
-
-	err = i2c_write_buf_poll(obj->device.addr, DS3231_CR, &buf, 1);
-	if (err)
-		return err;
-
-	obj->alarm.status = true;
-
-	return 0;
-}
-
-/* Turn off alarm */
-int ds3231_disable_alarm(struct ds3231 *obj)
-{
-	int err;
-	uint8_t buf[] = {DS3231_ALARM1_DIS, DS3231_A1F_CLEAR};
-
-	err = i2c_write_buf_poll(obj->device.addr, DS3231_CR, buf, 2);
-	if (err)
-		return err;
-
-	obj->alarm.status = false;
 
 	return 0;
 }

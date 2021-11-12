@@ -103,27 +103,22 @@ static irqreturn_t ds3231_exti_isr(int irq, void *data)
 static void ds3231_task(void *data)
 {
 	int ret;
-	uint8_t buf;
+	uint8_t buf[2];
 
 	struct ds3231 *obj = (struct ds3231 *)(data);
 
-	ret = i2c_read_single_byte_poll(obj->device.addr, DS3231_SR, &buf);
+	ret = i2c_read_buf_poll(obj->device.addr, DS3231_CR, buf, 2);
 	if (ret != 0) {
-		pr_err("Error: Can't read DS3231_SR register: %d\n", ret);
+		pr_err("Error: Can't read ds3231 registers: %d\n", ret);
 		hang();
 	}
 
-	buf &= ~DS3231_A1F;
+	buf[0] &= ~DS3231_A1IE;
+	buf[1] &= ~DS3231_A1F;
 
-	ret = i2c_write_buf_poll(obj->device.addr, DS3231_SR, &buf, 1);
+	ret = i2c_write_buf_poll(obj->device.addr, DS3231_CR, buf, 2);
 	if (ret != 0) {
-		pr_err("Error: Can't write to DS3231_SR register: %d\n", ret);
-		hang();
-	}
-
-	ret = ds3231_toggle_alarm(obj, false);
-	if (ret) {
-		pr_err("Error: Can't handle DS32321_CR register: %d\n", ret);
+		pr_err("Error: Can't write to DS3231 registers: %d\n", ret);
 		hang();
 	}
 

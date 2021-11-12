@@ -244,8 +244,10 @@ int ds3231_toggle_alarm(struct ds3231 *obj, bool alarm_enabled)
 /**
  * Set alarm.
  *
- * DS3231 contains two alarms. Only Alarm1 is in use. Alarm occures when
- * hours, minutes and seconds match. Day of a week or date are ignored.
+ * Write data to time of day/date alarm registers.
+ * As DS3231 contains two alarms, only Alarm1 is in use.
+ * Alarm occures when hours, minutes and seconds match.
+ * Day of a week or date are ignored.
  * Time data to trigger alarm should be set by caller.
  *
  * @param obj Device object

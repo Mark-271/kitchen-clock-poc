@@ -419,6 +419,48 @@ err_timeout:
 }
 
 /**
+ * Read 2 bytes of data into the buffer from I2C slave device using polling
+ * mode (no DMA, no IRQ).
+ *
+ * @param[out] data Buffer of data to read in
+ * @return 0 on success or negative value on failure
+ */
+static int i2c_read_2_bytes_poll(uint8_t *data)
+{
+	int ret;
+
+	I2C_CR1(i2c.base) |= I2C_CR1_POS;
+	i2c_disable_ack(i2c.base);
+
+	ret = wait_event_timeout(I2C_SR1(i2c.base) & I2C_SR1_BTF,
+				 I2C_TIMEOUT_FLAG);
+	if (ret != 0)
+		goto err_timeout;
+
+	i2c_send_stop(i2c.base);
+
+	*data++ = i2c_get_data(i2c.base);
+	*data = i2c_get_data(i2c.base);
+
+	ret = wait_event_timeout((I2C_CR1(i2c.base) & I2C_CR1_STOP) == 0,
+				 I2C_TIMEOUT_FLAG);
+	if (ret != 0)
+		goto err_timeout;
+
+	I2C_CR1(i2c.base) &= ~I2C_CR1_POS;
+	i2c_enable_ack(i2c.base);
+
+	WRITE_ONCE(i2c.state, I2C_STATE_READY);
+
+	return 0;
+
+err_timeout:
+	WRITE_ONCE(i2c.error, I2C_ERROR_TIMEOUT);
+	WRITE_ONCE(i2c.state, I2C_STATE_READY);
+	return -ETIMEDOUT;
+}
+
+/**
  * Read n bytes of data into the buffer from I2C slave device using polling
  * mode (no DMA, no IRQ).
  *
@@ -432,14 +474,14 @@ err_timeout:
  * @param addr Slave device I2C address
  * @param reg I2C register address in slave device
  * @param[out] buf Buffer of data to read in
- * @param len Buffer size, in bytes
+ * @param len Buffer size, in bytes, should be more than 1 byte.
  * @return 0 on success or negative value on failure
  */
 int i2c_read_buf_poll(uint8_t addr, uint8_t reg, uint8_t *buf, uint16_t len)
 {
 	int ret;
 
-	cm3_assert(len > 2);
+	cm3_assert(len > 1);
 
 	if (READ_ONCE(i2c.state) != I2C_STATE_READY)
 		return -EBUSY;
@@ -464,9 +506,15 @@ int i2c_read_buf_poll(uint8_t addr, uint8_t reg, uint8_t *buf, uint16_t len)
 	if (ret != 0)
 		return ret;
 
-	ret = i2c_receive_buf_poll(buf, len);
-	if (ret != 0)
-		return ret;
+	if (len > 2) {
+		ret = i2c_receive_buf_poll(buf, len);
+		if (ret != 0)
+			return ret;
+	} else {
+		ret = i2c_read_2_bytes_poll(buf);
+		if (ret != 0)
+			return ret;
+	}
 
 	WRITE_ONCE(i2c.state, I2C_STATE_READY);
 

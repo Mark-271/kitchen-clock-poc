@@ -1,4 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * Author: Sam Protsenko <joe.skb7@gmail.com>
+ */
 
 #ifndef CONFIG_RELEASE_H
 #define CONFIG_RELEASE_H

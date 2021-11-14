@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+/*
+ * Author: Mark Sungurov <mark.sungurov@gmail.com>
+ */
 
 #include <tools/common.h>
 #include <libopencm3/cm3/nvic.h>

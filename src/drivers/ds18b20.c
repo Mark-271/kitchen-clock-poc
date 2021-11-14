@@ -1,4 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+/*
+ * Author: Sam Protsenko <joe.skb7@gmail.com>
+ *         Mark Sungurov <mark.sungurov@gmail.com>
+ */
 
 #include <drivers/ds18b20.h>
 #include <drivers/one_wire.h>

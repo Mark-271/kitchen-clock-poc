@@ -1,4 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * Author: Sam Protsenko <joe.skb7@gmail.com>
+ */
 
 #ifndef DRIVERS_SERIAL_H
 #define DRIVERS_SERIAL_H

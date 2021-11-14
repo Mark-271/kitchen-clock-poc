@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+/*
+ * Author: Sam Protsenko <joe.skb7@gmail.com>
+ */
 
 #include <core/reset.h>
 #include <libopencm3/stm32/rcc.h>

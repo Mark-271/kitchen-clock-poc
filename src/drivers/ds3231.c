@@ -1,4 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+/*
+ * Author: Sam Protsenko <joe.skb7@gmail.com>
+ *         Mark Sungurov <mark.sungurov@gmail.com>
+ */
 
 #include <drivers/ds3231.h>
 #include <drivers/i2c.h>

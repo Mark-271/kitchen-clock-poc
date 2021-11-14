@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+/*
+ * Author: Mark Sungurov <mark.sungurov@gmail.com>
+ */
 
 #include <drivers/buzzer.h>
 #include <tools/common.h>

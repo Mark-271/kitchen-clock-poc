@@ -1,4 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * Author: Mark Sungurov <mark.sungurov@gmail.com>
+ */
 
 #ifndef DRIVERS_BUZZER_H
 #define DRIVERS_BUZZER_H

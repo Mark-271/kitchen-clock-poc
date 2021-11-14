@@ -1,4 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * Author: Sam Protsenko <joe.skb7@gmail.com>
+ *         Mark Sungurov <mark.sungurov@gmail.com>
+ */
 
 #ifndef CORE_SWTIMER_H
 #define CORE_SWTIMER_H

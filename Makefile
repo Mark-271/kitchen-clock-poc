@@ -13,18 +13,6 @@ ifneq ($(V),1)
   Q		:= @
 endif
 
-BUILD		?= debug
-ifeq ($(BUILD),release)
-  CFLAGS	+= -DNDEBUG
-  LDFLAGS	+= -s
-  CONFIG_FILE	= include/config_release.h
-else ifeq ($(BUILD),debug)
-  CFLAGS	+= $(DEBUG)
-  CONFIG_FILE	= include/config_debug.h
-else
-  $(error Incorrect BUILD variable)
-endif
-
 APP		:= kclock
 LIB_DIR		= $(OPENCM3_DIR)/lib
 INCLUDE_DIR	= $(OPENCM3_DIR)/include
@@ -52,6 +40,19 @@ STFLASH		= $(shell which st-flash)
 OPT		:= -O2
 DEBUG		:= -ggdb3
 CSTD		?= -std=gnu89
+
+BUILD		?= debug
+ifeq ($(BUILD),release)
+  CPPFLAGS	+= -DNDEBUG
+  LDFLAGS	+= -s
+  CONFIG_FILE	= include/config_release.h
+else ifeq ($(BUILD),debug)
+  CPPFLAGS	+= -DDEBUG
+  CFLAGS	+= $(DEBUG)
+  CONFIG_FILE	= include/config_debug.h
+else
+  $(error Incorrect BUILD variable)
+endif
 
 OBJS		+=				\
 		   src/board.o			\

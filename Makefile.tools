@@ -31,4 +31,16 @@ check_float: elf
 	@printf " CHECK_FLOAT\n"
 	$(Q)$(SCRIPT_DIR)/check-float.sh
 
-.PHONY: stylecheck styleclean doxy doxy_clean check_float
+gdb: $(APP).elf
+	@$(SCRIPT_DIR)/gdb.sh $(APP).elf
+
+ddd: $(APP).elf
+	@$(SCRIPT_DIR)/gdb.sh --ddd $(APP).elf
+
+help:
+	@echo
+	@echo "Debugging:"
+	@echo "  gdb                  - start gdb debugging session"
+	@echo "  ddd                  - start gdb debugging session using DDD"
+
+.PHONY: stylecheck styleclean doxy doxy_clean check_float help gdb ddd

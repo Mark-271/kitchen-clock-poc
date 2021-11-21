@@ -95,24 +95,17 @@ static void sched_profile_timer_tick(void *data)
 #endif
 }
 
-static int sched_profile_init(void)
+static void sched_profile_init(void)
 {
-	int timer_id;
-
-	swtim.cb = sched_profile_timer_tick;
-	swtim.period = SCHED_PROFILER_PERIOD;
-	swtim.data = &swtim;
-
-	timer_id = swtimer_tim_register(&swtim);
-	if (timer_id < 0)
-		return timer_id;
-
-	return 0;
+	swtim.cb	= sched_profile_timer_tick;
+	swtim.period	= SCHED_PROFILER_PERIOD;
+	swtim.data	= &swtim;
+	swtimer_tim_register(&swtim);
 }
 
 #else /* !CONFIG_SCHED_PROFILE */
 
-static inline int sched_profile_init(void) { return 0; }
+static inline void sched_profile_init(void) { }
 
 #endif /* CONFIG_SCHED_PROFILE */
 
@@ -287,13 +280,8 @@ static int sched_run_next(void)
  */
 int sched_init(void)
 {
-	int res;
-
-	res = sched_profile_init();
-	if (res)
-		return res;
-
-	return res;
+	sched_profile_init();
+	return 0;
 }
 
 /**

@@ -9,14 +9,16 @@
 #include <libopencm3/cm3/systick.h>
 #include <libopencm3/stm32/rcc.h>
 
-#define SYSTICK_FREQ		1000 /* overflows per second */
+#define SYSTICK_FREQ		1000UL /* overflows per second */
 #define AHB_FREQUENCY		24000000UL
-#define SYSTICK_RELOAD_VAL	(AHB_FREQUENCY / SYSTICK_FREQ)
-#define AHB_TICKS_PER_USEC	(AHB_FREQUENCY / 1000000UL)
-#define USEC_PER_MSEC		1000
-#define NSEC_PER_USEC		1000
+#define SYSTICK_RELOAD_VAL	((AHB_FREQUENCY / SYSTICK_FREQ) - 1)
 #define NSEC_PER_MSEC		1000000UL
-#define MSEC_PER_SEC		1000
+#define MSEC_PER_SEC		1000UL
+/* HR Timer resolution: 1/24000000 = 41.666 nsec/tick = (125/3) nsec/tick */
+#define HR_RES_NUM		125
+#define HR_RES_DENOM		3
+#define DIV_ROUND_CLOSEST	(HR_RES_NUM / HR_RES_DENOM)
+#define systick_get_reg()	STK_CVR
 
 static uint32_t ticks;
 
@@ -38,6 +40,7 @@ void sys_tick_handler(void)
 /**
  * Get timestamp.
  *
+ * Data precision is 125 ns.
  * When needed a few timestamps, then every call of function must be provided
  * with its own systick_time instance.
  *
@@ -46,19 +49,21 @@ void sys_tick_handler(void)
 void systick_get_time(struct systick_time *t)
 {
 	uint32_t ms;
-	uint32_t us;
-	uint32_t ns;
+	uint32_t ns = 0;
+	uint32_t reg;
 	unsigned long flags;
-
-	t->sec = 0;
-	t->nsec = 0;
 
 	enter_critical(flags);
 	ms = ticks;
-	us = (SYSTICK_RELOAD_VAL - systick_get_value()) / AHB_TICKS_PER_USEC;
+	reg = systick_get_reg();
 	exit_critical(flags);
 
-	ns = us * NSEC_PER_USEC;
+	/*
+	 * Calculate number of nanoseconds stored in STK_CVR register with
+	 * granularity of 3 counter ticks due to fractionary number of
+	 * nanoseconds per tick
+	 */
+	ns = (SYSTICK_RELOAD_VAL - reg) * DIV_ROUND_CLOSEST;
 	ns += (ms % MSEC_PER_SEC) * NSEC_PER_MSEC;
 
 	t->sec = ms / MSEC_PER_SEC;
@@ -91,53 +96,6 @@ uint64_t systick_calc_diff(const struct systick_time *t1,
 	t2_ns = t2_sec * NSEC_PER_SEC + t2->nsec;
 
 	return t2_ns - t1_ns;
-}
-
-/*
- * Precision: +/-1 msec.
- */
-uint32_t systick_get_time_ms(void)
-{
-	return ticks;
-}
-
-uint32_t systick_get_time_us(void)
-{
-	uint32_t us;
-
-	us = (SYSTICK_RELOAD_VAL - systick_get_value()) / AHB_TICKS_PER_USEC;
-	us += READ_ONCE(ticks) * USEC_PER_MSEC;
-
-	return us;
-}
-
-uint32_t systick_get_time_ns(void)
-{
-	uint32_t ns;
-
-	ns = (SYSTICK_RELOAD_VAL - systick_get_value()) / AHB_TICKS_PER_USEC
-	     * NSEC_PER_USEC;
-	ns += READ_ONCE(ticks) * NSEC_PER_MSEC;
-
-	return ns;
-}
-
-/* Calculate timestamp difference in nanoseconds */
-uint32_t systick_calc_diff_ns(uint32_t t1, uint32_t t2)
-{
-	if (t1 > t2)
-		t2 += UINT32_MAX;
-
-	return t2 - t1;
-}
-
-/* Calculate timestamp difference in milliseconds */
-uint32_t systick_calc_diff_ms(uint32_t t1, uint32_t t2)
-{
-	if (t1 > t2)
-		t2 += UINT32_MAX;
-
-	return t2 - t1;
 }
 
 /**

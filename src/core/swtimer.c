@@ -90,11 +90,15 @@ static void swtimer_hw_init(struct swtimer *obj)
 
 	timer_set_mode(obj->hw_tim.base, TIM_CR1_CKD_CK_INT,
 		       TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
+	timer_continuous_mode(obj->hw_tim.base);
+
 	timer_set_prescaler(obj->hw_tim.base, obj->hw_tim.psc);
 	timer_set_period(obj->hw_tim.base, obj->hw_tim.arr);
 	timer_disable_preload(obj->hw_tim.base);
-	timer_continuous_mode(obj->hw_tim.base);
+	timer_generate_event(obj->hw_tim.base, TIM_EGR_UG);
+
 	timer_enable_update_event(obj->hw_tim.base);
+	timer_clear_flag(obj->hw_tim.base, TIM_SR_UIF);
 	timer_update_on_overflow(obj->hw_tim.base);
 	timer_enable_irq(obj->hw_tim.base, TIM_DIER_UIE);
 

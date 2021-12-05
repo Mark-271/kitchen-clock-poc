@@ -36,7 +36,4 @@
 /* Enable profiler */
 #define CONFIG_SCHED_PROFILE
 
-/* ---- Systick ---- */
-#define CONFIG_SYSTICK_TEST
-
 #endif /* CONFIG_DEBUG_H */

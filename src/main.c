@@ -19,42 +19,6 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#ifdef CONFIG_SYSTICK_TEST
-static bool test_systick(void);
-#endif
-
-#ifdef CONFIG_SYSTICK_TEST
-static bool test_systick(void)
-{
-	unsigned int delays[] = {1, 2, 5, 9, 10, 25, 35, 50, 100, 1000, 5000};
-	size_t i;
-	uint64_t delta;
-	uint32_t delta_ms;
-	struct systick_time t1, t2;
-
-	for (i = 0; i < ARRAY_SIZE(delays); i++) {
-		pr_info("%zu: %u\n", i, delays[i]);
-		systick_get_time(&t1);
-		mdelay(delays[i]);
-		systick_get_time(&t2);
-		delta = systick_calc_diff(&t1, &t2);
-		delta_ms = delta / 1000000UL;
-		if (delays[i] != delta_ms)
-			goto err_1;
-	}
-
-	pr_info("[SUCCESS]\n");
-	return true;
-
-err_1:
-	pr_info("[FAIL]\n");
-	pr_info("Test data: %u msec\n", delays[i]);
-	pr_info("Calculated data(nsec): %llu\n", delta);
-	pr_info("Calculated data(msec): %lu\n", delta_ms);
-	return false;
-}
-#endif /* CONFIG_SYSTICK_TEST */
-
 static void init_reset(void)
 {
 	pr_info("Reboot reason: %s\n", reset_cause_name(reset_cause()));
@@ -83,13 +47,13 @@ static void init_core(void)
 	};
 
 	irq_init();
-#ifndef CONFIG_SYSTICK_TEST
+
 	err = wdt_init();
 	if (err) {
 		pr_err("Can't initialize watchdog timer: %d\n", err);
 		hang();
 	}
-#endif /* CONFIG_SYSTICK_TEST */
+
 	err = systick_init();
 	if (err) {
 		pr_err("Error: Can't initialize systick: %d\n", err);
@@ -111,17 +75,6 @@ static void init_core(void)
 int main(void)
 {
 	init_core();
-
-#ifdef CONFIG_SYSTICK_TEST
-	bool res;
-
-	res = test_systick();
-	if (!res)
-		hang();
-#else
 	logic_start();
-#endif /* CONFIG_SYSTICK_TEST */
-
 	sched_start();
-
 }

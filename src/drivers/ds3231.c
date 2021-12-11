@@ -27,6 +27,7 @@
 #define DS3231_A1IE		BIT(0)	/* Alarm 1 interrupt enable bit */
 #define DS3231_A1F		BIT(0)	/* Alarm 1 flag */
 #define DS3231_A1M		BIT(7)	/* Alarm 1 mask bit */
+#define DS3231_EN32kHz		BIT(3)	/* 32 kHz output */
 #define DS3231_BUF_LEN		7
 #define ALARM1_BUF_LEN		4
 #define DS3231_TASK		"ds3231"
@@ -322,6 +323,7 @@ int ds3231_init(struct ds3231 *obj, const struct ds3231_device *dev,
 		int epoch_year, ds3231_alarm_callback_t cb)
 {
 	int ret;
+	uint8_t reg;
 
 	obj->device = *dev;
 	obj->epoch_year = epoch_year;
@@ -354,6 +356,18 @@ int ds3231_init(struct ds3231 *obj, const struct ds3231_device *dev,
 			     &obj->alarm.task_id);
 	if (ret != 0)
 		return ret;
+
+	/* Disable 32kHz Output */
+	ret = i2c_read_single_byte_poll(obj->device.addr, DS3231_SR, &reg);
+	if (ret != 0)
+		return ret;
+
+	reg &= ~DS3231_EN32kHz;
+
+	ret = i2c_write_buf_poll(obj->device.addr, DS3231_SR, &reg, 1);
+	if (ret != 0) {
+		return ret;
+	}
 
 	return 0;
 }

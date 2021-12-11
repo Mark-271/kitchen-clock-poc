@@ -146,7 +146,6 @@ int ds3231_read_time(struct ds3231 *obj, struct rtc_time *tm)
 		return ret;
 
 	/*
-	 * TODO: Find root cause and fix bug.
 	 * DS3231 registers store trash values during first reading.
 	 * Temporary fix is to add one more i2c_read_buf_poll()
 	 */

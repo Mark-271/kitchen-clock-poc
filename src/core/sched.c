@@ -39,7 +39,8 @@ static struct swtimer_sw_tim swtim;
 
 #ifdef CONFIG_SCHED_PROFILE
 
-static inline __attribute__((always_inline)) void sched_profile_print(const char *task, int perc)
+static inline __attribute__((always_inline))
+void sched_profile_print(const char *task, int perc)
 {
 	printk("%s : %d%%\n", task, perc);
 }
@@ -209,7 +210,7 @@ static inline __attribute__((always_inline)) void sched_idle(void)
 #ifdef CONFIG_SCHED_PROFILE
 	systick_get_time(&t2);
 	diff_ns = systick_calc_diff(&t1, &t2);
-	idle_nsec += (uint32_t)diff_ns; /* XXX: Check integer promotion */
+	idle_nsec += (uint32_t)diff_ns;
 	while (idle_nsec > NSEC_PER_SEC) {
 		idle_nsec -= NSEC_PER_SEC;
 		idle_sec++;

@@ -202,10 +202,10 @@ static inline __attribute__((always_inline)) void sched_idle(void)
 	 * WFI: CPU sleep; improves power management
 	 * ISB: just mimic what FreeRTOS does
 	 */
-	__asm__ ("dsb");
-	__asm__ ("isb");
-	__asm__ ("wfi");
-	__asm__ ("isb");
+	dsb();
+	isb();
+	wfi();
+	isb();
 
 #ifdef CONFIG_SCHED_PROFILE
 	systick_get_time(&t2);

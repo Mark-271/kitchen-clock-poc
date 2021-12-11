@@ -129,7 +129,10 @@ static inline __attribute__((always_inline)) void ldelay(unsigned long cycles)
 }
 
 /* The "volatile" is due to gcc bugs */
-#define barrier() __asm__ __volatile__ ("":::"memory")
+#define barrier()	__asm__ __volatile__ ("":::"memory")
+#define dsb()		__asm__ __volatile__ ("dsb")
+#define isb()		__asm__ __volatile__ ("isb")
+#define wfi()		__asm__ __volatile__ ("wfi")
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-qual"

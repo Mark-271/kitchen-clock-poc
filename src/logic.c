@@ -30,6 +30,7 @@
 #define GET_TEMP_DELAY		5000	/* msec */
 #define BUF_LEN			25
 #define TIM_PERIOD		5000	/* msec */
+#define ALARM_TIM_PERIOD	1000	/* msec */
 #define TEMPER_DISPLAY_ADDR	0x07
 #define TM_DEFAULT_YEAR		(EPOCH_YEAR - TM_START_YEAR)
 
@@ -42,6 +43,7 @@ enum logic_stage {
 	STAGE_MAIN_SCREEN,
 	STAGE_MAIN_MENU,
 	STAGE_ALARM,
+	STAGE_ALARM_TRIG,
 	STAGE_ADJUSTMENT,
 	STAGE_SET_HH,
 	STAGE_SET_MM,
@@ -78,6 +80,7 @@ struct logic {
 	struct kbd kbd;
 	struct rtc_time tm;
 	struct swtimer_sw_tim swtim;		/* software timer object */
+	struct swtimer_sw_tim alarm_tim;	/* software timer object */
 	struct wh1602 wh;
 };
 
@@ -211,124 +214,6 @@ static void logic_display_cdata(struct logic *obj)
 	}
 }
 
-/* Callback to register inside swtimer */
-static void logic_show_main_screen(void *data)
-{
-	int err;
-	struct tm *t;
-
-	UNUSED(data);
-
-	if (logic.ds3231_presence_flag) {
-		err = ds3231_read_time(&logic.rtc, &logic.tm);
-		if (err) {
-			pr_emerg("Error: Can't read time: %d\n", err);
-			hang();
-		}
-
-		t = (struct tm *)(&logic.tm);
-		date2str(t, logic.data.date);
-		time2str(t, logic.data.time);
-	} else {
-		strcpy(logic.data.date, "00 000 0000");
-		strcpy(logic.data.time, "00 00");
-	}
-
-	if (logic.ds18b20_presence_flag)
-		strcpy(logic.data.temper, logic_read_temper(&logic.ts));
-	else
-		strcpy(logic.data.temper, "xx");
-
-	if (strcmp(logic.data.temper, logic.data.ctemper) ||
-	    strcmp(logic.data.time, logic.data.ctime)) {
-		logic_display_data(&logic);
-		strcpy(logic.data.ctime, logic.data.time);
-		strcpy(logic.data.cdate, logic.data.date);
-		strcpy(logic.data.ctemper, logic.data.temper);
-	}
-}
-
-static void logic_handle_stage_main_screen(void)
-{
-	wh1602_control_display(&logic.wh, LCD_ON, CURSOR_OFF, CURSOR_BLINK_OFF);
-	swtimer_tim_start(logic.swtim.id);
-
-	if (strcmp(logic.data.temper, logic.data.ctemper) ||
-	    strcmp(logic.data.time, logic.data.ctime))
-		logic_display_data(&logic);
-	else
-		logic_display_cdata(&logic);
-}
-
-static void logic_handle_stage_main_menu(void)
-{
-	size_t i;
-
-	swtimer_tim_stop(logic.swtim.id);
-	wh1602_clear_display(&logic.wh);
-
-	for (i = 0; i < MENU_NUM; i++) {
-		wh1602_set_address(&logic.wh, menu_addr[i]);
-		wh1602_print_str(&logic.wh, menu_msg[i]);
-	}
-}
-
-static void logic_handle_stage_init(void)
-{
-	int ret;
-
-	logic.swtim.cb = logic_show_main_screen;
-	logic.swtim.data = &logic.rtc;
-	logic.swtim.period = TIM_PERIOD;
-
-	logic_init_drivers();
-
-	ret = swtimer_tim_register(&logic.swtim);
-	if (ret < 0) {
-		pr_emerg("Error: Can't register timer: %d\n", ret);
-		hang();
-	}
-
-	if (logic.ds3231_presence_flag) {
-		/* Year count should start from beginning of the epoch */
-		logic.tm.tm_year = TM_DEFAULT_YEAR;
-		logic.rtc.alarm.time.tm_year = TM_DEFAULT_YEAR;
-
-		ret = ds3231_set_time(&logic.rtc, &logic.tm);
-		if (ret != 0) {
-			pr_emerg("Error: Unable to set year inside ds3231"
-					"timekeeping register\n");
-			hang();
-		}
-	}
-
-	wh1602_control_display(&logic.wh, LCD_ON, CURSOR_OFF, CURSOR_BLINK_OFF);
-	logic.stage = STAGE_MAIN_SCREEN;
-}
-
-static void logic_handle_stage_alarm(void)
-{
-	char alarm_time[BUF_LEN];
-	char *flag;
-	struct tm *t;
-
-	/* HACK: Brute kicking user back to main menu to disallow RTC ops */
-	if (!logic.ds3231_presence_flag) {
-		logic.stage = STAGE_MAIN_MENU;
-		return;
-	}
-
-	t = (struct tm *)(&logic.rtc.alarm.time);
-	time2str(t, alarm_time);
-
-	flag = (logic.rtc.alarm.status == true) ? "Alarm ON" : "Alarm OFF";
-
-	wh1602_clear_display(&logic.wh);
-	wh1602_set_line(&logic.wh, LINE_1);
-	wh1602_print_str(&logic.wh, alarm_time);
-	wh1602_set_line(&logic.wh, LINE_2);
-	wh1602_print_str(&logic.wh, flag);
-}
 
 static void logic_config_alarm(void)
 {
@@ -386,6 +271,76 @@ static void logic_show_adjustment_screen(void)
 	wh1602_print_str(&logic.wh, date);
 }
 
+static void logic_set_new_time(void)
+{
+	int err;
+	struct tm *t;
+
+	err = ds3231_set_time(&logic.rtc, &logic.tm);
+	if (err) {
+		pr_err("Error: Can't set time: %d\n", err);
+		hang();
+	}
+
+		t = (struct tm *)(&logic.tm);
+		date2str(t, logic.data.date);
+		time2str(t, logic.data.time);
+}
+
+static void logic_handle_stage_main_screen(void)
+{
+	wh1602_control_display(&logic.wh, LCD_ON, CURSOR_OFF, CURSOR_BLINK_OFF);
+	swtimer_tim_start(logic.swtim.id);
+
+	if (strcmp(logic.data.temper, logic.data.ctemper) ||
+	    strcmp(logic.data.time, logic.data.ctime))
+		logic_display_data(&logic);
+	else
+		logic_display_cdata(&logic);
+}
+
+static void logic_handle_stage_main_menu(void)
+{
+	size_t i;
+
+	swtimer_tim_stop(logic.swtim.id);
+	wh1602_clear_display(&logic.wh);
+
+	for (i = 0; i < MENU_NUM; i++) {
+		wh1602_set_address(&logic.wh, menu_addr[i]);
+		wh1602_print_str(&logic.wh, menu_msg[i]);
+	}
+}
+
+static void logic_handle_stage_alarm(void)
+{
+	char alarm_time[BUF_LEN];
+	char *flag;
+	struct tm *t;
+
+	/* HACK: Brute kicking user back to main menu to disallow RTC ops */
+	if (!logic.ds3231_presence_flag) {
+		logic.stage = STAGE_MAIN_MENU;
+		return;
+	}
+
+	t = (struct tm *)(&logic.rtc.alarm.time);
+	time2str(t, alarm_time);
+
+	flag = (logic.rtc.alarm.status == true) ? "Alarm ON" : "Alarm OFF";
+
+	wh1602_clear_display(&logic.wh);
+	wh1602_set_line(&logic.wh, LINE_1);
+	wh1602_print_str(&logic.wh, alarm_time);
+	wh1602_set_line(&logic.wh, LINE_2);
+	wh1602_print_str(&logic.wh, flag);
+}
+
+static void logic_handle_stage_trig_alarm(void)
+{
+	melody_play_tune(&logic.buzz);
+}
+
 static void logic_handle_stage_adjustment(void)
 {
 	int err;
@@ -406,21 +361,6 @@ static void logic_handle_stage_adjustment(void)
 	wh1602_set_address(&logic.wh, 0x0f);
 }
 
-static void logic_set_new_time(void)
-{
-	int err;
-	struct tm *t;
-
-	err = ds3231_set_time(&logic.rtc, &logic.tm);
-	if (err) {
-		pr_err("Error: Can't set time: %d\n", err);
-		hang();
-	}
-
-		t = (struct tm *)(&logic.tm);
-		date2str(t, logic.data.date);
-		time2str(t, logic.data.time);
-}
 
 static void logic_handle_stage_set_hh(void)
 {
@@ -479,9 +419,92 @@ static void logic_handle_stage_set_year(void)
 	wh1602_set_address(&logic.wh, 0x4b);
 }
 
-static void logic_alarm_cb(void)
+/* Callback to register inside swtimer */
+static void logic_show_main_screen(void *data)
 {
-	return;
+	int err;
+	struct tm *t;
+
+	UNUSED(data);
+
+	if (logic.ds3231_presence_flag) {
+		err = ds3231_read_time(&logic.rtc, &logic.tm);
+		if (err) {
+			pr_emerg("Error: Can't read time: %d\n", err);
+			hang();
+		}
+
+		t = (struct tm *)(&logic.tm);
+		date2str(t, logic.data.date);
+		time2str(t, logic.data.time);
+	} else {
+		strcpy(logic.data.date, "00 000 0000");
+		strcpy(logic.data.time, "00 00");
+	}
+
+	if (logic.ds18b20_presence_flag)
+		strcpy(logic.data.temper, logic_read_temper(&logic.ts));
+	else
+		strcpy(logic.data.temper, "xx");
+
+	if (strcmp(logic.data.temper, logic.data.ctemper) ||
+	    strcmp(logic.data.time, logic.data.ctime)) {
+		logic_display_data(&logic);
+		strcpy(logic.data.ctime, logic.data.time);
+		strcpy(logic.data.cdate, logic.data.date);
+		strcpy(logic.data.ctemper, logic.data.temper);
+	}
+}
+
+/* Callback to register inside sw timer given for alarm needs */
+static void logic_handle_alarm_event(void *data)
+{
+	UNUSED(data);
+	logic_handle_stage_trig_alarm();
+}
+
+static void logic_handle_stage_init(void)
+{
+	int ret;
+
+	logic.swtim.cb = logic_show_main_screen;
+	logic.swtim.data = &logic.rtc;
+	logic.swtim.period = TIM_PERIOD;
+
+	logic.alarm_tim.cb = logic_handle_alarm_event;
+	logic.alarm_tim.data = &logic.rtc;
+	logic.alarm_tim.period = ALARM_TIM_PERIOD;
+
+	logic_init_drivers();
+
+	ret = swtimer_tim_register(&logic.swtim);
+	if (ret < 0) {
+		pr_emerg("Error: Can't register timer: %d\n", ret);
+		hang();
+	}
+
+	ret = swtimer_tim_register(&logic.alarm_tim);
+	if (ret < 0) {
+		pr_emerg("Error: Can't register alarm timer: %d\n", ret);
+		hang();
+	}
+	swtimer_tim_stop(logic.alarm_tim.id);
+
+	if (logic.ds3231_presence_flag) {
+		/* Year count should start from beginning of the epoch */
+		logic.tm.tm_year = TM_DEFAULT_YEAR;
+		logic.rtc.alarm.time.tm_year = TM_DEFAULT_YEAR;
+
+		ret = ds3231_set_time(&logic.rtc, &logic.tm);
+		if (ret != 0) {
+			pr_emerg("Error: Unable to set year inside ds3231"
+					"timekeeping register\n");
+			hang();
+		}
+	}
+
+	wh1602_control_display(&logic.wh, LCD_ON, CURSOR_OFF, CURSOR_BLINK_OFF);
+	logic.stage = STAGE_MAIN_SCREEN;
 }
 
 static void logic_handle_stage(enum logic_stage stage)
@@ -501,6 +524,9 @@ static void logic_handle_stage(enum logic_stage stage)
 		break;
 	case STAGE_ALARM:
 		logic_handle_stage_alarm();
+		break;
+	case STAGE_ALARM_TRIG:
+		logic_handle_stage_trig_alarm();
 		break;
 	case STAGE_ADJUSTMENT:
 		logic_handle_stage_adjustment();
@@ -528,6 +554,24 @@ static void logic_handle_stage(enum logic_stage stage)
 	}
 }
 
+static void logic_alarm_cb(void)
+{
+	logic.stage = STAGE_ALARM_TRIG;
+
+	logic_handle_stage(STAGE_ALARM_TRIG);
+	swtimer_tim_start(logic.alarm_tim.id);
+}
+
+static enum logic_stage logic_break_alarm_signal(void)
+{
+	logic.rtc.alarm.status = false;
+	swtimer_tim_stop(logic.alarm_tim.id);
+	melody_stop_tune(&logic.buzz);
+	logic_handle_stage(STAGE_MAIN_SCREEN);
+
+	return STAGE_MAIN_SCREEN;
+}
+
 static void logic_handle_key_press(enum logic_event event)
 {
 	enum logic_stage stage = logic.stage;	/* current stage */
@@ -535,7 +579,9 @@ static void logic_handle_key_press(enum logic_event event)
 
 	switch (event) {
 	case EVENT_LEFT:
-		if (stage == STAGE_MAIN_SCREEN) {
+		if (stage == STAGE_ALARM_TRIG) {
+			new_stage = logic_break_alarm_signal();
+		} else if (stage == STAGE_MAIN_SCREEN) {
 			logic_handle_stage(STAGE_MAIN_MENU);
 			new_stage = STAGE_MAIN_MENU;
 		} else if (stage == STAGE_MAIN_MENU ||
@@ -549,7 +595,9 @@ static void logic_handle_key_press(enum logic_event event)
 		}
 		break;
 	case EVENT_RIGHT:
-		if (stage == STAGE_MAIN_SCREEN) {
+		if (stage == STAGE_ALARM_TRIG) {
+			new_stage = logic_break_alarm_signal();
+		} else if (stage == STAGE_MAIN_SCREEN) {
 			logic_handle_stage(STAGE_MAIN_MENU);
 			new_stage = STAGE_MAIN_MENU;
 		} else if (stage == STAGE_ALARM) {
@@ -571,7 +619,9 @@ static void logic_handle_key_press(enum logic_event event)
 		}
 		break;
 	case EVENT_UP:
-		if (stage == STAGE_MAIN_SCREEN) {
+		if (stage == STAGE_ALARM_TRIG) {
+			new_stage = logic_break_alarm_signal();
+		} else if (stage == STAGE_MAIN_SCREEN) {
 			logic_handle_stage(STAGE_MAIN_MENU);
 			new_stage = STAGE_MAIN_MENU;
 		} else if (stage == STAGE_MAIN_MENU) {
@@ -602,7 +652,9 @@ static void logic_handle_key_press(enum logic_event event)
 		}
 		break;
 	case EVENT_DOWN:
-		if (stage == STAGE_MAIN_SCREEN) {
+		if (stage == STAGE_ALARM_TRIG) {
+			new_stage = logic_break_alarm_signal();
+		} else if (stage == STAGE_MAIN_SCREEN) {
 			logic_handle_stage(STAGE_MAIN_MENU);
 			new_stage = STAGE_MAIN_MENU;
 		} else if (stage == STAGE_ALARM) {

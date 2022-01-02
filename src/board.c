@@ -69,6 +69,13 @@ static struct pin_mode pins[] = {
 		.conf = GPIO_CNF_OUTPUT_ALTFN_OPENDRAIN,
 	},
 	{
+		.port = DS3231_I2C_GPIO_PORT,
+		.pins = DS3231_ALARM_PIN,
+		.mode = GPIO_MODE_INPUT,
+		.conf = GPIO_CNF_INPUT_FLOAT,
+		.pull = PULL_UP,
+	},
+	{
 		.port = BUZZ_GPIO_PORT,
 		.pins = BUZZ_GPIO_PIN,
 		.mode = GPIO_MODE_OUTPUT_2_MHZ,

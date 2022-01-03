@@ -99,7 +99,6 @@ static const char * const menu_msg[MENU_NUM] = {
 	"D-Time settings",
 };
 
-
 static struct logic logic;
 
 /* Initialize peripheral drivers */
@@ -214,7 +213,6 @@ static void logic_display_cdata(struct logic *obj)
 	}
 }
 
-
 static void logic_config_alarm(void)
 {
 	int err;
@@ -276,15 +274,16 @@ static void logic_set_new_time(void)
 	int err;
 	struct tm *t;
 
+	t = (struct tm *)(&logic.tm);
+
 	err = ds3231_set_time(&logic.rtc, &logic.tm);
 	if (err) {
 		pr_err("Error: Can't set time: %d\n", err);
 		hang();
 	}
 
-		t = (struct tm *)(&logic.tm);
-		date2str(t, logic.data.date);
-		time2str(t, logic.data.time);
+	date2str(t, logic.data.date);
+	time2str(t, logic.data.time);
 }
 
 static void logic_handle_stage_main_screen(void)
@@ -361,7 +360,6 @@ static void logic_handle_stage_adjustment(void)
 	wh1602_set_address(&logic.wh, 0x0f);
 }
 
-
 static void logic_handle_stage_set_hh(void)
 {
 	logic.tm.tm_hour = (logic.tm.tm_hour + 1) % 24;
@@ -419,7 +417,7 @@ static void logic_handle_stage_set_year(void)
 	wh1602_set_address(&logic.wh, 0x4b);
 }
 
-/* Callback to register inside swtimer */
+/* Callback to register inside software timer used to renew displayed data */
 static void logic_show_main_screen(void *data)
 {
 	int err;
@@ -456,7 +454,7 @@ static void logic_show_main_screen(void *data)
 	}
 }
 
-/* Callback to register inside sw timer given for alarm needs */
+/* Callback to register inside software timer given for alarm needs */
 static void logic_handle_alarm_event(void *data)
 {
 	UNUSED(data);
@@ -491,7 +489,7 @@ static void logic_handle_stage_init(void)
 	swtimer_tim_stop(logic.alarm_tim.id);
 
 	if (logic.ds3231_presence_flag) {
-		/* Year count should start from beginning of the epoch */
+		/* Year count should start from beginning the epoch */
 		logic.tm.tm_year = TM_DEFAULT_YEAR;
 		logic.rtc.alarm.time.tm_year = TM_DEFAULT_YEAR;
 
@@ -554,6 +552,7 @@ static void logic_handle_stage(enum logic_stage stage)
 	}
 }
 
+/* Callback which determines a  behavior of the program when an alarm is on */
 static void logic_alarm_cb(void)
 {
 	logic.stage = STAGE_ALARM_TRIG;

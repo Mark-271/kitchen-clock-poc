@@ -30,7 +30,6 @@
 #define GET_TEMP_DELAY		5000	/* msec */
 #define BUF_LEN			25
 #define TIM_PERIOD		5000	/* msec */
-#define ALARM_TIM_PERIOD	1000	/* msec */
 #define TEMPER_DISPLAY_ADDR	0x07
 #define TM_DEFAULT_YEAR		(EPOCH_YEAR - TM_START_YEAR)
 #define ALARM_DURATION		60000	/* msec */
@@ -72,6 +71,7 @@ struct rtc_data {
 
 struct logic {
 	enum logic_stage stage; /* current state of FSM */
+	bool alarm_trigger_on;
 	bool ds18b20_presence_flag;
 	bool ds3231_presence_flag;
 	struct rtc_data data;
@@ -338,7 +338,13 @@ static void logic_handle_stage_alarm(void)
 
 static void logic_handle_stage_trig_alarm(void)
 {
-	melody_play_theme(&logic.buzz, ALARM_DURATION);
+	do {
+		melody_play_theme(&logic.buzz, ALARM_DURATION);
+		logic.alarm_trigger_on = false;
+	} while (logic.alarm_trigger_on);
+
+	logic.stage = STAGE_MAIN_SCREEN;
+	logic_handle_stage_main_screen();
 }
 
 static void logic_handle_stage_adjustment(void)
@@ -455,13 +461,6 @@ static void logic_show_main_screen(void *data)
 	}
 }
 
-/* Callback to register inside software timer given for alarm needs */
-static void logic_handle_alarm_event(void *data)
-{
-	UNUSED(data);
-	logic_handle_stage_trig_alarm();
-}
-
 static void logic_handle_stage_init(void)
 {
 	int ret;
@@ -470,10 +469,6 @@ static void logic_handle_stage_init(void)
 	logic.swtim.data = &logic.rtc;
 	logic.swtim.period = TIM_PERIOD;
 
-	logic.alarm_tim.cb = logic_handle_alarm_event;
-	logic.alarm_tim.data = &logic.rtc;
-	logic.alarm_tim.period = ALARM_TIM_PERIOD;
-
 	logic_init_drivers();
 
 	ret = swtimer_tim_register(&logic.swtim);
@@ -481,13 +476,6 @@ static void logic_handle_stage_init(void)
 		pr_emerg("Error: Can't register timer: %d\n", ret);
 		hang();
 	}
-
-	ret = swtimer_tim_register(&logic.alarm_tim);
-	if (ret < 0) {
-		pr_emerg("Error: Can't register alarm timer: %d\n", ret);
-		hang();
-	}
-	swtimer_tim_stop(logic.alarm_tim.id);
 
 	if (logic.ds3231_presence_flag) {
 		/* Year count should start from beginning the epoch */
@@ -557,15 +545,15 @@ static void logic_handle_stage(enum logic_stage stage)
 static void logic_alarm_cb(void)
 {
 	logic.stage = STAGE_ALARM_TRIG;
+	logic.alarm_trigger_on = true;
 
 	logic_handle_stage(STAGE_ALARM_TRIG);
-	swtimer_tim_start(logic.alarm_tim.id);
 }
 
 static enum logic_stage logic_break_alarm_signal(void)
 {
 	logic.rtc.alarm.status = false;
-	swtimer_tim_stop(logic.alarm_tim.id);
+	logic.alarm_trigger_on = false;
 	melody_stop_tune(&logic.buzz);
 	logic_handle_stage(STAGE_MAIN_SCREEN);
 

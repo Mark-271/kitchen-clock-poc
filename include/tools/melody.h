@@ -8,7 +8,7 @@
 
 #include <drivers/buzzer.h>
 
-void melody_play_tune(struct buzz *obj);
+void melody_play_theme(struct buzz *obj, unsigned int period);
 void melody_stop_tune(struct buzz *obj);
 
 #endif /* TOOLS_MELODY_H */

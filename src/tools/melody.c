@@ -3,8 +3,9 @@
  * Author: Mark Sungurov <mark.sungurov@gmail.com>
  */
 
-#include <tools/melody.h>
+#include <core/systick.h>
 #include <tools/common.h>
+#include <tools/melody.h>
 #include <stddef.h>
 
 /* The note frequency given in Hz */
@@ -34,11 +35,11 @@ static int tempo[] = {
 };
 
 /**
- * Sing  melody.
+ * Play tune.
  *
  * @param obj Buzzer object
  */
-void melody_play_tune(struct buzz *obj)
+static void melody_play_tune(struct buzz *obj)
 {
 	unsigned size = ARRAY_SIZE(theme);
 	size_t i;
@@ -52,9 +53,36 @@ void melody_play_tune(struct buzz *obj)
 		mdelay(pause);
 		exit_critical(flags);
 	}
+
+	/* Delay with max value of 1 sec */
+	for (i = 0; i < 10; i++)
+		mdelay(100);
 }
 
 void melody_stop_tune(struct buzz *obj)
 {
 	buzz_notune(obj);
+}
+
+/**
+ * Play theme for the specified time.
+ *
+ * @param obj Buzzer object
+ * @param period Time in milliseconds to reproduce a melody
+ */
+void melody_play_theme(struct buzz *obj, unsigned int period)
+{
+	struct systick_time _t1, _t2;
+
+	systick_get_time(&_t1);
+	while (1) {
+		systick_get_time(&_t2);
+		unsigned int _elapsed = systick_calc_diff(&_t1, &_t2);
+		_elapsed /= 1000000UL;
+
+		melody_play_tune(obj);
+
+		if (_elapsed > period)
+			break;
+	}
 }

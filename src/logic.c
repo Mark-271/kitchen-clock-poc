@@ -33,6 +33,7 @@
 #define ALARM_TIM_PERIOD	1000	/* msec */
 #define TEMPER_DISPLAY_ADDR	0x07
 #define TM_DEFAULT_YEAR		(EPOCH_YEAR - TM_START_YEAR)
+#define ALARM_DURATION		60000	/* msec */
 
 typedef void (*logic_handle_stage_func_t)(void);
 
@@ -337,7 +338,7 @@ static void logic_handle_stage_alarm(void)
 
 static void logic_handle_stage_trig_alarm(void)
 {
-	melody_play_tune(&logic.buzz);
+	melody_play_theme(&logic.buzz, ALARM_DURATION);
 }
 
 static void logic_handle_stage_adjustment(void)

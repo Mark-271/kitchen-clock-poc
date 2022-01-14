@@ -1,4 +1,4 @@
-update=сб, 08-січ-2022 23:55:15 +0200
+update=Fri 14 Jan 2022 22:57:05 EET
 version=1
 last_client=kicad
 [general]
@@ -44,7 +44,7 @@ LibDir=
 [schematic_editor]
 version=1
 PageLayoutDescrFile=
-PlotDirectoryName=/home/mark/Projects/stm32/kitchen_clock/doc/pic/
+PlotDirectoryName=/home/mark/Projects/stm32/kitchen_clock/doc/pictures
 SubpartIdSeparator=0
 SubpartFirstId=65
 NetFmtName=

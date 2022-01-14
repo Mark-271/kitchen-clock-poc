@@ -31,11 +31,13 @@
 #define GET_TEMP_DELAY		5000	/* msec */
 #define BUF_LEN			25
 #define TIM_PERIOD		5000	/* msec */
+#define ALARM_TIM_PERIOD	2000	/* msec */
 #define TEMPER_DISPLAY_ADDR	0x07
 #define TM_DEFAULT_YEAR		(EPOCH_YEAR - TM_START_YEAR)
-#define ALARM_DURATION		10000	/* msec */
+#define ALARM_MELODY_REPLAYS	5
 
 typedef void (*logic_handle_stage_func_t)(void);
+static enum logic_stage logic_break_alarm_signal(void);
 
 /* Keep 0 as undefined state */
 enum logic_stage {
@@ -62,27 +64,30 @@ enum logic_event {
 };
 
 struct rtc_data {
+	/* Actual values */
 	char temper[BUF_LEN];
 	char date[BUF_LEN];
 	char time[BUF_LEN];
+	/* Cached values */
 	char ctemper[BUF_LEN];
 	char cdate[BUF_LEN];
 	char ctime[BUF_LEN];
 };
 
 struct logic {
-	enum logic_stage stage; /* current state of FSM */
+	enum logic_stage stage;		/* current state of FSM */
 	bool alarm_trigger_on;
 	bool ds18b20_presence_flag;
 	bool ds3231_presence_flag;
+	int alarm_counter;
 	struct rtc_data data;
 	struct buzz buzz;
 	struct ds18b20 ts;
 	struct ds3231 rtc;
 	struct kbd kbd;
 	struct rtc_time tm;
-	struct swtimer_sw_tim swtim;		/* software timer object */
-	struct swtimer_sw_tim alarm_tim;	/* software timer object */
+	struct swtimer_sw_tim swtim;
+	struct swtimer_sw_tim alarm_tim;
 	struct wh1602 wh;
 };
 
@@ -337,48 +342,6 @@ static void logic_handle_stage_alarm(void)
 	wh1602_print_str(&logic.wh, flag);
 }
 
-/**
- * Play theme for the specified time.
- *
- * @param obj Buzzer object
- * @param period Time in milliseconds to reproduce a melody
- */
-static void logic_play_music(unsigned int period)
-{
-	struct systick_time _t1, _t2;
-	size_t i;
-
-	systick_get_time(&_t1);
-	while (1) {
-		systick_get_time(&_t2);
-		uint64_t _elapsed = systick_calc_diff(&_t1, &_t2);
-		_elapsed /= 1000000UL;
-
-		melody_play_tune(&logic.buzz);
-		/* Delay with max value of 1 sec */
-		for (i = 0; i < 10; i++) {
-			mdelay(100);
-			wdt_reset();
-		}
-
-		if (_elapsed > period)
-			break;
-	}
-}
-
-static void logic_handle_stage_trig_alarm(void)
-{
-	logic.alarm_trigger_on = true;
-
-	while (logic.alarm_trigger_on) {
-		pr_info("Alarm signal\n");
-		logic_play_music(ALARM_DURATION);
-	}
-
-	logic.stage = STAGE_MAIN_SCREEN;
-	logic_handle_stage_main_screen();
-}
-
 static void logic_handle_stage_adjustment(void)
 {
 	int err;
@@ -493,6 +456,17 @@ static void logic_show_main_screen(void *data)
 	}
 }
 
+/* Callback to register inside software timer used for alarm purposes */
+static void logic_handle_alarm_signal(void *data)
+{
+	UNUSED(data);
+	logic.alarm_counter++;
+	melody_play_tune(&logic.buzz);
+
+	if (logic.alarm_counter == ALARM_MELODY_REPLAYS)
+		logic.stage = logic_break_alarm_signal();
+}
+
 static void logic_handle_stage_init(void)
 {
 	int ret;
@@ -501,6 +475,10 @@ static void logic_handle_stage_init(void)
 	logic.swtim.data = &logic.rtc;
 	logic.swtim.period = TIM_PERIOD;
 
+	logic.alarm_tim.cb = logic_handle_alarm_signal;
+	logic.alarm_tim.data = &logic.rtc;
+	logic.alarm_tim.period = ALARM_TIM_PERIOD;
+
 	logic_init_drivers();
 
 	ret = swtimer_tim_register(&logic.swtim);
@@ -508,6 +486,13 @@ static void logic_handle_stage_init(void)
 		pr_emerg("Error: Can't register timer: %d\n", ret);
 		hang();
 	}
+
+	ret = swtimer_tim_register(&logic.alarm_tim);
+	if (ret < 0) {
+		pr_emerg("Error: Can't register alarm timer: %d\n", ret);
+		hang();
+	}
+	swtimer_tim_stop(logic.alarm_tim.id);
 
 	if (logic.ds3231_presence_flag) {
 		/* Year count should start from beginning the epoch */
@@ -545,7 +530,7 @@ static void logic_handle_stage(enum logic_stage stage)
 		logic_handle_stage_alarm();
 		break;
 	case STAGE_ALARM_TRIG:
-		logic_handle_stage_trig_alarm();
+		swtimer_tim_start(logic.alarm_tim.id);
 		break;
 	case STAGE_ADJUSTMENT:
 		logic_handle_stage_adjustment();
@@ -573,11 +558,10 @@ static void logic_handle_stage(enum logic_stage stage)
 	}
 }
 
-/* Callback which determines a  behavior of the program when an alarm is on */
+/* Callback that is  activated when alarm is on */
 static void logic_alarm_cb(void)
 {
 	logic.stage = STAGE_ALARM_TRIG;
-	logic.alarm_trigger_on = true;
 
 	logic_handle_stage(STAGE_ALARM_TRIG);
 }
@@ -585,9 +569,11 @@ static void logic_alarm_cb(void)
 static enum logic_stage logic_break_alarm_signal(void)
 {
 	logic.rtc.alarm.status = false;
-	logic.alarm_trigger_on = false;
+	logic.alarm_counter = 0;
+
 	melody_stop_tune(&logic.buzz);
-	pr_info("Alarm disarmed\n");
+	swtimer_tim_stop(logic.alarm_tim.id);
+
 	logic_handle_stage(STAGE_MAIN_SCREEN);
 
 	return STAGE_MAIN_SCREEN;

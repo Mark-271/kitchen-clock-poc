@@ -9,6 +9,7 @@
 #include <core/log.h>
 #include <core/sched.h>
 #include <core/swtimer.h>
+#include <core/wdt.h>
 #include <drivers/buzzer.h>
 #include <drivers/ds18b20.h>
 #include <drivers/ds3231.h>
@@ -32,7 +33,7 @@
 #define TIM_PERIOD		5000	/* msec */
 #define TEMPER_DISPLAY_ADDR	0x07
 #define TM_DEFAULT_YEAR		(EPOCH_YEAR - TM_START_YEAR)
-#define ALARM_DURATION		60000	/* msec */
+#define ALARM_DURATION		10000	/* msec */
 
 typedef void (*logic_handle_stage_func_t)(void);
 
@@ -336,12 +337,43 @@ static void logic_handle_stage_alarm(void)
 	wh1602_print_str(&logic.wh, flag);
 }
 
+/**
+ * Play theme for the specified time.
+ *
+ * @param obj Buzzer object
+ * @param period Time in milliseconds to reproduce a melody
+ */
+static void logic_play_music(unsigned int period)
+{
+	struct systick_time _t1, _t2;
+	size_t i;
+
+	systick_get_time(&_t1);
+	while (1) {
+		systick_get_time(&_t2);
+		uint64_t _elapsed = systick_calc_diff(&_t1, &_t2);
+		_elapsed /= 1000000UL;
+
+		melody_play_tune(&logic.buzz);
+		/* Delay with max value of 1 sec */
+		for (i = 0; i < 10; i++) {
+			mdelay(100);
+			wdt_reset();
+		}
+
+		if (_elapsed > period)
+			break;
+	}
+}
+
 static void logic_handle_stage_trig_alarm(void)
 {
-	do {
-		melody_play_theme(&logic.buzz, ALARM_DURATION);
-		logic.alarm_trigger_on = false;
-	} while (logic.alarm_trigger_on);
+	logic.alarm_trigger_on = true;
+
+	while (logic.alarm_trigger_on) {
+		pr_info("Alarm signal\n");
+		logic_play_music(ALARM_DURATION);
+	}
 
 	logic.stage = STAGE_MAIN_SCREEN;
 	logic_handle_stage_main_screen();
@@ -555,6 +587,7 @@ static enum logic_stage logic_break_alarm_signal(void)
 	logic.rtc.alarm.status = false;
 	logic.alarm_trigger_on = false;
 	melody_stop_tune(&logic.buzz);
+	pr_info("Alarm disarmed\n");
 	logic_handle_stage(STAGE_MAIN_SCREEN);
 
 	return STAGE_MAIN_SCREEN;

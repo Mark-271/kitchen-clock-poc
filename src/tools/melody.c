@@ -19,7 +19,7 @@
 #define D5		587
 
 /* Note duration in msec */
-#define BPM		120		/* Bits per minute */
+#define BPM		480		/* Bits per minute */
 #define CROTCHET	(60000 / BPM)	/* Quarter note */
 #define QUAVER		(CROTCHET / 2)	/* Eighth note */
 #define MINIM		(CROTCHET * 2)	/* Half note */
@@ -40,7 +40,7 @@ static int tempo[] = {
  *
  * @param obj Buzzer object
  */
-static void melody_play_tune(struct buzz *obj)
+void melody_play_tune(struct buzz *obj)
 {
 	unsigned size = ARRAY_SIZE(theme);
 	size_t i;
@@ -60,27 +60,4 @@ static void melody_play_tune(struct buzz *obj)
 void melody_stop_tune(struct buzz *obj)
 {
 	buzz_notune(obj);
-}
-
-/**
- * Play theme for the specified time.
- *
- * @param obj Buzzer object
- * @param period Time in milliseconds to reproduce a melody
- */
-void melody_play_theme(struct buzz *obj, unsigned int period)
-{
-	struct systick_time _t1, _t2;
-
-	systick_get_time(&_t1);
-	while (1) {
-		systick_get_time(&_t2);
-		unsigned int _elapsed = systick_calc_diff(&_t1, &_t2);
-		_elapsed /= 1000000UL;
-
-		melody_play_tune(obj);
-
-		if (_elapsed > period)
-			break;
-	}
 }

@@ -4,6 +4,7 @@
  */
 
 #include <core/systick.h>
+#include <core/wdt.h>
 #include <tools/common.h>
 #include <tools/melody.h>
 #include <stddef.h>
@@ -52,11 +53,8 @@ static void melody_play_tune(struct buzz *obj)
 		enter_critical(flags);
 		mdelay(pause);
 		exit_critical(flags);
+		wdt_reset();
 	}
-
-	/* Delay with max value of 1 sec */
-	for (i = 0; i < 10; i++)
-		mdelay(100);
 }
 
 void melody_stop_tune(struct buzz *obj)

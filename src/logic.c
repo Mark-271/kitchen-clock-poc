@@ -14,6 +14,7 @@
 #include <drivers/ds18b20.h>
 #include <drivers/ds3231.h>
 #include <drivers/kbd.h>
+#include <drivers/player.h>
 #include <drivers/wh1602.h>
 #include <tools/common.h>
 #include <tools/melody.h>
@@ -31,10 +32,9 @@
 #define GET_TEMP_DELAY		5000	/* msec */
 #define BUF_LEN			25
 #define TIM_PERIOD		5000	/* msec */
-#define ALARM_TIM_PERIOD	2000	/* msec */
 #define TEMPER_DISPLAY_ADDR	0x07
 #define TM_DEFAULT_YEAR		(EPOCH_YEAR - TM_START_YEAR)
-#define ALARM_MELODY_REPLAYS	5
+#define ALARM_TIMEOUT		60000 /* msec */
 
 typedef void (*logic_handle_stage_func_t)(void);
 
@@ -87,8 +87,8 @@ struct logic {
 	struct kbd kbd;
 	struct rtc_time tm;
 	struct swtimer_sw_tim swtim;
-	struct swtimer_sw_tim alarm_tim;
 	struct wh1602 wh;
+	struct player pl;
 };
 
 static void logic_handle_btn(int btn, bool pressed);
@@ -108,6 +108,16 @@ static const char * const menu_msg[MENU_NUM] = {
 };
 
 static struct logic logic;
+
+static void logic_play_tone(uint16_t tone, uint16_t duration)
+{
+	buzz_make_sound(&logic.buzz, tone,  duration);
+}
+
+static void logic_stop_sound(void)
+{
+	buzz_stop_sound(&logic.buzz);
+}
 
 /* Initialize peripheral drivers */
 static void logic_init_drivers(void)
@@ -167,6 +177,8 @@ static void logic_init_drivers(void)
 	logic.ds3231_presence_flag = !err;
 
 	buzz_init(&logic.buzz, BUZZ_GPIO_PORT, BUZZ_GPIO_PIN);
+	player_init(&logic.pl, &theme, logic_play_tone,
+		    logic_stop_sound);
 }
 
 static char *logic_read_temper(void *data)
@@ -458,13 +470,6 @@ static void logic_show_main_screen(void *data)
 	}
 }
 
-/* Callback to register inside software timer used for alarm purposes */
-static void logic_handle_alarm_signal(void *data)
-{
-	UNUSED(data);
-	logic.alarm_counter++;
-}
-
 static void logic_handle_stage_init(void)
 {
 	int ret;
@@ -473,10 +478,6 @@ static void logic_handle_stage_init(void)
 	logic.swtim.data = &logic.rtc;
 	logic.swtim.period = TIM_PERIOD;
 
-	logic.alarm_tim.cb = logic_handle_alarm_signal;
-	logic.alarm_tim.data = &logic.rtc;
-	logic.alarm_tim.period = ALARM_TIM_PERIOD;
-
 	logic_init_drivers();
 
 	ret = swtimer_tim_register(&logic.swtim);
@@ -484,13 +485,6 @@ static void logic_handle_stage_init(void)
 		pr_emerg("Error: Can't register timer: %d\n", ret);
 		hang();
 	}
-
-	ret = swtimer_tim_register(&logic.alarm_tim);
-	if (ret < 0) {
-		pr_emerg("Error: Can't register alarm timer: %d\n", ret);
-		hang();
-	}
-	swtimer_tim_stop(logic.alarm_tim.id);
 
 	if (logic.ds3231_presence_flag) {
 		/* Year count should start from beginning the epoch */
@@ -506,6 +500,30 @@ static void logic_handle_stage_init(void)
 	}
 
 	wh1602_control_display(&logic.wh, LCD_ON, CURSOR_OFF, CURSOR_BLINK_OFF);
+	logic.stage = STAGE_MAIN_SCREEN;
+}
+
+static void logic_play_melody(void)
+{
+	struct systick_time start_ts, end_ts;
+	uint64_t elapsed = 0;
+
+	systick_get_time(&start_ts);
+	while (elapsed < ALARM_TIMEOUT) {
+		systick_get_time(&end_ts);
+		elapsed = systick_calc_diff(&start_ts, &end_ts);
+		elapsed /= 1000000UL;
+
+		if (logic.flag_stopped) {
+			logic.flag_stopped = false;
+			break;
+		}
+
+		player_play_next_note(&logic.pl);
+		wdt_reset();
+	}
+
+	player_stop(&logic.pl);
 	logic.stage = STAGE_MAIN_SCREEN;
 }
 
@@ -528,7 +546,7 @@ static void logic_handle_stage(enum logic_stage stage)
 		logic_handle_stage_alarm();
 		break;
 	case STAGE_ALARM_TRIG:
-		swtimer_tim_start(logic.alarm_tim.id);
+		logic_play_melody();
 		break;
 	case STAGE_ADJUSTMENT:
 		logic_handle_stage_adjustment();

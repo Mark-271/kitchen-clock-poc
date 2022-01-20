@@ -25,18 +25,22 @@
 #include <stdio.h>
 #include <string.h>
 
-#define MENU_NUM		3
-#define ALARM_SYMBOL_POS	0x0f
 #define ALARM_INDICATOR		0x2a
+#define ALARM_SYMBOL_POS	0x0f
+#define ALARM_TIMEOUT		60000	/* msec */
+#define BUF_LEN			25
 #define EPOCH_YEAR		2021	/* years */
 #define GET_TEMP_DELAY		5000	/* msec */
-#define BUF_LEN			25
-#define TIM_PERIOD		5000	/* msec */
+#define MENU_NUM		3
 #define TEMPER_DISPLAY_ADDR	0x07
+#define TIM_PERIOD		5000	/* msec */
 #define TM_DEFAULT_YEAR		(EPOCH_YEAR - TM_START_YEAR)
-#define ALARM_TIMEOUT		60000 /* msec */
 
-typedef void (*logic_handle_stage_func_t)(void);
+static void logic_handle_btn(int btn, bool pressed);
+static void logic_alarm_cb(void);
+static void logic_break_alarm_signal(void);
+static void logic_play_tone(uint16_t tone, uint16_t duration);
+static void logic_stop_sound(void);
 
 /* Keep 0 as undefined state */
 enum logic_stage {
@@ -74,26 +78,21 @@ struct rtc_data {
 };
 
 struct logic {
-	enum logic_stage stage;		/* current state of FSM */
-	bool alarm_trigger_on;
-	bool flag_stopped;
 	bool ds18b20_presence_flag;
 	bool ds3231_presence_flag;
+	bool flag_stopped;
+	enum logic_stage stage;		/* current state of FSM */
 	int alarm_counter;
-	struct rtc_data data;
 	struct buzz buzz;
 	struct ds18b20 ts;
 	struct ds3231 rtc;
 	struct kbd kbd;
+	struct player pl;
+	struct rtc_data data;
 	struct rtc_time tm;
 	struct swtimer_sw_tim swtim;
 	struct wh1602 wh;
-	struct player pl;
 };
-
-static void logic_handle_btn(int btn, bool pressed);
-static void logic_alarm_cb(void);
-static void logic_break_alarm_signal(void);
 
 static uint8_t menu_addr[MENU_NUM] = {
 	0x00,
@@ -108,16 +107,6 @@ static const char * const menu_msg[MENU_NUM] = {
 };
 
 static struct logic logic;
-
-static void logic_play_tone(uint16_t tone, uint16_t duration)
-{
-	buzz_make_sound(&logic.buzz, tone,  duration);
-}
-
-static void logic_stop_sound(void)
-{
-	buzz_stop_sound(&logic.buzz);
-}
 
 /* Initialize peripheral drivers */
 static void logic_init_drivers(void)
@@ -181,6 +170,12 @@ static void logic_init_drivers(void)
 		    logic_stop_sound);
 }
 
+/**
+ * Read data from temperature sensor and convert it to string.
+ *
+ * @param data User data (DS18B20 object)
+ * @return Null-terminated string
+ */
 static char *logic_read_temper(void *data)
 {
 	struct ds18b20 *obj = (struct ds18b20 *)(data);
@@ -194,6 +189,7 @@ static char *logic_read_temper(void *data)
 	return ds18b20_temp2str(&obj->temp, buf);
 }
 
+/* Display new data on LCD screen */
 static void logic_display_data(struct logic *obj)
 {
 	wh1602_clear_display(&obj->wh);
@@ -214,6 +210,7 @@ static void logic_display_data(struct logic *obj)
 	}
 }
 
+/* Display cached data on LCD screen */
 static void logic_display_cdata(struct logic *obj)
 {
 	wh1602_clear_display(&obj->wh);
@@ -234,6 +231,7 @@ static void logic_display_cdata(struct logic *obj)
 	}
 }
 
+/* Control alarm */
 static void logic_config_alarm(void)
 {
 	int err;
@@ -242,16 +240,16 @@ static void logic_config_alarm(void)
 	if (enabled == false) {
 		err = ds3231_set_alarm(&logic.rtc);
 		if (err)
-			goto error;
+			goto alarm_err;
 	}
 
 	err = ds3231_toggle_alarm(&logic.rtc, !enabled);
 	if (err)
-		goto error;
+		goto alarm_err;
 
 	return;
 
-error:
+alarm_err:
 	pr_emerg("Error: Can't control alarm: %d\n", err);
 	hang();
 }
@@ -433,7 +431,13 @@ static void logic_handle_stage_set_year(void)
 	wh1602_set_address(&logic.wh, 0x4b);
 }
 
-/* Callback to register inside software timer used to renew displayed data */
+/**
+ * Renew displayed data on LCD screen.
+ *
+ * It's being called when software timer triggers.
+ *
+ * @param data User data
+ */
 static void logic_show_main_screen(void *data)
 {
 	int err;
@@ -503,6 +507,14 @@ static void logic_handle_stage_init(void)
 	logic.stage = STAGE_MAIN_SCREEN;
 }
 
+/**
+ * Play melody.
+ *
+ * The melody sounds till either of two events occurs:
+ * - one minute timeout;
+ * - push button.
+ * When melody stopped the firmware keeps running as usual.
+ */
 static void logic_play_melody(void)
 {
 	struct systick_time start_ts, end_ts;
@@ -573,15 +585,6 @@ static void logic_handle_stage(enum logic_stage stage)
 		pr_warn("Stage doesn't exist\n");
 	}
 }
-
-/* Callback that is  activated when alarm is on */
-static void logic_alarm_cb(void)
-{
-	logic.stage = STAGE_ALARM_TRIG;
-
-	logic_handle_stage(STAGE_ALARM_TRIG);
-}
-
 
 static void logic_handle_key_press(enum logic_event event)
 {
@@ -674,13 +677,14 @@ static void logic_handle_key_press(enum logic_event event)
 	logic.stage = new_stage;
 }
 
-/* It is being run from hardware ISR */
-static void logic_break_alarm_signal(void)
+/* Callback that is activated when alarm is on */
+static void logic_alarm_cb(void)
 {
-	if (logic.stage == STAGE_ALARM_TRIG)
-		logic.flag_stopped = true;
+	logic.stage = STAGE_ALARM_TRIG;
+	logic_handle_stage(STAGE_ALARM_TRIG);
 }
 
+/* Callback 1 for kbd_init() */
 static void logic_handle_btn(int button, bool pressed)
 {
 	enum logic_event event = button;
@@ -689,6 +693,29 @@ static void logic_handle_btn(int button, bool pressed)
 		logic_handle_key_press(event);
 }
 
+/*
+ * Callback 2 for kbd_init().
+ * It's being run from hardware ISR
+ */
+static void logic_break_alarm_signal(void)
+{
+	if (logic.stage == STAGE_ALARM_TRIG)
+		logic.flag_stopped = true;
+}
+
+/* Callback 1 to register in player_init() */
+static void logic_play_tone(uint16_t tone, uint16_t duration)
+{
+	buzz_make_sound(&logic.buzz, tone,  duration);
+}
+
+/* Callback 2 to register in player_init() */
+static void logic_stop_sound(void)
+{
+	buzz_stop_sound(&logic.buzz);
+}
+
+/* Enable logic execution */
 void logic_start(void)
 {
 	logic_handle_stage(STAGE_INIT);

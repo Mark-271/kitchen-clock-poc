@@ -6,9 +6,16 @@
 #ifndef TOOLS_MELODY_H
 #define TOOLS_MELODY_H
 
-#include <drivers/buzzer.h>
+struct note {
+	int tone;
+	int duration;
+};
 
-void melody_play_tune(struct buzz *obj);
-void melody_stop_tune(struct buzz *obj);
+struct theme {
+	int mlen;
+	struct note *melody;
+};
+
+extern struct theme theme;
 
 #endif /* TOOLS_MELODY_H */

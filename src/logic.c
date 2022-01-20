@@ -461,7 +461,6 @@ static void logic_handle_alarm_signal(void *data)
 {
 	UNUSED(data);
 	logic.alarm_counter++;
-	melody_play_tune(&logic.buzz);
 
 	if (logic.alarm_counter == ALARM_MELODY_REPLAYS)
 		logic.stage = logic_break_alarm_signal();
@@ -571,7 +570,6 @@ static enum logic_stage logic_break_alarm_signal(void)
 	logic.rtc.alarm.status = false;
 	logic.alarm_counter = 0;
 
-	melody_stop_tune(&logic.buzz);
 	swtimer_tim_stop(logic.alarm_tim.id);
 
 	logic_handle_stage(STAGE_MAIN_SCREEN);

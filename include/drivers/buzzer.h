@@ -15,7 +15,7 @@ struct buzz {
 
 int buzz_init(struct buzz *obj, uint32_t gpio_port, uint16_t gpio_pin);
 void buzz_exit(struct buzz *obj);
-void buzz_tune(struct buzz *obj, uint16_t freq, uint16_t duration);
-void buzz_notune(struct buzz *obj);
+void buzz_make_sound(struct buzz *obj, uint16_t freq, uint16_t duration);
+void buzz_stop_sound(struct buzz *obj);
 
 #endif /*DRIVERS_BUZZER_H */

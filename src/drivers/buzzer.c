@@ -15,7 +15,7 @@
  * @param freq Tune frequency to reproduce
  * @param duration Play time given in miliseconds
  */
-void buzz_tune(struct buzz *obj, uint16_t freq, uint16_t duration)
+void buzz_make_sound(struct buzz *obj, uint16_t freq, uint16_t duration)
 {
 	unsigned long flags;
 	uint16_t cycles = freq * duration / 1000;
@@ -30,7 +30,7 @@ void buzz_tune(struct buzz *obj, uint16_t freq, uint16_t duration)
 	}
 }
 
-void buzz_notune(struct buzz *obj)
+void buzz_stop_sound(struct buzz *obj)
 {
 	gpio_clear(obj->port, obj->pin);
 }

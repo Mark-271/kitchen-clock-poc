@@ -49,7 +49,7 @@ void melody_play_tune(struct buzz *obj)
 
 	for (i = 0; i < size; i++) {
 		pause = tempo[i] + tempo[i] / 3;
-		buzz_tune(obj, theme[i], tempo[i]);
+		buzz_make_sound(obj, theme[i], tempo[i]);
 		enter_critical(flags);
 		mdelay(pause);
 		exit_critical(flags);
@@ -59,5 +59,5 @@ void melody_play_tune(struct buzz *obj)
 
 void melody_stop_tune(struct buzz *obj)
 {
-	buzz_notune(obj);
+	buzz_stop_sound(obj);
 }

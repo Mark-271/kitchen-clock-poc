@@ -37,7 +37,6 @@
 #define ALARM_MELODY_REPLAYS	5
 
 typedef void (*logic_handle_stage_func_t)(void);
-static enum logic_stage logic_break_alarm_signal(void);
 
 /* Keep 0 as undefined state */
 enum logic_stage {
@@ -77,6 +76,7 @@ struct rtc_data {
 struct logic {
 	enum logic_stage stage;		/* current state of FSM */
 	bool alarm_trigger_on;
+	bool flag_stopped;
 	bool ds18b20_presence_flag;
 	bool ds3231_presence_flag;
 	int alarm_counter;
@@ -93,6 +93,7 @@ struct logic {
 
 static void logic_handle_btn(int btn, bool pressed);
 static void logic_alarm_cb(void);
+static void logic_break_alarm_signal(void);
 
 static uint8_t menu_addr[MENU_NUM] = {
 	0x00,
@@ -142,7 +143,8 @@ static void logic_init_drivers(void)
 		.addr = DS3231_DEVICE_ADDR,
 	};
 
-	err = kbd_init(&logic.kbd, &kbd_gpio, logic_handle_btn);
+	err = kbd_init(&logic.kbd, &kbd_gpio, logic_handle_btn,
+		       logic_break_alarm_signal);
 	if (err) {
 		pr_emerg("Error: Can't initialize kbd: %d\n", err);
 		hang();
@@ -461,9 +463,6 @@ static void logic_handle_alarm_signal(void *data)
 {
 	UNUSED(data);
 	logic.alarm_counter++;
-
-	if (logic.alarm_counter == ALARM_MELODY_REPLAYS)
-		logic.stage = logic_break_alarm_signal();
 }
 
 static void logic_handle_stage_init(void)
@@ -565,17 +564,6 @@ static void logic_alarm_cb(void)
 	logic_handle_stage(STAGE_ALARM_TRIG);
 }
 
-static enum logic_stage logic_break_alarm_signal(void)
-{
-	logic.rtc.alarm.status = false;
-	logic.alarm_counter = 0;
-
-	swtimer_tim_stop(logic.alarm_tim.id);
-
-	logic_handle_stage(STAGE_MAIN_SCREEN);
-
-	return STAGE_MAIN_SCREEN;
-}
 
 static void logic_handle_key_press(enum logic_event event)
 {
@@ -584,9 +572,7 @@ static void logic_handle_key_press(enum logic_event event)
 
 	switch (event) {
 	case EVENT_LEFT:
-		if (stage == STAGE_ALARM_TRIG) {
-			new_stage = logic_break_alarm_signal();
-		} else if (stage == STAGE_MAIN_SCREEN) {
+		if (stage == STAGE_MAIN_SCREEN) {
 			logic_handle_stage(STAGE_MAIN_MENU);
 			new_stage = STAGE_MAIN_MENU;
 		} else if (stage == STAGE_MAIN_MENU ||
@@ -600,9 +586,7 @@ static void logic_handle_key_press(enum logic_event event)
 		}
 		break;
 	case EVENT_RIGHT:
-		if (stage == STAGE_ALARM_TRIG) {
-			new_stage = logic_break_alarm_signal();
-		} else if (stage == STAGE_MAIN_SCREEN) {
+		if (stage == STAGE_MAIN_SCREEN) {
 			logic_handle_stage(STAGE_MAIN_MENU);
 			new_stage = STAGE_MAIN_MENU;
 		} else if (stage == STAGE_ALARM) {
@@ -624,9 +608,7 @@ static void logic_handle_key_press(enum logic_event event)
 		}
 		break;
 	case EVENT_UP:
-		if (stage == STAGE_ALARM_TRIG) {
-			new_stage = logic_break_alarm_signal();
-		} else if (stage == STAGE_MAIN_SCREEN) {
+		if (stage == STAGE_MAIN_SCREEN) {
 			logic_handle_stage(STAGE_MAIN_MENU);
 			new_stage = STAGE_MAIN_MENU;
 		} else if (stage == STAGE_MAIN_MENU) {
@@ -657,9 +639,7 @@ static void logic_handle_key_press(enum logic_event event)
 		}
 		break;
 	case EVENT_DOWN:
-		if (stage == STAGE_ALARM_TRIG) {
-			new_stage = logic_break_alarm_signal();
-		} else if (stage == STAGE_MAIN_SCREEN) {
+		if (stage == STAGE_MAIN_SCREEN) {
 			logic_handle_stage(STAGE_MAIN_MENU);
 			new_stage = STAGE_MAIN_MENU;
 		} else if (stage == STAGE_ALARM) {
@@ -674,6 +654,13 @@ static void logic_handle_key_press(enum logic_event event)
 	}
 
 	logic.stage = new_stage;
+}
+
+/* It is being run from hardware ISR */
+static void logic_break_alarm_signal(void)
+{
+	if (logic.stage == STAGE_ALARM_TRIG)
+		logic.flag_stopped = true;
 }
 
 static void logic_handle_btn(int button, bool pressed)

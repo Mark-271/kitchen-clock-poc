@@ -166,7 +166,7 @@ static void logic_init_drivers(void)
 	logic.ds3231_presence_flag = !err;
 
 	buzz_init(&logic.buzz, BUZZ_GPIO_PORT, BUZZ_GPIO_PIN);
-	player_init(&logic.pl, &theme, logic_play_tone,
+	player_init(&logic.pl, melody_alarm, melody_alarm_len, logic_play_tone,
 		    logic_stop_sound);
 }
 

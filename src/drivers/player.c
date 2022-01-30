@@ -17,13 +17,11 @@
  */
 void player_play_next_note(struct player *obj)
 {
-	struct theme *t = &obj->strack.theme;
-
-	if (obj->strack.pos > obj->strack.theme.mlen)
+	if (obj->strack.pos > obj->strack.melody_len)
 		obj->strack.pos = 0;
 
-	obj->cb1((t->melody + obj->strack.pos)->tone,
-		 (t->melody + obj->strack.pos)->duration);
+	obj->cb1((obj->strack.melody + obj->strack.pos)->tone,
+		 (obj->strack.melody + obj->strack.pos)->duration);
 
 	obj->strack.pos++;
 }
@@ -43,17 +41,19 @@ void player_stop(struct player *obj)
  * Initialize player module.
  *
  * @param obj Device object
- * @param thm Music theme to play
+ * @param melody Music theme (array of notes) to play
+ * @param melody_len Number of notes in @p melody array
  * @param cb1 Callback to call on demand
  * @param cb2 Callback to call on demand
  * @return 0
  */
-int player_init(struct player *obj, struct theme *thm, player_cb_1_t cb1,
-		player_cb_2_t cb2)
+int player_init(struct player *obj, const struct note *melody,
+		size_t melody_len, player_cb_1_t cb1, player_cb_2_t cb2)
 {
 	obj->cb1 = cb1;
 	obj->cb2 = cb2;
-	obj->strack.theme = *thm;
+	obj->strack.melody = melody;
+	obj->strack.melody_len = melody_len;
 	obj->strack.pos = 0;
 
 	return 0;

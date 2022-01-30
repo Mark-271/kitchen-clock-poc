@@ -4,8 +4,7 @@
  */
 
 #include <tools/melody.h>
-
-#define MELODY_LEN 11 /* number of notes in melody */
+#include <tools/common.h>
 
 /* The note frequency given in Hz */
 #define A4		440
@@ -23,8 +22,7 @@
 #define MINIM		(CROTCHET * 2)	/* Half note */
 #define NO_TONE		0
 
-/* Simple melody */
-struct note mel[] = {
+const struct note melody_alarm[] = {
 	{ D4, QUAVER },
 	{ A5, CROTCHET },
 	{ A4, QUAVER },
@@ -38,7 +36,4 @@ struct note mel[] = {
 	{ D4, MINIM },
 };
 
-struct theme theme = {
-	.mlen = MELODY_LEN,
-	.melody = mel,
-};
+const size_t melody_alarm_len = ARRAY_SIZE(melody_alarm);

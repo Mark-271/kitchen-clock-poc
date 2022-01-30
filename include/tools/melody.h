@@ -6,16 +6,14 @@
 #ifndef TOOLS_MELODY_H
 #define TOOLS_MELODY_H
 
+#include <stddef.h>
+
 struct note {
 	int tone;
 	int duration;
 };
 
-struct theme {
-	int mlen;
-	struct note *melody;
-};
-
-extern struct theme theme;
+extern const struct note melody_alarm[];
+extern const size_t melody_alarm_len;
 
 #endif /* TOOLS_MELODY_H */

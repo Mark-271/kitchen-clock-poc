@@ -14,7 +14,7 @@
  * When function is called, plays one note and returns. Every
  * subsequent call plays following note of the melody.
  *
- * @param obj Device object
+ * @param obj Player object
  */
 void player_play_next_note(struct player *obj)
 {
@@ -28,7 +28,7 @@ void player_play_next_note(struct player *obj)
 /**
  * Stop playing melody.
  *
- * @param obj Device object
+ * @param obj Player object
  */
 void player_stop(struct player *obj)
 {
@@ -38,7 +38,7 @@ void player_stop(struct player *obj)
 /**
  * Initialize player module.
  *
- * @param obj Device object
+ * @param obj Player object
  * @param melody Music theme (array of notes) to play
  * @param melody_len Number of notes in @p melody array
  * @param play_note_cb Function to play note

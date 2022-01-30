@@ -6,6 +6,7 @@
 #include <drivers/player.h>
 #include <tools/common.h>
 #include <stddef.h>
+#include <string.h>
 
 /**
  * Play note.
@@ -61,5 +62,5 @@ int player_init(struct player *obj, const struct note *melody,
 
 void player_exit(struct player *obj)
 {
-	UNUSED(obj);
+	memset(obj, 0, sizeof(*obj));
 }

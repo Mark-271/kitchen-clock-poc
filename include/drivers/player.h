@@ -9,8 +9,7 @@
 #include <tools/melody.h>
 #include <stdint.h>
 
-typedef void (*player_cb_1_t)(uint16_t tone, uint16_t duration);
-typedef void (*player_cb_2_t)(void);
+typedef void (*player_play_note_cb_t)(uint16_t tone, uint16_t duration);
 
 struct sound_track {
 	const struct note *melody;
@@ -19,13 +18,12 @@ struct sound_track {
 };
 
 struct player {
-	player_cb_1_t cb1;
-	player_cb_2_t cb2;
+	player_play_note_cb_t play_note_cb;
 	struct sound_track strack;
 };
 
 int player_init(struct player *obj, const struct note *melody,
-		size_t melody_len, player_cb_1_t cb1, player_cb_2_t cb2);
+		size_t melody_len, player_play_note_cb_t play_note_cb);
 void player_exit(struct player *obj);
 void player_play_next_note(struct player *obj);
 void player_stop(struct player *obj);

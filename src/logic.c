@@ -40,7 +40,6 @@ static void logic_handle_btn(int btn, bool pressed);
 static void logic_alarm_cb(void);
 static void logic_break_alarm_signal(void);
 static void logic_play_tone(uint16_t tone, uint16_t duration);
-static void logic_stop_sound(void);
 
 /* Keep 0 as undefined state */
 enum logic_stage {
@@ -166,8 +165,7 @@ static void logic_init_drivers(void)
 	logic.ds3231_presence_flag = !err;
 
 	buzz_init(&logic.buzz, BUZZ_GPIO_PORT, BUZZ_GPIO_PIN);
-	player_init(&logic.pl, melody_alarm, melody_alarm_len, logic_play_tone,
-		    logic_stop_sound);
+	player_init(&logic.pl, melody_alarm, melody_alarm_len, logic_play_tone);
 }
 
 /**
@@ -703,16 +701,9 @@ static void logic_break_alarm_signal(void)
 		logic.flag_stopped = true;
 }
 
-/* Callback 1 to register in player_init() */
 static void logic_play_tone(uint16_t tone, uint16_t duration)
 {
 	buzz_make_sound(&logic.buzz, tone,  duration);
-}
-
-/* Callback 2 to register in player_init() */
-static void logic_stop_sound(void)
-{
-	buzz_stop_sound(&logic.buzz);
 }
 
 /* Enable logic execution */

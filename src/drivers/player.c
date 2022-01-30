@@ -21,8 +21,8 @@ void player_play_next_note(struct player *obj)
 	if (obj->strack.pos > obj->strack.melody_len)
 		obj->strack.pos = 0;
 
-	obj->cb1((obj->strack.melody + obj->strack.pos)->tone,
-		 (obj->strack.melody + obj->strack.pos)->duration);
+	obj->play_note_cb((obj->strack.melody + obj->strack.pos)->tone,
+			  (obj->strack.melody + obj->strack.pos)->duration);
 
 	obj->strack.pos++;
 }
@@ -35,7 +35,6 @@ void player_play_next_note(struct player *obj)
 void player_stop(struct player *obj)
 {
 	obj->strack.pos = 0;
-	obj->cb2();
 }
 
 /**
@@ -44,15 +43,13 @@ void player_stop(struct player *obj)
  * @param obj Device object
  * @param melody Music theme (array of notes) to play
  * @param melody_len Number of notes in @p melody array
- * @param cb1 Callback to call on demand
- * @param cb2 Callback to call on demand
- * @return 0
+ * @param play_note_cb Function to play note
+ * @return 0 on success or negative number on error
  */
 int player_init(struct player *obj, const struct note *melody,
-		size_t melody_len, player_cb_1_t cb1, player_cb_2_t cb2)
+		size_t melody_len, player_play_note_cb_t play_note_cb)
 {
-	obj->cb1 = cb1;
-	obj->cb2 = cb2;
+	obj->play_note_cb = play_note_cb;
 	obj->strack.melody = melody;
 	obj->strack.melody_len = melody_len;
 	obj->strack.pos = 0;

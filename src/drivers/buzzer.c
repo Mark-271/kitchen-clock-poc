@@ -8,6 +8,11 @@
 #include <libopencm3/stm32/gpio.h>
 #include <stddef.h>
 
+void buzz_stop_sound(struct buzz *obj)
+{
+	gpio_clear(obj->port, obj->pin);
+}
+
 /**
  * Reproduce musical note.
  *
@@ -28,10 +33,7 @@ void buzz_make_sound(struct buzz *obj, uint16_t freq, uint16_t duration)
 		mdelay(pause);
 		exit_critical(flags);
 	}
-}
 
-void buzz_stop_sound(struct buzz *obj)
-{
 	gpio_clear(obj->port, obj->pin);
 }
 

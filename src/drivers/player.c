@@ -18,13 +18,11 @@
  */
 void player_play_next_note(struct player *obj)
 {
-	if (obj->pos > obj->melody_len)
-		obj->pos = 0;
+	const struct note *note = &obj->melody[obj->pos];
 
-	obj->play_note_cb((obj->melody + obj->pos)->tone,
-			  (obj->melody + obj->pos)->duration);
-
+	obj->play_note_cb(note->tone, note->duration);
 	obj->pos++;
+	obj->pos %= obj->melody_len;
 }
 
 /**

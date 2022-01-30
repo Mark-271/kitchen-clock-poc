@@ -18,13 +18,13 @@
  */
 void player_play_next_note(struct player *obj)
 {
-	if (obj->strack.pos > obj->strack.melody_len)
-		obj->strack.pos = 0;
+	if (obj->pos > obj->melody_len)
+		obj->pos = 0;
 
-	obj->play_note_cb((obj->strack.melody + obj->strack.pos)->tone,
-			  (obj->strack.melody + obj->strack.pos)->duration);
+	obj->play_note_cb((obj->melody + obj->pos)->tone,
+			  (obj->melody + obj->pos)->duration);
 
-	obj->strack.pos++;
+	obj->pos++;
 }
 
 /**
@@ -34,7 +34,7 @@ void player_play_next_note(struct player *obj)
  */
 void player_stop(struct player *obj)
 {
-	obj->strack.pos = 0;
+	obj->pos = 0;
 }
 
 /**
@@ -50,9 +50,9 @@ int player_init(struct player *obj, const struct note *melody,
 		size_t melody_len, player_play_note_cb_t play_note_cb)
 {
 	obj->play_note_cb = play_note_cb;
-	obj->strack.melody = melody;
-	obj->strack.melody_len = melody_len;
-	obj->strack.pos = 0;
+	obj->melody = melody;
+	obj->melody_len = melody_len;
+	obj->pos = 0;
 
 	return 0;
 }

@@ -11,15 +11,11 @@
 
 typedef void (*player_play_note_cb_t)(uint16_t tone, uint16_t duration);
 
-struct sound_track {
+struct player {
+	player_play_note_cb_t play_note_cb;
 	const struct note *melody;
 	size_t melody_len;
 	size_t pos; /* indicates what note to play next */
-};
-
-struct player {
-	player_play_note_cb_t play_note_cb;
-	struct sound_track strack;
 };
 
 int player_init(struct player *obj, const struct note *melody,

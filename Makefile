@@ -72,9 +72,9 @@ OBJS		+=				\
 		   src/drivers/wh1602.o		\
 		   src/logic.o			\
 		   src/main.o			\
+		   src/melody.o			\
 		   src/player.o			\
 		   src/tools/common.o		\
-		   src/tools/melody.o		\
 		   src/tools/tools.o
 
 # C flags

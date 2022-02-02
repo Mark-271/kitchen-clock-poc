@@ -3,7 +3,7 @@
  * Author: Mark Sungurov <mark.sungurov@gmail.com>
  */
 
-#include <tools/melody.h>
+#include <melody.h>
 #include <tools/common.h>
 
 /* The note frequency given in Hz */

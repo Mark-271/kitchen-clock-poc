@@ -3,8 +3,8 @@
  * Author: Mark Sungurov <mark.sungurov@gmail.com>
  */
 
-#ifndef TOOLS_MELODY_H
-#define TOOLS_MELODY_H
+#ifndef MELODY_H
+#define MELODY_H
 
 #include <stddef.h>
 
@@ -16,4 +16,4 @@ struct note {
 extern const struct note melody_alarm[];
 extern const size_t melody_alarm_len;
 
-#endif /* TOOLS_MELODY_H */
+#endif /* MELODY_H */

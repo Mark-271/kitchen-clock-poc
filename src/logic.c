@@ -5,6 +5,7 @@
 
 #include <logic.h>
 #include <board.h>
+#include <melody.h>
 #include <player.h>
 #include <core/irq.h>
 #include <core/log.h>
@@ -17,7 +18,6 @@
 #include <drivers/kbd.h>
 #include <drivers/wh1602.h>
 #include <tools/common.h>
-#include <tools/melody.h>
 #include <tools/tools.h>
 #include <libopencm3/stm32/gpio.h>
 #include <stdbool.h>

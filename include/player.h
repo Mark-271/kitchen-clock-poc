@@ -6,7 +6,7 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
-#include <tools/melody.h>
+#include <melody.h>
 #include <stdint.h>
 
 typedef void (*player_play_note_cb_t)(uint16_t tone, uint16_t duration);

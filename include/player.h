@@ -3,8 +3,8 @@
  * Author: Mark Sungurov <mark.sungurov@gmail.com>
  */
 
-#ifndef DRIVERS_PLAYER
-#define DRIVERS_PLAYER
+#ifndef PLAYER_H
+#define PLAYER_H
 
 #include <tools/melody.h>
 #include <stdint.h>
@@ -24,4 +24,4 @@ void player_exit(struct player *obj);
 void player_play_next_note(struct player *obj);
 void player_stop(struct player *obj);
 
-#endif /* DRIVERS_PLAYER */
+#endif /* PLAYER_H */

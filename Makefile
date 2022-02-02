@@ -68,11 +68,11 @@ OBJS		+=				\
 		   src/drivers/i2c.o		\
 		   src/drivers/kbd.o		\
 		   src/drivers/one_wire.o	\
-		   src/drivers/player.o		\
 		   src/drivers/serial.o		\
 		   src/drivers/wh1602.o		\
 		   src/logic.o			\
 		   src/main.o			\
+		   src/player.o			\
 		   src/tools/common.o		\
 		   src/tools/melody.o		\
 		   src/tools/tools.o

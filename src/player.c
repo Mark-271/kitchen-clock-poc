@@ -3,7 +3,7 @@
  * Author: Mark Sungurov <mark.sungurov@gmail.com>
  */
 
-#include <drivers/player.h>
+#include <player.h>
 #include <tools/common.h>
 #include <stddef.h>
 #include <string.h>

@@ -5,6 +5,7 @@
 
 #include <logic.h>
 #include <board.h>
+#include <player.h>
 #include <core/irq.h>
 #include <core/log.h>
 #include <core/sched.h>
@@ -14,7 +15,6 @@
 #include <drivers/ds18b20.h>
 #include <drivers/ds3231.h>
 #include <drivers/kbd.h>
-#include <drivers/player.h>
 #include <drivers/wh1602.h>
 #include <tools/common.h>
 #include <tools/melody.h>

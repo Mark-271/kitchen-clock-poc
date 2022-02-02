@@ -168,7 +168,10 @@ static void logic_init_drivers(void)
 	if (err)
 		pr_warn("Warning: Can't initialize buzzer: %d\n", err);
 
-	player_init(&logic.pl, melody_alarm, melody_alarm_len, logic_play_tone);
+	err = player_init(&logic.pl, melody_alarm, melody_alarm_len,
+			  logic_play_tone);
+	if (err)
+		pr_warn("Warning: Can't initialize player: %d\n", err);
 }
 
 /**

@@ -7,6 +7,7 @@
 #include <tools/common.h>
 #include <libopencm3/stm32/gpio.h>
 #include <stddef.h>
+#include <string.h>
 
 void buzzer_stop_sound(struct buzzer *obj)
 {
@@ -49,5 +50,5 @@ int buzzer_init(struct buzzer *obj, uint32_t gpio_port, uint16_t gpio_pin)
 
 void buzzer_exit(struct buzzer *obj)
 {
-	UNUSED(obj);
+	memset(obj, 0, sizeof(*obj));
 }

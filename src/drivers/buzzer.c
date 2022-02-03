@@ -23,16 +23,13 @@ void buzzer_stop_sound(struct buzzer *obj)
  */
 void buzzer_make_sound(struct buzzer *obj, uint16_t freq, uint16_t duration)
 {
-	unsigned long flags;
 	uint16_t cycles = freq * duration / 1000;
 	uint16_t pause = 1000 / freq;
 	size_t i;
 
 	for (i = 0; i < cycles; i++) {
 		gpio_toggle(obj->port, obj->pin);
-		enter_critical(flags);
 		mdelay(pause);
-		exit_critical(flags);
 	}
 
 	gpio_clear(obj->port, obj->pin);

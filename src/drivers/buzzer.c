@@ -8,7 +8,7 @@
 #include <libopencm3/stm32/gpio.h>
 #include <stddef.h>
 
-void buzz_stop_sound(struct buzz *obj)
+void buzzer_stop_sound(struct buzz *obj)
 {
 	gpio_clear(obj->port, obj->pin);
 }
@@ -20,7 +20,7 @@ void buzz_stop_sound(struct buzz *obj)
  * @param freq Tune frequency to reproduce
  * @param duration Play time given in miliseconds
  */
-void buzz_make_sound(struct buzz *obj, uint16_t freq, uint16_t duration)
+void buzzer_make_sound(struct buzz *obj, uint16_t freq, uint16_t duration)
 {
 	unsigned long flags;
 	uint16_t cycles = freq * duration / 1000;
@@ -37,7 +37,7 @@ void buzz_make_sound(struct buzz *obj, uint16_t freq, uint16_t duration)
 	gpio_clear(obj->port, obj->pin);
 }
 
-int buzz_init(struct buzz *obj, uint32_t gpio_port, uint16_t gpio_pin)
+int buzzer_init(struct buzz *obj, uint32_t gpio_port, uint16_t gpio_pin)
 {
 	obj->port = gpio_port;
 	obj->pin = gpio_pin;
@@ -47,7 +47,7 @@ int buzz_init(struct buzz *obj, uint32_t gpio_port, uint16_t gpio_pin)
 	return 0;
 }
 
-void buzz_exit(struct buzz *obj)
+void buzzer_exit(struct buzz *obj)
 {
 	UNUSED(obj);
 }

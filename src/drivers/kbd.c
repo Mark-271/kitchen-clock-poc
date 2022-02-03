@@ -59,7 +59,7 @@ static void kbd_enable_exti(struct kbd *obj)
 	};
 }
 
-static void kdb_handle_interrupt(struct kbd *obj)
+static void kbd_handle_interrupt(struct kbd *obj)
 {
 	if (!obj->scan_pending) {
 		obj->btn_alarm_cb();
@@ -129,7 +129,7 @@ static irqreturn_t exti1_handler(int irq, void *data)
 
 	UNUSED(irq);
 
-	kdb_handle_interrupt(obj);
+	kbd_handle_interrupt(obj);
 	exti_reset_request(obj->gpio.read[0]);
 
 	return IRQ_HANDLED;
@@ -141,7 +141,7 @@ static irqreturn_t exti2_handler(int irq, void *data)
 
 	UNUSED(irq);
 
-	kdb_handle_interrupt(obj);
+	kbd_handle_interrupt(obj);
 	exti_reset_request(obj->gpio.read[1]);
 
 	return IRQ_HANDLED;

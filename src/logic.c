@@ -82,7 +82,7 @@ struct logic {
 	bool flag_stopped;
 	enum logic_stage stage;		/* current state of FSM */
 	int alarm_counter;
-	struct buzz buzz;
+	struct buzzer buzz;
 	struct ds18b20 ts;
 	struct ds3231 rtc;
 	struct kbd kbd;

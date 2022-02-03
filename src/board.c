@@ -76,8 +76,8 @@ static struct pin_mode pins[] = {
 		.pull = PULL_UP,
 	},
 	{
-		.port = BUZZ_GPIO_PORT,
-		.pins = BUZZ_GPIO_PIN,
+		.port = BUZZER_GPIO_PORT,
+		.pins = BUZZER_GPIO_PIN,
 		.mode = GPIO_MODE_OUTPUT_2_MHZ,
 		.conf = GPIO_CNF_OUTPUT_PUSHPULL,
 	},
@@ -94,7 +94,7 @@ enum rcc_periph_clken clocks[] = {
 	DS3231_AFIO_RCC,
 	DS3231_GPIO_RCC,
 	DS3231_I2C_RCC,
-	BUZZ_GPIO_RCC,
+	BUZZER_GPIO_RCC,
 };
 
 /**

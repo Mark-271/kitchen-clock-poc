@@ -164,7 +164,7 @@ static void logic_init_drivers(void)
 		pr_warn("Warning: Can't initialize ds3231: %d\n", err);
 	logic.ds3231_presence_flag = !err;
 
-	err = buzzer_init(&logic.buzz, BUZZ_GPIO_PORT, BUZZ_GPIO_PIN);
+	err = buzzer_init(&logic.buzz, BUZZER_GPIO_PORT, BUZZER_GPIO_PIN);
 	if (err)
 		pr_warn("Warning: Can't initialize buzzer: %d\n", err);
 

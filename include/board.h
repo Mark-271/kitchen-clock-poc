@@ -70,9 +70,9 @@
 #define DS3231_EXTI_IRQ		NVIC_EXTI15_10_IRQ
 
 /* Buzzer */
-#define BUZZ_GPIO_RCC		RCC_GPIOC
-#define BUZZ_GPIO_PORT		GPIOC
-#define BUZZ_GPIO_PIN		GPIO12
+#define BUZZER_GPIO_RCC		RCC_GPIOC
+#define BUZZER_GPIO_PORT	GPIOC
+#define BUZZER_GPIO_PIN		GPIO12
 
 int board_init(void);
 

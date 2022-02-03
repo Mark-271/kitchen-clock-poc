@@ -16,7 +16,7 @@
 #define KBD_READ_LINES		2
 #define KEYS			4
 
-typedef void (*kbd_btn_event_1_t)(int button, bool pressed);
+typedef void (*kbd_btn_event_cb_t)(int button, bool pressed);
 typedef void (*kbd_btn_event_2_t)(void);
 
 struct kbd_gpio {
@@ -29,7 +29,7 @@ struct kbd_gpio {
 
 struct kbd {
 	struct kbd_gpio gpio;	/* user data */
-	kbd_btn_event_1_t cb1;	/* callback 1 */
+	kbd_btn_event_cb_t btn_event_cb;
 	kbd_btn_event_2_t cb2;	/* callback 2 */
 	uint16_t scan_mask;	/* cached mask for scan pins */
 	uint16_t read_mask;	/* cached mask for read pins */
@@ -40,7 +40,7 @@ struct kbd {
 };
 
 int kbd_init(struct kbd *obj, const struct kbd_gpio *gpio,
-	     kbd_btn_event_1_t cb1, kbd_btn_event_2_t cb2);
+	     kbd_btn_event_cb_t btn_event_cb, kbd_btn_event_2_t cb2);
 void kbd_exit(struct kbd *obj);
 
 #endif /* DRIVERS_KBD_H */

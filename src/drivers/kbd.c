@@ -109,11 +109,11 @@ static void kbd_handle_btn(void *data)
 	/* Issue callback for each changed button state */
 	for (i = 0; i < KEYS; ++i) {
 		if (pressed_now[i] && !obj->pressed[i]) {
-			obj->cb1(i, true);
+			obj->btn_event_cb(i, true);
 			obj->pressed[i] = true;
 			ret = 0;
 		} else if (!pressed_now[i] && obj->pressed[i]) {
-			obj->cb1(i, false);
+			obj->btn_event_cb(i, false);
 			obj->pressed[i] = false;
 			ret = 0;
 		}
@@ -171,14 +171,14 @@ static struct irq_action a[KBD_IRQS] = {
  *       running this function.
  */
 int kbd_init(struct kbd *obj, const struct kbd_gpio *gpio,
-		kbd_btn_event_1_t cb1, kbd_btn_event_2_t cb2)
+	     kbd_btn_event_cb_t btn_event_cb, kbd_btn_event_2_t cb2)
 {
 	int ret;
 	size_t i;
 
 	cm3_assert(obj != NULL);
 	cm3_assert(gpio != NULL);
-	cm3_assert(cb1 != NULL);
+	cm3_assert(btn_event_cb != NULL);
 	cm3_assert(cb2 != NULL);
 
 	obj->gpio = *gpio;
@@ -191,7 +191,7 @@ int kbd_init(struct kbd *obj, const struct kbd_gpio *gpio,
 		obj->read_mask |= gpio->read[i];
 
 	/* Register the callbacks */
-	obj->cb1 = cb1;
+	obj->btn_event_cb = btn_event_cb;
 	obj->cb2 = cb2;
 
 	/* Prepare irq values for external interrupts */

@@ -17,7 +17,7 @@
 #define KEYS			4
 
 typedef void (*kbd_btn_event_cb_t)(int button, bool pressed);
-typedef void (*kbd_btn_event_2_t)(void);
+typedef void (*kbd_btn_alarm_cb_t)(void);
 
 struct kbd_gpio {
 	uint32_t port;
@@ -30,7 +30,7 @@ struct kbd_gpio {
 struct kbd {
 	struct kbd_gpio gpio;	/* user data */
 	kbd_btn_event_cb_t btn_event_cb;
-	kbd_btn_event_2_t cb2;	/* callback 2 */
+	kbd_btn_alarm_cb_t btn_alarm_cb;
 	uint16_t scan_mask;	/* cached mask for scan pins */
 	uint16_t read_mask;	/* cached mask for read pins */
 	bool pressed[KEYS];	/* storage for button pushed/released state */
@@ -40,7 +40,7 @@ struct kbd {
 };
 
 int kbd_init(struct kbd *obj, const struct kbd_gpio *gpio,
-	     kbd_btn_event_cb_t btn_event_cb, kbd_btn_event_2_t cb2);
+	     kbd_btn_event_cb_t btn_event_cb, kbd_btn_alarm_cb_t btn_alarm_cb);
 void kbd_exit(struct kbd *obj);
 
 #endif /* DRIVERS_KBD_H */

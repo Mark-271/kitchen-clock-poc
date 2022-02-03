@@ -62,7 +62,7 @@ static void kbd_enable_exti(struct kbd *obj)
 static void kdb_handle_interrupt(struct kbd *obj)
 {
 	if (!obj->scan_pending) {
-		obj->cb2();
+		obj->btn_alarm_cb();
 		swtimer_tim_start(swtim.id);
 		kbd_disable_exti(obj);
 		obj->scan_pending = true;
@@ -171,7 +171,7 @@ static struct irq_action a[KBD_IRQS] = {
  *       running this function.
  */
 int kbd_init(struct kbd *obj, const struct kbd_gpio *gpio,
-	     kbd_btn_event_cb_t btn_event_cb, kbd_btn_event_2_t cb2)
+	     kbd_btn_event_cb_t btn_event_cb, kbd_btn_alarm_cb_t btn_alarm_cb)
 {
 	int ret;
 	size_t i;
@@ -179,7 +179,7 @@ int kbd_init(struct kbd *obj, const struct kbd_gpio *gpio,
 	cm3_assert(obj != NULL);
 	cm3_assert(gpio != NULL);
 	cm3_assert(btn_event_cb != NULL);
-	cm3_assert(cb2 != NULL);
+	cm3_assert(btn_alarm_cb != NULL);
 
 	obj->gpio = *gpio;
 
@@ -192,7 +192,7 @@ int kbd_init(struct kbd *obj, const struct kbd_gpio *gpio,
 
 	/* Register the callbacks */
 	obj->btn_event_cb = btn_event_cb;
-	obj->cb2 = cb2;
+	obj->btn_alarm_cb = btn_alarm_cb;
 
 	/* Prepare irq values for external interrupts */
 	for (i = 0; i < KBD_READ_LINES; i++) {

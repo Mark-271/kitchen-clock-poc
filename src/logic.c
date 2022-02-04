@@ -540,6 +540,7 @@ static void logic_play_melody(void)
 	}
 
 	player_stop(&logic.pl);
+	logic.rtc.alarm.status = false;
 	logic.stage = STAGE_MAIN_SCREEN;
 }
 

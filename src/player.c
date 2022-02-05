@@ -3,6 +3,7 @@
  * Author: Mark Sungurov <mark.sungurov@gmail.com>
  */
 
+#include <note.h>
 #include <player.h>
 #include <tools/common.h>
 #include <stddef.h>

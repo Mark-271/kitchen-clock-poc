@@ -6,12 +6,8 @@
 #ifndef MELODY_H
 #define MELODY_H
 
+#include <note.h>
 #include <stddef.h>
-
-struct note {
-	int tone;
-	int duration;
-};
 
 extern const struct note melody_alarm[];
 extern const size_t melody_alarm_len;

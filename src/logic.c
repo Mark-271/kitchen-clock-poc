@@ -37,7 +37,7 @@
 #define TM_DEFAULT_YEAR		(EPOCH_YEAR - TM_START_YEAR)
 
 static void logic_handle_btn(int btn, bool pressed);
-static void logic_alarm_cb(void);
+static void logic_activate_alarm_sig(void);
 
 /* Keep 0 as undefined state */
 enum logic_stage {
@@ -172,7 +172,8 @@ static void logic_init_drivers(void)
 		hang();
 	}
 
-	err = ds3231_init(&logic.rtc, &device, EPOCH_YEAR, logic_alarm_cb);
+	err = ds3231_init(&logic.rtc, &device, EPOCH_YEAR,
+			  logic_activate_alarm_sig);
 	if (err)
 		pr_warn("Warning: Can't initialize ds3231: %d\n", err);
 	logic.ds3231_presence_flag = !err;
@@ -695,8 +696,7 @@ static void logic_handle_key_press(enum logic_event event)
 	logic.stage = new_stage;
 }
 
-/* Callback that is activated when alarm is on */
-static void logic_alarm_cb(void)
+static void logic_activate_alarm_sig(void)
 {
 	logic.stage = STAGE_ALARM_TRIG;
 	logic_handle_stage(STAGE_ALARM_TRIG);

@@ -38,8 +38,6 @@
 
 static void logic_handle_btn(int btn, bool pressed);
 static void logic_alarm_cb(void);
-static void logic_break_alarm_signal(void);
-static void logic_play_tone(uint16_t tone, uint16_t duration);
 
 /* Keep 0 as undefined state */
 enum logic_stage {
@@ -106,6 +104,21 @@ static const char * const menu_msg[MENU_NUM] = {
 };
 
 static struct logic logic;
+
+static void logic_play_tone(uint16_t tone, uint16_t duration)
+{
+	buzzer_make_sound(&logic.buzz, tone,  duration);
+}
+
+/*
+ * Callback 2 for kbd_init().
+ * It's being run from hardware ISR
+ */
+static void logic_break_alarm_signal(void)
+{
+	if (logic.stage == STAGE_ALARM_TRIG)
+		logic.flag_stopped = true;
+}
 
 /* Initialize peripheral drivers */
 static void logic_init_drivers(void)
@@ -696,21 +709,6 @@ static void logic_handle_btn(int button, bool pressed)
 
 	if (pressed)
 		logic_handle_key_press(event);
-}
-
-/*
- * Callback 2 for kbd_init().
- * It's being run from hardware ISR
- */
-static void logic_break_alarm_signal(void)
-{
-	if (logic.stage == STAGE_ALARM_TRIG)
-		logic.flag_stopped = true;
-}
-
-static void logic_play_tone(uint16_t tone, uint16_t duration)
-{
-	buzzer_make_sound(&logic.buzz, tone,  duration);
 }
 
 /* Enable logic execution */

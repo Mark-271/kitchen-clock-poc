@@ -110,10 +110,6 @@ static void logic_play_tone(uint16_t tone, uint16_t duration)
 	buzzer_make_sound(&logic.buzz, tone,  duration);
 }
 
-/*
- * Callback 2 for kbd_init().
- * It's being run from hardware ISR
- */
 static void logic_break_alarm_signal(void)
 {
 	if (logic.stage == STAGE_ALARM_TRIG)
@@ -702,7 +698,6 @@ static void logic_activate_alarm_sig(void)
 	logic_handle_stage(STAGE_ALARM_TRIG);
 }
 
-/* Callback 1 for kbd_init() */
 static void logic_handle_btn(int button, bool pressed)
 {
 	enum logic_event event = button;
@@ -711,7 +706,6 @@ static void logic_handle_btn(int button, bool pressed)
 		logic_handle_key_press(event);
 }
 
-/* Enable logic execution */
 void logic_start(void)
 {
 	logic_handle_stage(STAGE_INIT);

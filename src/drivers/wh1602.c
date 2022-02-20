@@ -127,8 +127,8 @@ void wh1602_return_home(struct wh1602 *obj)
  *
  * @param obj Structure whose fields should be filled by the caller
  * @param id Cursor moving control bit. DDRAM address is increased by 1
- * @param sh When set and DDRAM write operation, shift of display
- * 	     is performed according to id value
+ * @param sh When set and DDRAM write operation, shift of display is performed
+ * according to id value
  */
 void wh1602_set_entry_mode(struct wh1602 *obj, int id, int sh)
 {

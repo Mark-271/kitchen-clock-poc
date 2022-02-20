@@ -75,8 +75,8 @@ void systick_get_time(struct systick_time *t)
  *
  * @param[in] t1 Pointer to systick_time object containig first timestamp
  * @param[in] t2 Pointer to systick_time object that carries second timestamp
- * @return time in nanoseconds elapsed between two events specified by
- * 	   input parameters
+ * @return time in nanoseconds elapsed between two events specified by input
+ * parameters
  */
 uint64_t systick_calc_diff(const struct systick_time *t1,
 			   const struct systick_time *t2)
@@ -86,8 +86,7 @@ uint64_t systick_calc_diff(const struct systick_time *t1,
 	uint64_t t2_sec;
 
 	/* Timestamp t1 must precede timestamp t2 */
-	if ((t1->sec > t2->sec) ||
-	   ((t1->sec == t2->sec) && (t1->nsec > t2->nsec)))
+	if ((t1->sec == t2->sec && t1->nsec > t2->nsec) || t1->sec > t2->sec)
 		t2_sec = (uint64_t)t2->sec + UINT32_MAX + 1;
 	else
 		t2_sec = t2->sec;

@@ -17,7 +17,7 @@ struct systick_time {
 
 int systick_init(void);
 void systick_exit(void);
-void systick_get_time (struct systick_time *t);
+void systick_get_time(struct systick_time *t);
 uint64_t systick_calc_diff(const struct systick_time *t1,
 			   const struct systick_time *t2);
 

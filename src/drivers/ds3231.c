@@ -27,7 +27,7 @@
 #define DS3231_A1IE		BIT(0)	/* Alarm 1 interrupt enable bit */
 #define DS3231_A1F		BIT(0)	/* Alarm 1 flag */
 #define DS3231_A1M		BIT(7)	/* Alarm 1 mask bit */
-#define DS3231_EN32kHz		BIT(3)	/* 32 kHz output */
+#define DS3231_EN32KHz		BIT(3)	/* 32 kHz output */
 #define DS3231_BUF_LEN		7
 #define ALARM1_BUF_LEN		4
 #define DS3231_TASK		"ds3231"
@@ -179,8 +179,8 @@ int ds3231_read_time(struct ds3231 *obj, struct rtc_time *tm)
  * 24-hour mode is selected by default.
  *
  * @param obj DS3231 device object
- * @param[in] tm Structure used to store time/date values. Should be
- * 		filled by caller.
+ * @param[in] tm Structure used to store time/date values.
+ * Should be filled by caller.
  * @return 0 on success or negative value on error
  */
 int ds3231_set_time(struct ds3231 *obj, struct rtc_time *tm)
@@ -215,8 +215,8 @@ int ds3231_set_time(struct ds3231 *obj, struct rtc_time *tm)
  * Interrupt control bit of DS3231 control register should be asserted.
  *
  * @param ob DS3231 device object
- * @param alarm_enabled Flag showing whether to set or reset the
- * 			alarm 1 interrupt enable bit
+ * @param alarm_enabled Flag showing whether to set or reset the alarm
+ * interrupt enable bit
  * @return 0 on success or negative value on error
  */
 int ds3231_toggle_alarm(struct ds3231 *obj, bool alarm_enabled)
@@ -364,12 +364,11 @@ int ds3231_init(struct ds3231 *obj, const struct ds3231_device *dev,
 	if (ret != 0)
 		return ret;
 
-	reg &= ~DS3231_EN32kHz;
+	reg &= ~DS3231_EN32KHz;
 
 	ret = i2c_write_buf_poll(obj->device.addr, DS3231_SR, &reg, 1);
-	if (ret != 0) {
+	if (ret != 0)
 		return ret;
-	}
 
 	return 0;
 }

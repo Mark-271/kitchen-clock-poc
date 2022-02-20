@@ -30,10 +30,10 @@ static int yisleap(int year)
 /**
  * Calculate day number beginning from January 1.
  *
- * @param mon Month should be in range 0 - 11
- * @param day Day in range 1 - 31
- * @param year Year
- * @return Number of a day in range 1 - 366
+ * @param mon Month should be in the range 0 - 11
+ * @param day Month day in range 1 - 31
+ * @param year Number representing the year
+ * @return Day number in the range 1 - 366
  */
 int get_yday(int mon, int day, int year)
 {

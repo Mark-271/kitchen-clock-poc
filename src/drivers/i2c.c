@@ -225,7 +225,7 @@ static int i2c_receive_buf_poll(uint8_t *buf, uint16_t len)
 		if (len == 3)
 			break;
 		ret = wait_event_timeout(I2C_SR1(i2c.base) & I2C_SR1_BTF,
-				I2C_TIMEOUT_FLAG);
+					 I2C_TIMEOUT_FLAG);
 		if (ret != 0)
 			goto err_timeout;
 		buf[i++] = i2c_get_data(i2c.base);

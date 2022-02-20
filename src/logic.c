@@ -603,7 +603,8 @@ static void logic_handle_stage(enum logic_stage stage)
 
 static void logic_handle_key_press(enum logic_event event)
 {
-	enum logic_stage stage = logic.stage;	/* current stage */
+	/* Current stage of fsm */
+	enum logic_stage stage = logic.stage;
 	enum logic_stage new_stage = STAGE_UNDEFINED;
 
 	switch (event) {

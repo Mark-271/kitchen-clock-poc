@@ -251,7 +251,7 @@ static void logic_config_alarm(void)
 	int err;
 	bool enabled = logic.rtc.alarm.status;
 
-	if (enabled == false) {
+	if (!enabled) {
 		err = ds3231_set_alarm(&logic.rtc);
 		if (err)
 			goto alarm_err;
@@ -511,8 +511,8 @@ static void logic_handle_stage_init(void)
 
 		ret = ds3231_set_time(&logic.rtc, &logic.tm);
 		if (ret != 0) {
-			pr_emerg("Error: Unable to set year inside ds3231"
-					"timekeeping register\n");
+			pr_emerg("Error: Unable to set year inside ds3231 "
+				 "timekeeping register\n");
 			hang();
 		}
 	}
